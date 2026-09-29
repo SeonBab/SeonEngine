@@ -130,6 +130,18 @@
   #undef CreateWindow
   ```
 
+- **진입점** — 플랫폼 진입점은 플랫폼별 준비만 하고 플랫폼과 관계없는 `EngineMain()`을 호출한다. 엔진 초기화, 메인 루프, 종료는 `EngineMain()` 쪽에 둔다. 진입점은 엔진 모듈에 있고, 게임 모듈에는 진입점을 두지 않는다.
+
+  ```text
+  Engine/Private/
+  ├─ Launch/
+  │  └─ EngineMain.h / .cpp          int EngineMain()
+  └─ Platform/Windows/
+     └─ WindowsLaunch.cpp            WinMain → EngineMain()
+  ```
+
+  - Windows 진입점은 `wWinMain`이 아니라 `WinMain`을 쓴다. 진입점이 정적 라이브러리 안에 있으면 링커가 진입점 종류를 알아내지 못하고 기본값(`WinMain`)을 쓰기 때문이다. 유니코드 명령줄이 필요하면 `GetCommandLineW()`로 읽는다.
+
 ## 4. 렌더링 백엔드
 
 - **그래픽스 API** — D3D11로 시작한다.

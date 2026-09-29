@@ -70,8 +70,11 @@ SeonEngine/
 | 프로젝트 | 종류 | 담는 모듈 | include 경로 |
 |---|---|---|---|
 | `Engine` | 정적 라이브러리 (`.lib`) | `Core`, `Engine` | 두 모듈의 `Public`, `Private` |
-| `SampleGame` | 실행 파일 (`.exe`) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈의 `Public`, `Private` |
+| `SampleGame` | 실행 파일 (`.exe`, Windows 서브시스템) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈의 `Public`, `Private` |
 
+- `SampleGame`은 `Engine`을 프로젝트 참조로 연결한다. 빌드 순서와 `Engine.lib` 링크가 자동으로 처리된다.
+- 진입점(`WinMain`)은 `Engine.lib`에 있다(Architecture 3. 플랫폼 추상화). 게임 프로젝트는 엔진과 게임 코드를 실행 파일로 링크하는 단위다.
+- 게임 프로젝트에는 `.cpp`가 하나 이상 있어야 한다. 컴파일된 `.obj`가 없으면 CRT가 링크되지 않아 시작 코드(`WinMainCRTStartup`)를 찾지 못한다.
 - 게임 프로젝트의 include 경로에는 엔진 모듈의 `Public`만 넣는다. 엔진 내부 헤더를 include하면 빌드가 실패한다(Code Convention 2.1 파일 구성 참고).
 - 프로젝트에서 다른 폴더를 가리킬 때는 `$(SERootDir)`(저장소 루트)을 쓴다. `$(SolutionDir)`은 솔루션 없이 프로젝트만 빌드하면 값이 달라진다.
 
@@ -82,7 +85,7 @@ SeonEngine/
 | 파일 | 담는 설정 |
 |---|---|
 | `Directory.Build.props` | 루트 경로(`SERootDir`), 출력 / 중간 디렉터리, 아래 "컴파일러 설정" 전부 |
-| 각 `.vcxproj` | 프로젝트 종류, include 경로, 프로젝트 전용 전처리기 정의(`_LIB`, `_CONSOLE`), 링커 / 매니페스트, 프로젝트 참조 |
+| 각 `.vcxproj` | 프로젝트 종류, include 경로, 프로젝트 전용 전처리기 정의(`_LIB`, `_WINDOWS`), 링커 / 매니페스트, 프로젝트 참조 |
 
 | 설정 | 값 |
 |---|---|

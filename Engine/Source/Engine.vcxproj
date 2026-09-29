@@ -54,7 +54,14 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <ItemGroup></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Engine\Private\Launch\EngineMain.h" />
+    <ClInclude Include="Engine\Private\Platform\Windows\WindowsHeaders.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Private\Launch\EngineMain.cpp" />
+    <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
