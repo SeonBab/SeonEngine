@@ -4,7 +4,7 @@
 
 ## 언어 표준
 
-모든 구성에서 C++20(`/std:c++20`)을 쓴다. (`.vcxproj` → C/C++ → 언어 → C++ 언어 표준)
+모든 프로젝트, 모든 구성에서 C++20(`/std:c++20`)을 쓴다. (`Directory.Build.props`, 속성 페이지: C/C++ → 언어 → C++ 언어 표준)
 
 ## 소스 인코딩
 
@@ -12,7 +12,7 @@
 
 | 설정 | 위치 | 이유 |
 |---|---|---|
-| `/utf-8` | `.vcxproj` → C/C++ → 명령줄 → 추가 옵션 (모든 구성) | MSVC는 BOM 없는 파일을 시스템 코드페이지(CP949)로 읽기 때문에 한글 주석과 문자열이 깨진다. |
+| `/utf-8` | `Directory.Build.props` (속성 페이지: C/C++ → 명령줄 → 추가 옵션) | MSVC는 BOM 없는 파일을 시스템 코드페이지(CP949)로 읽기 때문에 한글 주석과 문자열이 깨진다. |
 | `charset = utf-8` | `.editorconfig` | Visual Studio가 파일을 BOM 없는 UTF-8로 저장하게 한다. |
 
 ## `.editorconfig`
@@ -45,6 +45,7 @@
 ```text
 SeonEngine/
 ├─ SeonEngine.slnx
+├─ Directory.Build.props   모든 프로젝트 공통 설정
 ├─ Engine/
 │  ├─ Source/
 │  │  ├─ Engine.vcxproj
@@ -72,14 +73,26 @@ SeonEngine/
 | `SampleGame` | 실행 파일 (`.exe`) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈의 `Public`, `Private` |
 
 - 게임 프로젝트의 include 경로에는 엔진 모듈의 `Public`만 넣는다. 엔진 내부 헤더를 include하면 빌드가 실패한다(Code Convention 2.1 파일 구성 참고).
-- 새 프로젝트를 추가하면 아래 컴파일러 설정과 출력 경로를 기존 프로젝트와 똑같이 맞춘다.
+- 프로젝트에서 다른 폴더를 가리킬 때는 `$(SERootDir)`(저장소 루트)을 쓴다. `$(SolutionDir)`은 솔루션 없이 프로젝트만 빌드하면 값이 달라진다.
 
-| 설정 | 값 | 위치 |
-|---|---|---|
-| 출력 디렉터리 (`OutDir`) | `$(SolutionDir)Binaries\$(Platform)\$(Configuration)\` | `.vcxproj` → 일반 → 출력 디렉터리 |
-| 중간 디렉터리 (`IntDir`) | `$(SolutionDir)Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\` | `.vcxproj` → 일반 → 중간 디렉터리 |
+## 공통 설정 (`Directory.Build.props`)
+
+저장소 루트의 `Directory.Build.props`는 MSBuild가 모든 `.vcxproj`에 자동으로 import한다. 새 프로젝트도 따로 설정하지 않아도 공통 설정이 적용된다.
+
+| 파일 | 담는 설정 |
+|---|---|
+| `Directory.Build.props` | 루트 경로(`SERootDir`), 출력 / 중간 디렉터리, 아래 "컴파일러 설정" 전부 |
+| 각 `.vcxproj` | 프로젝트 종류, include 경로, 프로젝트 전용 전처리기 정의(`_LIB`, `_CONSOLE`), 링커 / 매니페스트, 프로젝트 참조 |
+
+| 설정 | 값 |
+|---|---|
+| 출력 디렉터리 (`OutDir`) | `$(SERootDir)Binaries\$(Platform)\$(Configuration)\` |
+| 중간 디렉터리 (`IntDir`) | `$(SERootDir)Intermediate\$(MSBuildProjectName)\$(Platform)\$(Configuration)\` |
 
 - 모든 프로젝트의 `.exe`, `.lib`, DLL은 `Binaries`의 같은 폴더에 모은다. 중간 파일은 프로젝트별로 나눈다.
+- 공통 설정은 이 파일을 직접 고친다. VS 속성 페이지에서 바꾼 값은 해당 `.vcxproj`에만 저장된다. 속성 페이지에서는 이 파일에서 온 값이 굵지 않은 글씨로 보인다.
+- 이 파일은 프로젝트 앞부분에서 import되므로 `$(ProjectName)`처럼 프로젝트가 정의하는 속성을 쓸 수 없다. `$(MSBuildProjectName)`처럼 MSBuild가 미리 정의하는 속성을 쓴다.
+- `.vcxproj`에서 목록형 설정(전처리기 정의, include 경로, 추가 옵션)을 넣을 때는 `%(PreprocessorDefinitions)`처럼 기존 값을 이어 붙인다. 빠뜨리면 공통 값이 사라진다.
 
 ## 플랫폼 / 빌드 구성
 
@@ -88,7 +101,7 @@ SeonEngine/
 
 ## 컴파일러 설정
 
-모든 프로젝트, 모든 구성에 적용한다 (`.vcxproj` → C/C++).
+모든 프로젝트, 모든 구성에 적용한다 (`Directory.Build.props`). 위치 열은 VS 속성 페이지(C/C++)에서 보이는 위치다.
 
 | 설정 | 값 | 위치 |
 |---|---|---|
