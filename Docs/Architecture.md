@@ -1,0 +1,141 @@
+# SeonEngine Architecture
+
+엔진 구조에 대한 규칙이다. 코드를 어떻게 쓰는지는 [Code Convention](Conventions/CodeConvention.md)을 따른다.
+
+---
+
+## 1. 모듈과 의존성 방향
+
+- **모듈 구성** — `Core`, `Engine`, `Game` 세 모듈로 시작하고, 코드가 커지면 나눈다(예: `Engine`에서 `Renderer`, `RHI`, `Platform` 분리). 의존은 위에서 아래로만 한다.
+
+  ```text
+  Game      (콘텐츠 코드)
+    │
+    ▼
+  Engine    (렌더링, 플랫폼, 입력, 씬 등 엔진 기능)
+    │
+    ▼
+  Core      (타입, 컨테이너, 수학, 로그, assert, 메모리)
+  ```
+
+  - 하위 모듈은 상위 모듈의 헤더를 include하지 않는다(`Core`는 `Engine`을, `Engine`은 `Game`을 모른다).
+  - 모듈은 폴더로 나누고, 각 모듈 안에 `Public` / `Private`를 둔다(Code Convention 2.1 파일 구성 참고). 빌드 설정으로 강제하지 않으므로 코드 리뷰에서 확인한다.
+- **같은 계층끼리 의존 금지** — 모듈을 나눈 뒤 같은 계층의 모듈(예: `Renderer`와 `Audio`)은 서로 의존하지 않는다. 함께 동작해야 하면 상위 모듈이 연결한다.
+- **역방향 통지** — 하위 모듈이 상위 모듈에 알려야 할 일은 인터페이스나 이벤트(델리게이트)로 전달한다. 상위 모듈의 타입을 직접 참조하지 않는다.
+
+  ```cpp
+  // Core — 상위를 모른 채 인터페이스만 정의
+  class ILogSink
+  {
+  public:
+  	virtual ~ILogSink() = default;
+  	virtual void Write(const NString& message) = 0;
+  };
+
+  // Engine — 구현해서 Core에 등록
+  class NFileLogSink final : public ILogSink
+  {
+  public:
+  	void Write(const NString& message) override;
+  };
+  ```
+
+## 2. 서브시스템과 전역 상태
+
+- **싱글톤 금지** — 클래스가 스스로 인스턴스를 들고 있는 싱글톤(`GetInstance()`)은 만들지 않는다. 생성 / 파괴 시점을 제어할 수 없어 아래 초기화 / 종료 순서를 깨뜨린다. 서브시스템은 `NEngine`이 소유하고, 전역에는 `gEngine` 하나만 둔다.
+- **초기화 / 종료 순서** — `NEngine::Initialize()` 한 곳에서 초기화 순서를 명시하고, `NEngine::Shutdown()`은 정확히 그 역순으로 정리한다. 전역 / static 객체의 생성자에서는 초기화 작업을 하지 않는다(파일 사이의 전역 초기화 순서는 보장되지 않는다).
+
+  ```cpp
+  bool NEngine::Initialize()
+  {
+  	if (!platform->Initialize()) { return false; }
+  	if (!renderer->Initialize(rendererDesc)) { return false; }
+  	if (!input->Initialize()) { return false; }
+  	return true;
+  }
+
+  void NEngine::Shutdown()
+  {
+  	input->Shutdown();
+  	renderer->Shutdown();
+  	platform->Shutdown();
+  }
+  ```
+
+- **서브시스템 접근** — 타입으로 조회한다. 서브시스템은 `NEngine::Initialize()`에서 등록한다.
+
+  ```cpp
+  NEngine* gEngine = nullptr;
+
+  NRenderer* renderer = gEngine->GetSubsystem<NRenderer>();
+
+  // 금지
+  NRenderer& renderer = NRenderer::GetInstance();
+  ```
+
+- **전역 변수** — 새 전역 변수는 만들지 않는다. 이 문서에 적힌 엔진 기반 전역(`gEngine`)만 둔다. 상수(`constexpr`)와 `.cpp` 안의 익명 namespace 변수는 허용한다. 필요한 객체는 가능하면 생성자나 함수 인자로 넘겨받는다.
+
+## 3. 플랫폼 추상화
+
+- **분기 코드 위치** — 플랫폼별 코드는 `Platform/` 폴더에만 둔다. 그 외에는 Core의 플랫폼 매크로 정의 헤더만 `#if SE_PLATFORM_*` 분기를 쓸 수 있다. 일반 코드는 플랫폼에 따라 나뉘지 않는다.
+
+  ```text
+  Engine/
+  └─ Private/
+     └─ Platform/
+        ├─ PlatformFile.h
+        └─ Windows/
+           └─ WindowsPlatformFile.cpp
+  ```
+
+- **구현 방식** — 지원 플랫폼이 하나인 동안은 공통 헤더에 선언하고 플랫폼별 `.cpp`에서 구현한다. 플랫폼이 두 개 이상이 되면 `Generic` 공통 구현을 두고 플랫폼 구현이 상속한 뒤 `using`으로 고르는 방식으로 바꾼다. 두 방식 모두 사용하는 코드는 `NPlatformFile`이라는 같은 이름을 쓰므로 전환할 때 사용처를 고치지 않는다.
+
+  ```cpp
+  // 플랫폼이 하나일 때
+  // PlatformFile.h
+  class NPlatformFile
+  {
+  public:
+  	static bool Exists(const NString& path);
+  };
+
+  // Windows/WindowsPlatformFile.cpp
+  bool NPlatformFile::Exists(const NString& path)
+  {
+  	...
+  }
+
+  // 플랫폼이 둘 이상일 때
+  struct NGenericPlatformFile { ... };
+  struct NWindowsPlatformFile : NGenericPlatformFile { ... };
+
+  using NPlatformFile = NWindowsPlatformFile;
+  ```
+
+- **`Windows.h`** — 직접 include하지 않고 `Platform/Windows/WindowsHeaders.h` 래퍼만 include한다. 래퍼는 Platform과 그래픽스 API 전용 폴더(4장 렌더링 백엔드 참고)의 `.cpp`(또는 Private 헤더)에서만 include하고, Public 헤더에서는 include하지 않는다.
+  - 래퍼는 `WIN32_LEAN_AND_MEAN`, `NOMINMAX`를 정의한 뒤 `Windows.h`를 include하고, 엔진 이름과 충돌하는 매크로(`CreateWindow` 등)를 `#undef`한다.
+
+  ```cpp
+  // Platform/Windows/WindowsHeaders.h
+  #pragma once
+
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  #include <Windows.h>
+
+  #undef CreateWindow
+  ```
+
+## 4. 렌더링 백엔드
+
+- **그래픽스 API** — D3D11로 시작한다.
+- **API 코드 격리** — D3D11 타입(`ID3D11Device` 등)과 `d3d11.h`는 렌더러 안의 D3D11 전용 폴더에서만 쓴다. 렌더러의 나머지 코드와 그 위의 코드는 엔진 타입만 쓴다.
+
+  ```text
+  Engine/
+  └─ Private/
+     └─ Renderer/
+        ├─ Renderer.cpp          // 엔진 타입만 사용
+        └─ D3D11/
+           └─ D3D11Device.cpp    // ID3D11Device 등은 여기에서만
+  ```
