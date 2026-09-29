@@ -28,7 +28,7 @@
 
 저장소 루트의 `.clang-format`으로 코드 포매팅을 통일한다(Code Convention 1.1 Formatting). Visual Studio는 내장 clang-format으로 이 파일을 읽는다(도구 → 옵션 → 텍스트 편집기 → C/C++ → 코드 스타일 → 서식에서 clang-format 지원이 켜져 있어야 한다).
 
-`ThirdParty/.clang-format`은 서드파티 폴더의 서식 정리와 include 정렬을 끈다(Code Convention 6.3 예외 조항).
+`Engine/ThirdParty/.clang-format`은 서드파티 폴더의 서식 정리와 include 정렬을 끈다(Code Convention 6.3 예외 조항).
 
 ## `.gitattributes`
 
@@ -38,14 +38,57 @@
 - 이미지, 오디오, 폰트, 바이너리 파일: 변환하지 않음 (`binary`)
 - 예외: `.bat` / `.cmd`는 CRLF, `.sh`는 LF로 고정
 
+## 폴더 구조
+
+저장소 루트에 솔루션을 두고, 엔진과 게임 프로젝트를 최상위 폴더로 나눈다. 빌드 결과는 루트에 모은다.
+
+```text
+SeonEngine/
+├─ SeonEngine.slnx
+├─ Engine/
+│  ├─ Source/
+│  │  ├─ Engine.vcxproj
+│  │  ├─ Core/            모듈 (Public/, Private/)
+│  │  └─ Engine/          모듈
+│  └─ ThirdParty/
+├─ SampleGame/            게임 프로젝트
+│  └─ Source/
+│     ├─ SampleGame.vcxproj
+│     └─ SampleGame/      모듈
+├─ Docs/
+├─ Binaries/              빌드 결과 (git 무시)
+└─ Intermediate/          중간 파일 (git 무시)
+```
+
+- 엔진과 게임 프로젝트는 같은 구조를 갖는다. 셰이더(`Shaders/`), 에셋(`Content/`), 설정(`Config/`) 폴더는 처음 필요할 때 각 폴더 아래에 추가한다.
+- 게임 프로젝트 이름은 `<이름>Game`으로 짓고, 게임 모듈 이름은 프로젝트 이름과 같게 한다.
+- `Engine/`과 게임 폴더에는 빌드 결과를 두지 않는다.
+
+## 프로젝트
+
+| 프로젝트 | 종류 | 담는 모듈 | include 경로 |
+|---|---|---|---|
+| `Engine` | 정적 라이브러리 (`.lib`) | `Core`, `Engine` | 두 모듈의 `Public`, `Private` |
+| `SampleGame` | 실행 파일 (`.exe`) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈의 `Public`, `Private` |
+
+- 게임 프로젝트의 include 경로에는 엔진 모듈의 `Public`만 넣는다. 엔진 내부 헤더를 include하면 빌드가 실패한다(Code Convention 2.1 파일 구성 참고).
+- 새 프로젝트를 추가하면 아래 컴파일러 설정과 출력 경로를 기존 프로젝트와 똑같이 맞춘다.
+
+| 설정 | 값 | 위치 |
+|---|---|---|
+| 출력 디렉터리 (`OutDir`) | `$(SolutionDir)Binaries\$(Platform)\$(Configuration)\` | `.vcxproj` → 일반 → 출력 디렉터리 |
+| 중간 디렉터리 (`IntDir`) | `$(SolutionDir)Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\` | `.vcxproj` → 일반 → 중간 디렉터리 |
+
+- 모든 프로젝트의 `.exe`, `.lib`, DLL은 `Binaries`의 같은 폴더에 모은다. 중간 파일은 프로젝트별로 나눈다.
+
 ## 플랫폼 / 빌드 구성
 
-- 플랫폼: x64만 둔다 (`Engine.slnx`, `Engine.vcxproj`).
+- 플랫폼: x64만 둔다 (`SeonEngine.slnx`, 모든 `.vcxproj`).
 - 구성: Debug(개발용), Release(배포용).
 
 ## 컴파일러 설정
 
-모든 구성에 적용한다 (`.vcxproj` → C/C++).
+모든 프로젝트, 모든 구성에 적용한다 (`.vcxproj` → C/C++).
 
 | 설정 | 값 | 위치 |
 |---|---|---|

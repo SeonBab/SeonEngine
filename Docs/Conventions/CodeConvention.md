@@ -906,15 +906,16 @@
 
 ### 6.3 예외 조항
 
-- **서드파티 코드** — 서드파티 라이브러리는 저장소 루트의 `ThirdParty/` 폴더에 둔다. 이 폴더에는 이 문서의 컨벤션과 clang-format을 적용하지 않는다(`ThirdParty/.clang-format`에서 서식을 끈다). 업데이트할 때 충돌하지 않도록 원본은 가능하면 수정하지 않는다. 서드파티를 감싸는 엔진 코드는 이 문서의 컨벤션을 따른다.
+- **서드파티 코드** — 서드파티 라이브러리는 `Engine/ThirdParty/` 폴더에 둔다. 이 폴더에는 이 문서의 컨벤션과 clang-format을 적용하지 않는다(`Engine/ThirdParty/.clang-format`에서 서식을 끈다). 업데이트할 때 충돌하지 않도록 원본은 가능하면 수정하지 않는다. 서드파티를 감싸는 엔진 코드는 이 문서의 컨벤션을 따른다.
 
   ```text
   SeonEngine/
-  ├─ Engine/
-  └─ ThirdParty/
-     ├─ .clang-format     // DisableFormat: true
-     ├─ imgui/
-     └─ stb/
+  └─ Engine/
+     ├─ Source/
+     └─ ThirdParty/
+        ├─ .clang-format     // DisableFormat: true
+        ├─ imgui/
+        └─ stb/
   ```
 
 - **컨벤션 예외** — 꼭 필요하면 컨벤션을 어길 수 있다. 대신 그 자리에 `NOTE` 주석으로 이유를 적는다. 서식 예외는 `// clang-format off` / `// clang-format on`으로 감싼다. 같은 예외가 반복되면 이 문서를 고친다.
