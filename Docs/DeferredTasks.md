@@ -11,6 +11,8 @@
 | 빌드 / 도구 | 모듈별 프로젝트 분리 | `Engine` 모듈을 `Renderer`, `RHI`, `Platform` 등으로 나눌 때, 또는 역방향 include가 반복해서 생길 때 |
 | 빌드 / 도구 | clang-tidy | 검사할 코드가 어느 정도 쌓였을 때 |
 | 빌드 / 도구 | CI | 빌드할 코드가 저장소에 들어갔을 때 |
+| 빌드 / 도구 | 서드파티 관리 방식 | CI를 도입할 때, 첫 서드파티 라이브러리를 추가할 때, 다른 PC에서 빌드할 때 중 먼저 오는 때 |
+| 빌드 / 도구 | 빌드 시스템 / 프로젝트 생성기 | 엔진 모듈별 프로젝트 분리, 리플렉션 코드 생성, 두 번째 플랫폼이나 IDE 지원 중 하나가 필요할 때 |
 | 엔진 기반 시스템 | 서브시스템 등록 / 조회 | `NEngine`과 첫 서브시스템을 구현할 때 |
 | 엔진 기반 시스템 | 핸들 시스템 | 리소스(텍스처, 메시 등)나 게임 오브젝트 관리 시스템을 만들 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
@@ -69,10 +71,36 @@
   - GitHub Actions Windows 환경에서 Debug / Release 빌드
   - clang-format 검사 (서식이 맞지 않으면 실패)
   - 도입 후 clang-tidy 검사 추가 여부
+  - 도입 전에 vcpkg 전역 통합을 끈다(아래 "서드파티 관리 방식" 참고). 켜 둔 채로는 개발 PC에서 숨은 의존성을 알아챌 수 없다.
   - PR 도입: 작업 브랜치 → PR → Rebase and merge로 바꾸고, CI 통과를 병합 조건으로 건다. PR 템플릿(`.github/pull_request_template.md`)은 준비되어 있다.
   - GitHub 저장소 설정: Rebase and merge만 허용, `main` 보호 규칙(PR 필수, 한 줄 기록)
   - 브랜치 이름 규칙: PR 목록과 원격 브랜치에 이름이 드러나므로 정한다. 후보안은 루트 설계 기록의 Git 컨벤션 결정 기록 5장에 있다.
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 6.2 자동화 도구, [Git Convention](Conventions/GitConvention.md) 1장 브랜치, 3장 병합
+
+### 서드파티 관리 방식
+
+- **진행 시점**: 아래 중 먼저 오는 때
+  - CI를 도입할 때
+  - 첫 서드파티 라이브러리를 `Engine/ThirdParty/`에 추가할 때
+  - 다른 PC에서 빌드할 때
+- **배경**: 개발 PC에 `vcpkg integrate install`(사용자 전역 통합)이 되어 있으면, VS가 모든 C++ 프로젝트에 vcpkg의 include 경로를 추가하고 설치된 `*.lib`를 전부 링크한다. 저장소에 적히지 않은 라이브러리에 코드가 기대도 그 PC에서는 빌드가 성공해서 알아챌 수 없고, 다른 PC나 CI에서 처음 실패한다.
+- **정할 것**
+  - vcpkg 전역 통합 끄기: `Directory.Build.props`에 `<VcpkgEnabled>false</VcpkgEnabled>`를 넣는다. 각자 `vcpkg integrate remove`를 실행하는 방식은 사람에게 기대고 다른 프로젝트에도 영향을 주므로 쓰지 않는다.
+  - 서드파티를 들여오는 방식: 소스나 빌드된 라이브러리를 `Engine/ThirdParty/`에 직접 넣기 / vcpkg manifest 모드(저장소의 `vcpkg.json`에 라이브러리와 버전 명시) / git submodule
+  - 라이브러리별 include 경로와 링크 설정을 두는 위치 (`Engine.vcxproj` / 라이브러리별 `.props`)
+- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 6.3 예외 조항, [Project Settings](ProjectSettings.md) 공통 설정
+
+### 빌드 시스템 / 프로젝트 생성기
+
+- **진행 시점**: 아래 중 하나가 필요할 때
+  - 엔진 모듈별 프로젝트 분리: 모듈마다 의존성과 include 경로를 손으로 맞추기 번거로워질 때
+  - 리플렉션 코드 생성: 헤더를 분석해 코드를 만드는 단계를 빌드에 넣어야 할 때
+  - 두 번째 플랫폼이나 IDE 지원: `.vcxproj`는 Windows / Visual Studio 전용
+- **정할 것**
+  - 도구 선택: Sharpmake(C#, Unreal `*.Build.cs`와 비슷한 사용감) / premake(Lua) / CMake / 자체 도구
+  - 모듈 의존성 선언 방식 (Unreal `PublicDependencyModuleNames` / `PrivateDependencyModuleNames` 참고)
+  - 생성된 `.sln` / `.vcxproj`를 git에 올릴지 여부
+- **반영할 곳**: [Project Settings](ProjectSettings.md), [Architecture](Architecture.md) 1. 모듈과 의존성 방향
 
 ---
 
