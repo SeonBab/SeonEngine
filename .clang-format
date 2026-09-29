@@ -1,0 +1,106 @@
+# SeonEngine Code Convention 1.1 Formatting
+# 규칙 설명은 Docs/Conventions/CodeConvention.md 참고
+---
+Language: Cpp
+Standard: c++20
+
+# 들여쓰기: Tab, 폭 4
+UseTab: AlignWithSpaces
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+AccessModifierOffset: -4
+IndentCaseLabels: true
+IndentPPDirectives: None
+NamespaceIndentation: All
+
+# 한 줄 최대 길이: 제한 없음
+ColumnLimit: 0
+
+# 중괄호: Allman, 제어문 중괄호 항상 사용
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+InsertBraces: true
+
+# 한 줄 표기: early exit(if), 클래스 안 getter만
+AllowShortBlocksOnASingleLine: Always
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortLambdasOnASingleLine: None
+LambdaBodyIndentation: OuterScope
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+
+# 포인터 / 레퍼런스: 타입 쪽
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+DerivePointerAlignment: false
+
+# 공백
+SpaceBeforeParens: ControlStatements
+SpaceAfterTemplateKeyword: false
+SpaceAfterCStyleCast: false
+SpacesInParens: Never
+SpaceBeforeAssignmentOperators: true
+Cpp11BracedListStyle: true
+
+# 정렬: 공백으로 줄을 맞추지 않음
+AlignAfterOpenBracket: DontAlign
+AlignOperands: DontAlign
+AlignEscapedNewlines: DontAlign
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignTrailingComments:
+  Kind: Leave
+
+# 빈 줄
+MaxEmptyLinesToKeep: 1
+KeepEmptyLines:
+  AtStartOfBlock: false
+  AtStartOfFile: false
+EmptyLineBeforeAccessModifier: LogicalBlock
+EmptyLineAfterAccessModifier: Never
+
+# 템플릿 / 생성자
+BreakTemplateDeclarations: Yes
+RequiresClausePosition: OwnLine
+IndentRequiresClause: true
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: Never
+
+# include 순서: 자기 헤더 → 엔진("") → 서드파티(<*.h>) → 표준(<name>)
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: '^<.*\.(h|hpp)>'
+    Priority: 2
+  - Regex: '^<'
+    Priority: 3
+
+# 기타
+FixNamespaceComments: false
+InsertNewlineAtEOF: true
+LineEnding: CRLF
+...

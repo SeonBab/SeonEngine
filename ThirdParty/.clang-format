@@ -1,0 +1,5 @@
+# 서드파티 코드에는 SeonEngine 포매팅을 적용하지 않는다 (Code Convention 6.3 예외 조항)
+---
+DisableFormat: true
+SortIncludes: Never
+...
