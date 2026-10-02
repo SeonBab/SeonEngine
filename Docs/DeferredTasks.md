@@ -184,6 +184,7 @@
   - Mutex / Lock 사용 규칙과 Lock 순서
   - Atomic 사용 기준
   - 저장해 두었다가 다른 스레드에서 실행하는 람다의 캡처 수명 (3.11 Lambda 참고)
+  - 렌더 스레드를 둘 때: 렌더 씬(`NRenderScene`) 호출을 렌더 스레드로 보내는 명령으로 바꾸는 방식, 렌더러가 따로 들고 있을 데이터(Proxy / 스냅샷). Unreal은 컴포넌트가 `CreateRenderState_Concurrent` / `SendRenderTransform_Concurrent`로 변경을 넘긴다.
 - **반영할 곳**: [Architecture](Architecture.md)에 Threading 장 추가
 
 ### 프로젝트 경로와 `Saved` 폴더
