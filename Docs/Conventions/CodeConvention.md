@@ -2,7 +2,7 @@
 
 ## 관련 문서
 
-- [Architecture](../Architecture.md) — 모듈, 서브시스템, 플랫폼, 렌더링 백엔드 등 엔진 구조
+- [Architecture](../Architecture.md) — 모듈, 서브시스템, 플랫폼, 렌더링 등 엔진 구조
 - [Project Settings](../ProjectSettings.md) — 프로젝트에 적용한 설정
 - [Deferred Tasks](../DeferredTasks.md) — 필요해지면 진행할 작업
 - [Git Convention](GitConvention.md) — 브랜치, 커밋, 병합
