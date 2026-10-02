@@ -75,7 +75,7 @@
 - **한 줄 getter** — 클래스 안에서 정의하는 getter 중 본문이 `return` 한 문장뿐인 경우 한 줄 표기를 허용한다. setter와 그 외 함수는 Allman을 따른다.
 
   ```cpp
-  class NMesh
+  class FMesh
   {
   public:
   	uint32 GetVertexCount() const { return vertexCount; }
@@ -84,7 +84,7 @@
   ```
 
 - **switch** — `case`는 `switch`보다 한 단계 들여쓴다. `case` 안에서 변수를 선언하는 등 블록이 필요하면 `case` 다음 줄에 중괄호를 연다.
-- **포인터 / 레퍼런스 위치** — `*`와 `&`는 타입 쪽에 붙인다(`NTexture* texture`).
+- **포인터 / 레퍼런스 위치** — `*`와 `&`는 타입 쪽에 붙인다(`FTexture* texture`).
 - **공백**
   - 넣는 곳: 제어문 키워드(`if`, `for`, `while`, `switch`) 뒤, 이항·대입 연산자 양쪽, 쉼표와 `for`의 `;` 뒤
   - 넣지 않는 곳: 함수 이름과 `(` 사이, 괄호 안쪽, 단항 연산자 뒤, `template`과 `<` 사이
@@ -98,7 +98,7 @@
 
 | 대상 | 규칙 | 예시 |
 |---|---|---|
-| 타입 | 접두사 + PascalCase (아래 타입 접두사 표) | `NRenderer`, `TRingBuffer`, `IRenderDevice` |
+| 타입 | 접두사 + PascalCase (아래 타입 접두사 표) | `FRenderer`, `TRingBuffer`, `IRenderDevice` |
 | Enum 값 | PascalCase | `ETextureFormat::RGBA8` |
 | Template parameter | `T`, 또는 PascalCase + `Type` | `T`, `KeyType`, `InElementType` |
 | Function / Method | PascalCase | `CreateTexture()` |
@@ -112,28 +112,28 @@
 | static 멤버 변수 | 일반 멤버 변수와 동일 (접두사 없음) | `liveCount` |
 | Macro | `SE_` + UPPER_SNAKE_CASE | `SE_ASSERT`, `SE_PLATFORM_WINDOWS` |
 
-- **타입 접두사** — 모든 타입에 접두사를 붙이며, 각 글자는 타입의 종류를 뜻한다.
+- **타입 접두사** — 모든 타입에 접두사를 붙이며, 각 글자는 타입의 종류를 나타낸다. 표기는 Unreal 관례를 따른다.
 
   | 접두사 | 뜻 | 대상 |
   |---|---|---|
-  | `N` | Native | GC 관리 대상이 아닌 일반 C++ 타입 (class / struct 공통) |
+  | `F` | — | 다른 접두사가 적용되지 않는 일반 class / struct (값 타입, 소유권 등 특정 성질을 뜻하지 않음) |
   | `T` | Template | 템플릿 class / struct |
   | `I` | Interface | 순수 가상 함수로만 이루어진 class |
   | `E` | Enum | 열거형 |
   | `C` | Concept | C++20 concept (3.10 Template 참고) |
-  | `O` | Object | GC가 수명을 관리하는 객체 — **예약** (GC 체계 도입 전까지 사용하지 않음) |
+  | `U` | — | 엔진 객체 루트 클래스에서 파생되는 클래스 — **예약** (객체 체계 도입 전까지 사용하지 않음) |
 
-  Interface를 구현하는 클래스는 일반 타입이므로 `N`을 붙인다.
+  Interface를 구현하는 클래스는 일반 타입이므로 `F`를 붙인다.
 
   ```cpp
-  class NRenderer;
-  struct NVertexData;
+  class FRenderer;
+  struct FVertexData;
 
   template<typename T>
   class TRingBuffer;
 
   class IRenderDevice;
-  class ND3D12RenderDevice : public IRenderDevice { ... };
+  class FD3D12RenderDevice : public IRenderDevice { ... };
 
   enum class ETextureFormat : uint8;
   ```
@@ -156,10 +156,10 @@
 - **매개변수와 멤버 이름 충돌 금지** — 매개변수는 멤버 변수와 다른 이름을 쓴다. 이름으로 구분되므로 `this->`는 필요하지 않다. (MSVC 경고 C4458로 검출된다. 6.1 빌드 / 컴파일러 설정 참고)
 
   ```cpp
-  class NMesh
+  class FMesh
   {
   public:
-  	explicit NMesh(uint32 initialVertexCount)
+  	explicit FMesh(uint32 initialVertexCount)
   		: vertexCount(initialVertexCount)
   	{
   	}
@@ -177,23 +177,23 @@
 - **약어** — 약어는 대문자를 유지한다. camelCase 이름이 약어로 시작하면 약어 전체를 소문자로 쓴다. 외부 API 이름(`ID3D12Device` 등)은 원래 이름을 그대로 쓴다.
 
   ```cpp
-  class NRHIDevice;
-  class NGPUBuffer;
-  class ND3D12RenderDevice;
+  class FRHIDevice;
+  class FGPUBuffer;
+  class FD3D12RenderDevice;
 
   uint32 textureID;
-  NGPUBuffer* gpuBuffer = nullptr;
+  FGPUBuffer* gpuBuffer = nullptr;
   ```
 
 - **전역 변수** — `g` 접두사를 붙여 전역임을 드러낸다. static 멤버 변수는 `Class::`로 접근하므로 접두사를 붙이지 않는다.
 - **Getter / Setter** — `Get` / `Set` 접두어를 쓴다(`GetWidth()`, `SetWidth(uint32 newWidth)`). bool은 `IsVisible()` / `SetVisible(bool bNewVisible)`처럼 쓴다.
 - **Type alias** — `typedef`는 쓰지 않고 `using`만 쓴다. 별칭 이름은 가리키는 타입의 종류에 맞는 접두사를 붙인다.
-  - 구체적인 타입의 별칭은 `N` (템플릿 인스턴스도 더 이상 템플릿이 아니므로 `N`)
+  - 구체적인 타입의 별칭은 `F` (템플릿 인스턴스도 더 이상 템플릿이 아니므로 `F`)
   - 별칭 템플릿은 `T`
   - 예외: 클래스 안의 멤버 별칭(`ElementType` 등)은 접두사 없이 PascalCase, 기본 정수 별칭(`int32`, `uint8` 등)은 소문자
 
   ```cpp
-  using NMeshList = TArray<NMesh*>;
+  using FMeshList = TArray<FMesh*>;
 
   template<typename T>
   using TSharedPtr = std::shared_ptr<T>;
@@ -243,7 +243,7 @@
   // 프레임 렌더링 전체를 관리한다.
   // 렌더 스레드에서만 생성하고 파괴한다.
   ////////////////////////////////////////////////////////////////////////////////
-  class NRenderer
+  class FRenderer
   {
   public:
   	/**
@@ -279,7 +279,7 @@
    * @param name 대소문자를 구분한다.
    * @return 없으면 nullptr.
    */
-  NTexture* FindTexture(const NString& name) const;
+  FTexture* FindTexture(const FString& name) const;
   ```
 
 ---
@@ -292,13 +292,15 @@
 - **파일 이름** — 파일에 담긴 주 타입의 이름에서 접두사를 뺀 이름을 쓴다.
 
   ```text
-  Renderer.h        → class NRenderer
+  Renderer.h        → class FRenderer
   RingBuffer.h      → class TRingBuffer
   RenderDevice.h    → class IRenderDevice
   TextureFormat.h   → enum class ETextureFormat
   ```
 
-- **파일 단위** — 파일마다 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다(예: `Texture.h`에 `NTextureDesc`, `ETextureFormat`, `NTexture`).
+  - 예외: 대소문자를 무시했을 때 C / C++ 표준 헤더나 Windows SDK 헤더와 같아지는 이름(`String.h`, `Math.h`, `Memory.h` 등)이면 엔진 이름 `Seon`을 앞에 붙인다(`SeonString.h` → `FString`). Windows는 파일 이름의 대소문자를 구분하지 않아서, 표준 헤더를 찾을 때 엔진 헤더가 대신 잡힐 수 있다.
+
+- **파일 단위** — 파일마다 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다(예: `Texture.h`에 `FTextureDesc`, `ETextureFormat`, `FTexture`).
 - **Public / Private 분리** — 엔진 모듈마다 `Public`과 `Private` 폴더를 둔다.
   - `Public`: 다른 모듈과 콘텐츠 코드가 include할 수 있는 헤더. 1.4 API Documentation의 "공개 API"는 이 폴더의 헤더를 뜻한다.
   - `Private`: `.cpp` 전부와 모듈 내부 전용 헤더.
@@ -351,7 +353,7 @@
   #include "../Public/Renderer.h"
   ```
 
-- **전방 선언** — 헤더에서 포인터, 레퍼런스, 함수 선언에만 쓰는 타입은 include하지 않고 전방 선언한다. 값 멤버, 부모 클래스, 헤더 안의 inline 함수에서 멤버를 사용하는 타입은 include한다.
+- **전방 선언** — 헤더에서 포인터, 레퍼런스, 함수 선언에만 쓰는 타입은 include하지 않고 전방 선언한다. 값 멤버, 부모 클래스, 헤더 안의 inline 함수에서 멤버를 사용하는 타입은 include한다. 전방 선언은 클래스처럼 전방 선언할 수 있는 타입에만 적용한다. 타입 별칭(`FString`, `TArray` 등)은 포인터나 레퍼런스로만 써도 별칭을 제공하는 헤더를 include한다.
 - **직접 쓰는 것만 include** — 파일은 자기가 직접 쓰는 헤더를 include한다. 다른 헤더를 통해 간접적으로 들어오는 헤더에 기대지 않는다. `.cpp`에서만 필요한 include는 헤더가 아니라 `.cpp`에 둔다.
 - **`using namespace`** — 헤더에서는 쓰지 않는다. `.cpp`에서도 `using namespace std;`는 쓰지 않는다(Windows 헤더의 `byte`와 `std::byte`가 충돌한다). `.cpp`에서 `using std::vector;`처럼 이름 하나씩 가져오는 것은 허용한다.
 
@@ -360,13 +362,13 @@
 - **선언 순서** — 접근 지정자는 `public` → `protected` → `private` 순서로 각각 한 번씩만 쓴다. 각 구역 안에서는 타입(`using`, 중첩 타입) → 생성자 / 소멸자 → 함수 → 변수 순서로 선언한다.
 
   ```cpp
-  class NRenderer
+  class FRenderer
   {
   public:
   	using Callback = void(*)();
 
-  	NRenderer();
-  	~NRenderer();
+  	FRenderer();
+  	~FRenderer();
 
   	void Render();
 
@@ -376,7 +378,7 @@
   private:
   	void CreateDevice();
 
-  	NRenderDevice* device = nullptr;
+  	FRenderDevice* device = nullptr;
   };
   ```
 
@@ -386,7 +388,7 @@
 - **struct vs class** — 모든 멤버가 public이고 어떤 값 조합이든 유효한 데이터 묶음(불변 조건 없음)은 struct로 쓴다. 간단한 생성자나 계산 함수는 둘 수 있지만 가상 함수는 두지 않는다. 그 외에는 class로 쓴다.
 
   ```cpp
-  struct NVector3
+  struct FVector3
   {
   	float x = 0.0f;
   	float y = 0.0f;
@@ -399,20 +401,20 @@
 - **특수 멤버 함수** — 소멸자, 복사 / 이동 생성자, 복사 / 이동 대입 연산자는 가능하면 직접 정의하지 않는다(Rule of 0). 하나라도 직접 정의하면 다섯 가지를 모두 정의하거나 `= default` / `= delete`로 명시한다(Rule of 5). GPU 리소스처럼 복사하면 안 되는 클래스는 복사를 `= delete`로 막는다.
 
   ```cpp
-  class NTexture
+  class FTexture
   {
   public:
-  	explicit NTexture(const NTextureDesc& desc);
-  	~NTexture();
+  	explicit FTexture(const FTextureDesc& desc);
+  	~FTexture();
 
-  	NTexture(const NTexture&) = delete;
-  	NTexture& operator=(const NTexture&) = delete;
-  	NTexture(NTexture&&) noexcept;
-  	NTexture& operator=(NTexture&&) noexcept;
+  	FTexture(const FTexture&) = delete;
+  	FTexture& operator=(const FTexture&) = delete;
+  	FTexture(FTexture&&) noexcept;
+  	FTexture& operator=(FTexture&&) noexcept;
   };
   ```
 
-- **멤버 초기화** — 모든 멤버 변수는 선언하는 자리에서 기본값을 준다. 생성자 인자로 받는 값은 초기화 리스트에서 넣는다. 생성자 본문에서 대입하는 방식은 쓰지 않는다(1.2 Naming의 `NMesh` 예시 참고).
+- **멤버 초기화** — 모든 멤버 변수는 선언하는 자리에서 기본값을 준다. 생성자 인자로 받는 값은 초기화 리스트에서 넣는다. 생성자 본문에서 대입하는 방식은 쓰지 않는다(1.2 Naming의 `FMesh` 예시 참고).
 - **virtual / override / final** — 함수에는 `virtual`, `override`, `final` 중 하나만 쓴다.
   - 부모 클래스에서 처음 선언하는 가상 함수는 `virtual`
   - 재정의는 `override` (`virtual`을 반복하지 않는다)
@@ -428,7 +430,7 @@
   	virtual void Present() = 0;
   };
 
-  class ND3D12RenderDevice final : public IRenderDevice
+  class FD3D12RenderDevice final : public IRenderDevice
   {
   public:
   	void Present() override;
@@ -444,13 +446,13 @@
 - **유틸리티 함수 묶음** — 콘텐츠 코드가 쓰는 함수 묶음은 namespace나 전역 함수 대신 static 함수를 모은 struct로 둔다.
 
   ```cpp
-  struct NMath
+  struct FMath
   {
   	static float Lerp(float a, float b, float t);
   	static float Clamp(float value, float minValue, float maxValue);
   };
 
-  float x = NMath::Lerp(0.0f, 1.0f, 0.5f);
+  float x = FMath::Lerp(0.0f, 1.0f, 0.5f);
   ```
 
 - **`using namespace`** — 2.2 Header 규칙을 따른다.
@@ -473,20 +475,20 @@
 
 ### 3.2 함수 작성 `필수`
 
-- **길이 / 매개변수 개수** — 강제하지 않는다. 함수가 한 화면(약 50줄)을 넘으면 나눌 수 있는지, 매개변수가 5개를 넘으면 Desc struct로 묶을 수 있는지(`CreateTexture(const NTextureDesc& desc)`) 검토한다.
+- **길이 / 매개변수 개수** — 강제하지 않는다. 함수가 한 화면(약 50줄)을 넘으면 나눌 수 있는지, 매개변수가 5개를 넘으면 Desc struct로 묶을 수 있는지(`CreateTexture(const FTextureDesc& desc)`) 검토한다.
 - **인자 전달** — 기본형, enum, 포인터, 16바이트 이하의 작은 struct는 값으로 받는다. 그 외에는 `const&`로 받는다. 소유권을 넘겨받을 때는 값으로 받고 `std::move`한다.
 
   ```cpp
-  void SetPosition(NVector3 newPosition);
-  void SetName(const NString& newName);
-  void Draw(const NMesh& mesh);
-  void SetTexture(TUniquePtr<NTexture> newTexture);
+  void SetPosition(FVector3 newPosition);
+  void SetName(const FString& newName);
+  void Draw(const FMesh& mesh);
+  void SetTexture(TUniquePtr<FTexture> newTexture);
   ```
 
 - **반환값** — 결과는 반환값으로 돌려준다. 여러 값은 struct로 묶는다. 큰 버퍼를 재사용하는 경우처럼 꼭 필요할 때만 out 매개변수를 쓰고, 이름에 `out`을 붙인다. bool out 매개변수는 `bOut`을 붙인다.
 
   ```cpp
-  void CollectVisibleObjects(TArray<NObject*>& outObjects) const;
+  void CollectVisibleObjects(TArray<FRenderObject*>& outObjects) const;
   ```
 
 - **`[[nodiscard]]`** — 반환값을 버리면 버그가 되는 함수에만 붙인다. 성공 / 실패를 돌려주는 함수, 새로 만든 리소스를 돌려주는 함수가 해당한다. getter에는 붙이지 않는다.
@@ -499,7 +501,7 @@
 - **멤버 함수** — 객체 상태를 바꾸지 않는 멤버 함수는 반드시 `const`로 만든다.
 - **지역 변수 / 값 매개변수** — 바뀌지 않는 값에 `const`를 붙이는 것을 권장하되 강제하지 않는다. 값 매개변수의 `const`는 호출하는 쪽에 의미가 없으므로 헤더 선언에는 붙이지 않는다.
 - **반환 타입** — 값으로 반환할 때는 `const`를 붙이지 않는다. `const` 값은 이동할 수 없어서 복사가 일어난다. `const&`와 `const*` 반환은 허용한다.
-- **위치** — `const`는 타입 앞에 쓴다(`const NMesh&`, `const NTexture*`). 포인터 자체가 const면 `NTexture* const`로 쓴다.
+- **위치** — `const`는 타입 앞에 쓴다(`const FMesh&`, `const FTexture*`). 포인터 자체가 const면 `FTexture* const`로 쓴다.
 - **`constexpr`** — 컴파일 타임에 값이 정해지는 상수는 `const` 대신 `constexpr`로 쓴다. 함수에는 상수 계산에 쓰이는 간단한 함수(수학 함수 등)에만 붙인다. `consteval`과 `constinit`은 필요할 때만 쓴다.
 
 ### 3.4 Pointer / Reference `필수`
@@ -507,8 +509,8 @@
 - **`&`와 `*` 구분** — 값이 반드시 있어야 하면 `&`, 없을 수 있으면(`nullptr` 가능) `*`를 쓴다. 둘 다 소유권이 없다(4.1 메모리 소유권 참고).
 
   ```cpp
-  void Draw(const NMesh& mesh);            // mesh는 항상 있음
-  void SetParent(NTransform* newParent);   // nullptr이면 부모 없음
+  void Draw(const FMesh& mesh);            // mesh는 항상 있음
+  void SetParent(FTransform* newParent);   // nullptr이면 부모 없음
   ```
 
 - **Nullable 표시** — `*` 자체가 "없을 수 있음"을 뜻하므로 추가로 표시하지 않는다. 포인터가 아닌 값이 없을 수 있을 때는 `std::optional`을 쓴다.
@@ -516,16 +518,16 @@
 - **레퍼런스 멤버 금지** — 멤버 변수는 레퍼런스로 두지 않고 포인터로 둔다. 레퍼런스 멤버가 있으면 대입 연산자가 삭제되어 컨테이너에 넣거나 다시 대입할 수 없다. 대상이 반드시 있어야 하면 생성자에서 레퍼런스로 받아 주소를 저장한다.
 
   ```cpp
-  class NRenderPass
+  class FRenderPass
   {
   public:
-  	explicit NRenderPass(NRenderDevice& targetDevice)
+  	explicit FRenderPass(FRenderDevice& targetDevice)
   		: device(&targetDevice)
   	{
   	}
 
   private:
-  	NRenderDevice* device = nullptr;
+  	FRenderDevice* device = nullptr;
   };
   ```
 
@@ -538,7 +540,7 @@
   - structured binding (`auto`로만 쓸 수 있다)
 
   ```cpp
-  TUniquePtr<NTexture> texture = MakeUnique<NTexture>(desc);   // 타입 명시
+  TUniquePtr<FTexture> texture = MakeUnique<FTexture>(desc);   // 타입 명시
 
   auto it = textureMap.find(name);
   for (const auto& [name, texture] : textureMap)
@@ -556,7 +558,7 @@
 - **`std::bit_cast`** — 값의 비트를 다른 타입으로 해석할 때 쓴다. 포인터를 `reinterpret_cast`해서 읽는 방식은 정의되지 않은 동작이므로 쓰지 않는다.
 
   ```cpp
-  NVertex* vertices = static_cast<NVertex*>(mapped);   // void* → 원래 타입
+  FVertex* vertices = static_cast<FVertex*>(mapped);   // void* → 원래 타입
 
   uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
 
@@ -667,7 +669,7 @@
 - **캡처** — 캡처할 변수를 항상 명시한다. `[&]`, `[=]` 같은 자동 캡처는 쓰지 않는다. 저장해 두었다가 나중에 실행하는 람다는 캡처한 대상(`this`, 레퍼런스)이 실행 시점까지 살아 있는지 확인한다.
 
   ```cpp
-  auto isVisible = [&camera, maxDistance](const NObject* object)   // 캡처 대상을 명시 ([&]나 [=]는 쓰지 않음)
+  auto isVisible = [&camera, maxDistance](const FRenderObject* object)   // 캡처 대상을 명시 ([&]나 [=]는 쓰지 않음)
   {
   	...
   };
@@ -676,7 +678,7 @@
 - **모양** — 람다는 본문이 짧아도 항상 Allman으로 쓴다. 한 줄로 쓰지 않는다(clang-format 설정과 같다).
 
   ```cpp
-  std::sort(lights.begin(), lights.end(), [](const NLight& a, const NLight& b)
+  std::sort(lights.begin(), lights.end(), [](const FLight& a, const FLight& b)
   {
   	return a.priority > b.priority;
   });
@@ -696,17 +698,17 @@
   template<typename KeyType, typename ValueType>
   using THashMap = std::unordered_map<KeyType, ValueType>;
 
-  using NString = std::string;
+  using FString = std::string;
 
-  TArray<NMesh*> meshes;
+  TArray<FMesh*> meshes;
   meshes.push_back(mesh);
   ```
 
 - **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Core/Public/CoreTypes.h`). 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
-- **문자열 인코딩** — 엔진 안의 문자열은 모두 UTF-8(`NString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다.
+- **문자열 인코딩** — 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다.
 
   ```cpp
-  NString path = "Textures/한글.png";
+  FString path = "Textures/한글.png";
 
   // Platform/Windows 내부
   std::wstring widePath = Utf8ToWide(path);
@@ -731,16 +733,16 @@
 - **소유 / 비소유** — 객체를 소유하는 쪽만 `TUniquePtr`로 가진다. 나머지는 일반 포인터나 레퍼런스로 빌려 쓴다. 일반 포인터와 레퍼런스는 항상 비소유이며, 가리키는 객체를 지우지 않는다.
 
   ```cpp
-  class NRenderer
+  class FRenderer
   {
   private:
-  	TUniquePtr<NRenderDevice> device;   // 소유
+  	TUniquePtr<FRenderDevice> device;   // 소유
   };
 
-  class NRenderPass
+  class FRenderPass
   {
   private:
-  	NRenderDevice* device = nullptr;    // 비소유
+  	FRenderDevice* device = nullptr;    // 비소유
   };
   ```
 
@@ -749,9 +751,9 @@
 - **핸들** — 텍스처, 메시, 게임 오브젝트처럼 여러 곳에서 참조하고 수명이 따로 관리되는 객체는 포인터 대신 핸들(인덱스 + 세대 번호)로 가리키는 것을 원칙으로 한다.
 
   ```cpp
-  NTextureHandle texture = resourceManager.LoadTexture(path);
+  FTextureHandle texture = resourceManager.LoadTexture(path);
 
-  if (NTexture* resolved = resourceManager.Resolve(texture))
+  if (FTexture* resolved = resourceManager.Resolve(texture))
   {
   	...
   }
@@ -759,13 +761,13 @@
 
 ### 4.2 객체 생명주기 `매우 중요`
 
-- **생성 / 파괴 책임** — 객체는 소유자(`TUniquePtr`를 가진 쪽)가 만들고 파괴한다. 소유 관계는 나무 모양이 되며, 최상위 소유자는 `NEngine`이다.
+- **생성 / 파괴 책임** — 객체는 소유자(`TUniquePtr`를 가진 쪽)가 만들고 파괴한다. 소유 관계는 나무 모양이 되며, 최상위 소유자는 `FEngine`이다.
 
   ```text
-  NEngine
-   └─ NRenderer              (Engine이 소유)
-       ├─ NRenderDevice      (Renderer가 소유)
-       └─ NShaderCache       (Renderer가 소유)
+  FEngine
+   └─ FRenderer              (Engine이 소유)
+       ├─ FRenderDevice      (Renderer가 소유)
+       └─ FShaderCache       (Renderer가 소유)
   ```
 
 - **초기화 방식** — 무거운 객체는 2단계로 초기화하고, 함수 이름과 검사 방식을 통일한다.
@@ -775,13 +777,13 @@
   - `Initialize()` 전에 다른 함수를 호출하거나, `Shutdown()` 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
 
   ```cpp
-  class NTexture
+  class FTexture
   {
   public:
-  	NTexture() = default;
-  	~NTexture();                  // Shutdown()을 호출하지 않았으면 assert
+  	FTexture() = default;
+  	~FTexture();                  // Shutdown()을 호출하지 않았으면 assert
 
-  	[[nodiscard]] bool Initialize(const NTextureDesc& desc);
+  	[[nodiscard]] bool Initialize(const FTextureDesc& desc);
   	void Shutdown();
 
   	bool IsInitialized() const { return bInitialized; }
@@ -812,7 +814,7 @@
   	DiskFull
   };
 
-  [[nodiscard]] EFileError SaveFile(const NString& path, const TArray<uint8>& data);
+  [[nodiscard]] EFileError SaveFile(const FString& path, const TArray<uint8>& data);
   ```
 
 - **종류별 처리** — 에러를 세 가지로 나눠 처리한다.

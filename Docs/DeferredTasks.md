@@ -14,7 +14,7 @@
 | 빌드 / 도구 | 서드파티 관리 방식 (방향 결정, 적용 대기) | 저장소 안에서 컴파일하는 외부 코드를 들일 때 (CI 도입이나 다른 PC 빌드가 먼저 오면 그때) |
 | 빌드 / 도구 | 빌드 시스템 / 프로젝트 생성기 | 엔진 모듈별 프로젝트 분리, 리플렉션 코드 생성, 두 번째 플랫폼이나 IDE 지원 중 하나가 필요할 때 |
 | 엔진 기반 시스템 | 플랫폼별 기본 타입 정의 | Windows가 아닌 두 번째 플랫폼을 지원할 때 |
-| 엔진 기반 시스템 | 서브시스템 등록 / 조회 | `NEngine`과 첫 서브시스템을 구현할 때 |
+| 엔진 기반 시스템 | 서브시스템 등록 / 조회 | `FEngine`과 첫 서브시스템을 구현할 때 |
 | 엔진 기반 시스템 | 핸들 시스템 | 리소스(텍스처, 메시 등)나 게임 오브젝트 관리 시스템을 만들 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
 | 엔진 기반 시스템 | 델리게이트 / 이벤트 | 객체 간 이벤트 통지(입력, UI, 게임 이벤트 등)가 필요할 때 |
@@ -150,7 +150,7 @@
 
 ### 서브시스템 등록 / 조회
 
-- **진행 시점**: `NEngine`과 첫 서브시스템을 구현할 때
+- **진행 시점**: `FEngine`과 첫 서브시스템을 구현할 때
 - **정할 것**
   - `GetSubsystem<T>()`가 타입을 구분하는 방법. RTTI(`typeid`)를 쓰지 않기로 했으므로 템플릿 정적 타입 ID나 리플렉션을 쓴다.
     - 참고: Unreal의 `GetEngineSubsystem<T>()`는 리플렉션의 `T::StaticClass()`(UClass 포인터)를 키로 쓴다.
@@ -167,7 +167,7 @@
 
     - 주의: 모듈을 DLL로 나누면 DLL마다 `static` 변수가 따로 생겨 같은 타입이 다른 번호를 받을 수 있다. DLL로 분리할 때는 타입 이름을 컴파일 시간에 해시하는 방식 등 DLL과 상관없이 같은 값이 나오는 방법을 검토한다.
     - 리플렉션이 생기면 리플렉션의 타입 정보로 바꾼다.
-  - 등록 시점(`NEngine::Initialize()`)과 초기화 / 종료 순서(Architecture 2. 서브시스템과 전역 상태)의 관계
+  - 등록 시점(`FEngine::Initialize()`)과 초기화 / 종료 순서(Architecture 2. 서브시스템과 전역 상태)의 관계
   - 없는 서브시스템을 조회했을 때의 처리 (nullptr / assert)
 - **반영할 곳**: [Architecture](Architecture.md) 2. 서브시스템과 전역 상태
 
@@ -176,7 +176,7 @@
 - **진행 시점**: 리소스(텍스처, 메시 등)나 게임 오브젝트 관리 시스템을 만들 때
 - **정할 것**
   - 핸들 구조 (인덱스 + 세대 번호, 비트 배분)
-  - 타입별 핸들 (`NTextureHandle` 등) 정의 방식
+  - 타입별 핸들 (`FTextureHandle` 등) 정의 방식
   - 핸들 → 객체 변환(`Resolve`)과 무효 핸들 처리
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 4.1 메모리 소유권
 
@@ -296,17 +296,18 @@
 
 - **진행 시점**: 에셋이나 게임 오브젝트처럼 수명을 엔진이 관리해야 하는 객체 체계가 필요할 때
 - **정할 것**
-  - GC 방식과 기반 클래스 (예: `OObject`)
+  - GC 방식과 기반 클래스 (예: `UObject`)
+  - `U` 접두사 유지 여부: Unreal 관례라 리플렉션, `NewObject`, 마크 앤 스윕 GC를 떠올리게 한다. 수명 정책이 Unreal UObject와 크게 다르면(참조 카운팅 등) 글자를 다시 검토한다.
   - 생성 / 참조 규칙 (`new` / `delete` 금지, 전용 생성 함수, 추적되는 참조 등)
   - 리플렉션과의 관계
 - **반영할 곳**
-  - [Code Convention](Conventions/CodeConvention.md) 1.2 Naming: `O` 접두사 예약 해제
+  - [Code Convention](Conventions/CodeConvention.md) 1.2 Naming: `U` 접두사 예약 해제
   - [Code Convention](Conventions/CodeConvention.md) 4장 Memory & Lifetime
 
 ### 에디터용 에러 메시지 전달
 
 - **진행 시점**: 에디터나 도구에서 사용자에게 실패 원인을 보여줘야 할 때
 - **정할 것**
-  - 사용자에게 보여줄 메시지를 넘기는 방식. Unreal처럼 `NString& outErrorMessage` out 매개변수를 쓰는 방식을 우선 검토한다.
+  - 사용자에게 보여줄 메시지를 넘기는 방식. Unreal처럼 `FString& outErrorMessage` out 매개변수를 쓰는 방식을 우선 검토한다.
   - 코드 분기용 에러 코드 enum(5.1 에러 처리)과 함께 쓰는 기준
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 5.1 에러 처리

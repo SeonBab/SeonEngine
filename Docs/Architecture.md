@@ -33,24 +33,24 @@
   {
   public:
   	virtual ~ILogSink() = default;
-  	virtual void Write(const NString& message) = 0;
+  	virtual void Write(const FString& message) = 0;
   };
 
   // Engine — 구현해서 Core에 등록
-  class NFileLogSink final : public ILogSink
+  class FFileLogSink final : public ILogSink
   {
   public:
-  	void Write(const NString& message) override;
+  	void Write(const FString& message) override;
   };
   ```
 
 ## 2. 서브시스템과 전역 상태
 
-- **싱글톤 금지** — 클래스가 스스로 인스턴스를 들고 있는 싱글톤(`GetInstance()`)은 만들지 않는다. 생성 / 파괴 시점을 제어할 수 없어 아래 초기화 / 종료 순서를 깨뜨린다. 서브시스템은 `NEngine`이 소유하고, 전역에는 `gEngine` 하나만 둔다.
-- **초기화 / 종료 순서** — `NEngine::Initialize()` 한 곳에서 초기화 순서를 명시하고, `NEngine::Shutdown()`은 정확히 그 역순으로 정리한다. 전역 / static 객체의 생성자에서는 초기화 작업을 하지 않는다(파일 사이의 전역 초기화 순서는 보장되지 않는다).
+- **싱글톤 금지** — 클래스가 스스로 인스턴스를 들고 있는 싱글톤(`GetInstance()`)은 만들지 않는다. 생성 / 파괴 시점을 제어할 수 없어 아래 초기화 / 종료 순서를 깨뜨린다. 서브시스템은 `FEngine`이 소유하고, 전역에는 `gEngine` 하나만 둔다.
+- **초기화 / 종료 순서** — `FEngine::Initialize()` 한 곳에서 초기화 순서를 명시하고, `FEngine::Shutdown()`은 정확히 그 역순으로 정리한다. 전역 / static 객체의 생성자에서는 초기화 작업을 하지 않는다(파일 사이의 전역 초기화 순서는 보장되지 않는다).
 
   ```cpp
-  bool NEngine::Initialize()
+  bool FEngine::Initialize()
   {
   	if (!platform->Initialize()) { return false; }
   	if (!renderer->Initialize(rendererDesc)) { return false; }
@@ -58,7 +58,7 @@
   	return true;
   }
 
-  void NEngine::Shutdown()
+  void FEngine::Shutdown()
   {
   	input->Shutdown();
   	renderer->Shutdown();
@@ -66,10 +66,10 @@
   }
   ```
 
-- **서브시스템 접근** — 타입으로 조회한다. 서브시스템은 `NEngine::Initialize()`에서 등록한다.
+- **서브시스템 접근** — 타입으로 조회한다. 서브시스템은 `FEngine::Initialize()`에서 등록한다.
 
   ```cpp
-  NEngine* gEngine = nullptr;
+  FEngine* gEngine = nullptr;
 
   IRenderer* renderer = gEngine->GetSubsystem<IRenderer>();
 
@@ -92,28 +92,28 @@
            └─ WindowsPlatformFile.cpp
   ```
 
-- **구현 방식** — 지원 플랫폼이 하나인 동안은 공통 헤더에 선언하고 플랫폼별 `.cpp`에서 구현한다. 플랫폼이 두 개 이상이 되면 `Generic` 공통 구현을 두고 플랫폼 구현이 상속한 뒤 `using`으로 고르는 방식으로 바꾼다. 두 방식 모두 사용하는 코드는 `NPlatformFile`이라는 같은 이름을 쓰므로 전환할 때 사용처를 고치지 않는다.
+- **구현 방식** — 지원 플랫폼이 하나인 동안은 공통 헤더에 선언하고 플랫폼별 `.cpp`에서 구현한다. 플랫폼이 두 개 이상이 되면 `Generic` 공통 구현을 두고 플랫폼 구현이 상속한 뒤 `using`으로 고르는 방식으로 바꾼다. 두 방식 모두 사용하는 코드는 `FPlatformFile`이라는 같은 이름을 쓰므로 전환할 때 사용처를 고치지 않는다.
 
   ```cpp
   // 플랫폼이 하나일 때
   // PlatformFile.h
-  class NPlatformFile
+  class FPlatformFile
   {
   public:
-  	static bool Exists(const NString& path);
+  	static bool Exists(const FString& path);
   };
 
   // Windows/WindowsPlatformFile.cpp
-  bool NPlatformFile::Exists(const NString& path)
+  bool FPlatformFile::Exists(const FString& path)
   {
   	...
   }
 
   // 플랫폼이 둘 이상일 때
-  struct NGenericPlatformFile { ... };
-  struct NWindowsPlatformFile : NGenericPlatformFile { ... };
+  struct FGenericPlatformFile { ... };
+  struct FWindowsPlatformFile : FGenericPlatformFile { ... };
 
-  using NPlatformFile = NWindowsPlatformFile;
+  using FPlatformFile = FWindowsPlatformFile;
   ```
 
 - **`Windows.h`** — 직접 include하지 않고 `Platform/Windows/WindowsHeaders.h` 래퍼만 include한다. 래퍼는 Platform과 그래픽스 API 전용 폴더(4장 렌더링 참고)의 `.cpp`(또는 Private 헤더)에서만 include하고, Public 헤더에서는 include하지 않는다.
@@ -158,7 +158,7 @@
   Engine (월드, 컴포넌트)
     │  렌더러 인터페이스만 사용
     ▼
-  렌더러 인터페이스        IRenderer / IRenderScene / NRenderView      ← 렌더러 교체
+  렌더러 인터페이스        IRenderer / IRenderScene / FRenderView      ← 렌더러 교체
     ├─ SeonEngine 렌더러
     │    ▼
     │   RHI (D3D12 때 도입) ─ D3D11 / D3D12 / Vulkan 백엔드          ← 그래픽스 API 교체
@@ -182,7 +182,7 @@
 
   ```cpp
   // 설계 예시 (미구현). 넘기는 지점은 게임을 엔진에 연결하는 방식과 함께 정한다
-  engineDesc.renderer = MakeUnique<NMyGameRenderer>();
+  engineDesc.renderer = MakeUnique<FMyGameRenderer>();
   ```
 
   - 실행 중 렌더러 교체와 DLL 바이너리 호환은 약속하지 않는다.
@@ -192,7 +192,7 @@
   |---|---|---|
   | `IRenderer` | 렌더러 입구. 초기화 / 종료, 렌더 리소스(메시, 텍스처, 머티리얼) 생성과 해제, 씬 생성, `Render(scene, view)` | 엔진에 하나 (서브시스템) |
   | `IRenderScene` | 무엇을 그리나. 오브젝트와 조명을 등록 / 갱신 / 제거 | 월드마다 하나 (월드가 소유) |
-  | `NRenderView` | 어디서 보나. 뷰 행렬, 카메라 파라미터(화각, near / far, 종횡비), 뷰포트 | 매 프레임 만드는 값 (구조체) |
+  | `FRenderView` | 어디서 보나. 뷰 행렬, 카메라 파라미터(화각, near / far, 종횡비), 뷰포트 | 매 프레임 만드는 값 (구조체) |
 
 - **등록형** — 오브젝트는 한 번 등록하고 바뀐 것만 갱신한다. 엔진이 매 프레임 전체 목록을 다시 제출하지 않는다. 매 프레임 그리기 요청이 필요한 렌더러는 구현 안에서 등록된 목록으로 요청을 만든다.
 
@@ -203,11 +203,11 @@
   TUniquePtr<IRenderScene> renderScene = renderer->CreateScene();
 
   // 리소스 준비
-  NMeshHandle mesh = renderer->LoadMesh("Box.obj");
-  NMaterialHandle material = renderer->CreateMaterial(materialDesc);
+  FMeshHandle mesh = renderer->LoadMesh("Box.obj");
+  FMaterialHandle material = renderer->CreateMaterial(materialDesc);
 
   // 컴포넌트 등록 시
-  NRenderObjectID objectID = renderScene->AddObject(mesh, material, worldMatrix);
+  FRenderObjectID objectID = renderScene->AddObject(mesh, material, worldMatrix);
 
   // 트랜스폼이 바뀌었을 때
   renderScene->UpdateTransform(objectID, worldMatrix);
@@ -261,7 +261,7 @@
   - 렌더러와 렌더 씬은 메인 스레드에서만 호출한다. assert로 확인한다.
   - 렌더 씬 등록 / 갱신 / 제거는 컴포넌트의 등록 / 해제 / 트랜스폼 변경 지점에서만 한다. 게임 코드가 렌더 씬을 직접 호출하지 않는다.
   - 오브젝트 ID는 불투명한 값으로 둔다. 엔진은 ID가 내부에서 무엇을 가리키는지 모른다.
-  - 투영 행렬은 렌더러가 `NRenderView`의 카메라 파라미터로 만든다. 엔진은 완성된 투영 행렬을 넘기지 않는다. 깊이 범위, reversed-Z, 지터처럼 백엔드나 렌더링 기법에 따라 달라지는 부분을 렌더러가 정하게 하기 위해서다.
+  - 투영 행렬은 렌더러가 `FRenderView`의 카메라 파라미터로 만든다. 엔진은 완성된 투영 행렬을 넘기지 않는다. 깊이 범위, reversed-Z, 지터처럼 백엔드나 렌더링 기법에 따라 달라지는 부분을 렌더러가 정하게 하기 위해서다.
   - 인터페이스에 `HWND` 등 Windows 타입을 쓰지 않는다(3장 `Windows.h` 참고).
 - **SeonEngine 렌더러 내부 규칙**
   - D3D11 타입(`ID3D11Device` 등)과 `d3d11.h`는 렌더러 안의 D3D11 전용 폴더에서만 쓴다. RHI를 추출할 때 이 경계가 백엔드가 된다.
@@ -272,7 +272,7 @@
   ```text
   Engine/
   ├─ Public/
-  │  └─ Renderer/                렌더러 계약 (IRenderer, IRenderScene, NRenderView, 핸들)
+  │  └─ Renderer/                렌더러 계약 (IRenderer, IRenderScene, FRenderView, 핸들)
   └─ Private/
      └─ Renderer/
         ├─ Renderer.cpp          SeonEngine 렌더러. 엔진 타입만 사용
@@ -287,10 +287,10 @@
   | 용어 | 뜻 | 이름 |
   |---|---|---|
   | World | 게임의 원본. 액터, 컴포넌트, 게임 로직 | 월드 타입 하나 (이름은 월드 구현 때 확정) |
-  | `<시스템>Scene` | 각 시스템이 월드를 자기 용도로 본 사본 | `IRenderScene`(렌더러 인터페이스, 4장), 나중에 `NPhysicsScene` |
+  | `<시스템>Scene` | 각 시스템이 월드를 자기 용도로 본 사본 | `IRenderScene`(렌더러 인터페이스, 4장), 나중에 `FPhysicsScene` |
   | Level | 저장하고 불러오는 콘텐츠 단위 (맵) | 필요해지면 만든다 |
 
-  - 접두어 없는 `NScene`은 쓰지 않는다. 씬 이름에는 항상 시스템 이름을 붙인다.
+  - 접두어 없는 `FScene`은 쓰지 않는다. 씬 이름에는 항상 시스템 이름을 붙인다.
   - 물리 쪽 씬은 충돌 검사와 시뮬레이션을 함께 담당하고 `Physics`로 이름을 통일한다.
 - **소유와 통신** — 월드가 시스템별 씬을 소유한다. 컴포넌트는 자기와 관련된 씬에만 등록한다(메시 컴포넌트는 렌더 씬, 충돌 컴포넌트는 물리 씬). 씬끼리는 직접 통신하지 않는다. 물리 결과는 월드의 컴포넌트에 반영되고, 컴포넌트가 렌더 씬을 갱신한다(1장 "같은 계층끼리 의존 금지").
 
@@ -309,9 +309,9 @@
 
   - 다른 축 규약을 쓰는 데이터(OBJ, glTF 등 Y-up 에셋)는 불러오는 곳 한 곳에서 변환한다.
   - 그래픽스 API 쪽 차이(HLSL 행렬 배치, 깊이 범위)는 렌더러가 처리한다.
-- **수학 타입** — 엔진 타입(`NVector2`, `NVector3`, `NVector4`, `NQuat`, `NMatrix4`, `NTransform`, 함수 모음 `NMath`)을 `Core/Public/Math/`에 둔다. 엔진 코드와 공개 API는 이 타입만 쓴다.
+- **수학 타입** — 엔진 타입(`FVector2`, `FVector3`, `FVector4`, `FQuat`, `FMatrix4`, `FTransform`, 함수 모음 `FMath`)을 `Core/Public/Math/`에 둔다. 엔진 코드와 공개 API는 이 타입만 쓴다.
   - 계산은 DirectXMath로 구현한다. DirectXMath는 Windows SDK판이 아니라 vcpkg로 받은 것을 쓴다(Project Settings "vcpkg"). 함수를 하나씩 직접 구현으로 바꿀 수 있다. 사용처는 엔진 타입만 쓰므로 바꿀 때 고치지 않는다.
   - 타입은 `float` 멤버만 가진다. SIMD 타입(`XMVECTOR`, `XMMATRIX`)은 정렬 제약이 있어 멤버로 두지 않고, 계산할 때만 쓴다.
   - DirectXMath는 수학 타입의 구현 파일에서만 include한다. 공개 헤더에 `DirectX` 타입이 드러나지 않게 한다. 인라인이 필요할 만큼 호출 비용이 문제가 되면 그때 다시 검토한다.
-- **트랜스폼 저장** — 컴포넌트와 에셋은 위치, 회전, 크기를 `NTransform`으로 저장한다. 행렬은 필요할 때 만든다(렌더 씬에 넘길 때 등).
+- **트랜스폼 저장** — 컴포넌트와 에셋은 위치, 회전, 크기를 `FTransform`으로 저장한다. 행렬은 필요할 때 만든다(렌더 씬에 넘길 때 등).
 - **위치와 방향 변환** — 점은 `TransformPosition`(이동 적용), 방향은 `TransformVector`(이동 무시)로 나눠 변환한다. 행렬 곱셈 연산자는 수학 타입과 렌더러 안에서 쓸 수 있다.
