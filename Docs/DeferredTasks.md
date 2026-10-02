@@ -34,7 +34,7 @@
 - **진행 시점**: 빌드 시간이 문제가 될 때
 - **정할 것**
   - 도입 여부, 파일 이름과 위치 (모듈별 / 엔진 공통)
-  - 포함 대상: 무겁고 거의 바뀌지 않는 헤더(`Windows.h`, `d3d11.h`, STL 등). 자주 바뀌는 엔진 헤더는 제외
+  - 포함 대상: 무겁고 거의 바뀌지 않는 헤더(`Windows.h`, `d3d12.h`, STL 등). 자주 바뀌는 엔진 헤더는 제외
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 2.2 Header 규칙
   - MSVC에서는 PCH를 `.cpp`의 첫 include로 두어야 하므로, include 순서에서 자기 헤더보다 앞에 둔다.
 
