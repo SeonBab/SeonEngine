@@ -299,7 +299,7 @@
   ```
 
 - **파일 단위** — 파일마다 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다(예: `Texture.h`에 `NTextureDesc`, `ETextureFormat`, `NTexture`).
-- **Public / Private 분리** — 모듈마다 `Public`과 `Private` 폴더를 둔다.
+- **Public / Private 분리** — 엔진 모듈마다 `Public`과 `Private` 폴더를 둔다.
   - `Public`: 다른 모듈과 콘텐츠 코드가 include할 수 있는 헤더. 1.4 API Documentation의 "공개 API"는 이 폴더의 헤더를 뜻한다.
   - `Private`: `.cpp` 전부와 모듈 내부 전용 헤더.
   - 새 헤더는 기본적으로 `Private`에 두고, 공개가 필요해지면 `Public`으로 옮긴다.
@@ -314,7 +314,17 @@
      └─ RenderQueue.h
   ```
 
-- **디렉터리 구조** — 모듈마다 폴더를 두고, 그 안에 `Public` / `Private`를 둔다. 모듈 구성은 [Architecture](../Architecture.md) 1장을 따른다.
+- **게임 모듈은 나누지 않음** — 게임 모듈은 다른 모듈이 include하지 않으므로 `Public` / `Private` 없이 모듈 폴더에 바로 파일을 둔다. 하위 폴더는 기능별로 나눈다. 다른 모듈이 include하게 된 게임 모듈만 엔진 모듈처럼 나눈다.
+
+  ```text
+  SampleGame/
+  ├─ SampleGame.cpp
+  └─ Player/
+     ├─ PlayerCharacter.h
+     └─ PlayerCharacter.cpp
+  ```
+
+- **디렉터리 구조** — 모듈마다 폴더를 두고, 엔진 모듈은 그 안에 `Public` / `Private`를 둔다. 모듈 구성은 [Architecture](../Architecture.md) 1장을 따른다.
 
 ### 2.2 Header 규칙 `필수`
 
@@ -325,7 +335,7 @@
   3. 서드파티 헤더
   4. 표준 라이브러리 헤더
 
-- **include 경로** — 모듈의 `Public` 폴더를 기준으로 경로를 쓴다. 모듈 내부의 `.cpp`와 Private 헤더에서는 자기 모듈의 `Private` 폴더도 기준으로 쓸 수 있다.
+- **include 경로** — 모듈의 `Public` 폴더를 기준으로 경로를 쓴다. 모듈 내부의 `.cpp`와 Private 헤더에서는 자기 모듈의 `Private` 폴더도 기준으로 쓸 수 있다. 게임 모듈은 모듈 폴더가 기준이다(`#include "Player/PlayerCharacter.h"`).
   - 엔진 헤더는 `""`, 표준 라이브러리와 서드파티 헤더는 `<>`로 include한다.
   - `../` 같은 상대 경로는 쓰지 않는다.
   - 헤더 이름은 엔진 전체에서 고유해야 한다. (다른 모듈에 같은 이름의 헤더를 두지 않는다)

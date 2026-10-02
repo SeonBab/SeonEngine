@@ -50,7 +50,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SERootDir)Engine\Source\Core\Public;$(SERootDir)Engine\Source\Engine\Public;$(ProjectDir)SampleGame\Public;$(ProjectDir)SampleGame\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SERootDir)Engine\Source\Core\Public;$(SERootDir)Engine\Source\Engine\Public;$(ProjectDir)SampleGame;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -62,7 +62,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="SampleGame\Private\SampleGame.cpp" />
+    <ClCompile Include="SampleGame\SampleGame.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Engine\Source\Engine.vcxproj">

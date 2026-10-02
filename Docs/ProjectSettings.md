@@ -55,7 +55,7 @@ SeonEngine/
 ├─ SampleGame/            게임 프로젝트
 │  └─ Source/
 │     ├─ SampleGame.vcxproj
-│     └─ SampleGame/      모듈
+│     └─ SampleGame/      모듈 (Public / Private 없음)
 ├─ Docs/
 ├─ Binaries/              빌드 결과 (git 무시)
 └─ Intermediate/          중간 파일 (git 무시)
@@ -70,7 +70,7 @@ SeonEngine/
 | 프로젝트 | 종류 | 담는 모듈 | include 경로 |
 |---|---|---|---|
 | `Engine` | 정적 라이브러리 (`.lib`) | `Core`, `Engine` | 두 모듈의 `Public`, `Private` |
-| `SampleGame` | 실행 파일 (`.exe`, Windows 서브시스템) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈의 `Public`, `Private` |
+| `SampleGame` | 실행 파일 (`.exe`, Windows 서브시스템) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈 폴더 |
 
 - `SampleGame`은 `Engine`을 프로젝트 참조로 연결한다. 빌드 순서와 `Engine.lib` 링크가 자동으로 처리된다.
 - 진입점(`WinMain`)은 `Engine.lib`에 있다(Architecture 3. 플랫폼 추상화). 게임 프로젝트는 엔진과 게임 코드를 실행 파일로 링크하는 단위다.
