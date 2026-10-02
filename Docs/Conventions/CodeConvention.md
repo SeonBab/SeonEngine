@@ -702,7 +702,7 @@
   meshes.push_back(mesh);
   ```
 
-- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>` 기반으로 정의한다. 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
+- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Core/Public/CoreTypes.h`). 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
 - **문자열 인코딩** — 엔진 안의 문자열은 모두 UTF-8(`NString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다.
 
   ```cpp
