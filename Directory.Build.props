@@ -2,7 +2,8 @@
 <!-- 모든 .vcxproj에 자동으로 적용되는 공통 설정. 프로젝트별 설정(종류, include 경로, 링커)은 각 .vcxproj에 둔다. -->
 <!-- VS 속성 페이지에서 바꾼 값은 이 파일이 아니라 .vcxproj에 저장된다. 공통 설정은 이 파일을 직접 고친다. -->
 <Project>
-  <PropertyGroup>
+  <!-- 이 파일은 C# 프로젝트(dotnet run으로 실행하는 도구 스크립트 포함)에도 import된다. OutDir는 C#도 쓰는 속성이라 C++ 프로젝트로 한정한다. -->
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
     <!-- 저장소 루트. 프로젝트에서 다른 폴더를 가리킬 때 쓴다. -->
     <SERootDir>$(MSBuildThisFileDirectory)</SERootDir>
     <OutDir>$(SERootDir)Binaries\$(Platform)\$(Configuration)\</OutDir>

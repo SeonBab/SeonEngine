@@ -1,17 +1,45 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="소스 파일">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Core">
+      <UniqueIdentifier>{1FD72A95-F979-35B5-8A6B-B0D89B8BD9EE}</UniqueIdentifier>
     </Filter>
-    <Filter Include="헤더 파일">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="Core\Public">
+      <UniqueIdentifier>{952E5BDE-3947-38D8-8C36-FD1AE59E332B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="리소스 파일">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{DCEDBFB7-7356-351C-B584-5097F9AACC9F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Private">
+      <UniqueIdentifier>{687924DB-7C28-3421-9D6F-8609EA0ED5CE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Private\Launch">
+      <UniqueIdentifier>{EAE10732-6B9F-3897-A287-8A32E2182F32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Private\Platform">
+      <UniqueIdentifier>{45EB86B4-E177-3B7A-8F28-F114BE4678C4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Private\Platform\Windows">
+      <UniqueIdentifier>{BAE0A9CD-C20A-3296-9AC1-1F52B54BE001}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Public\CoreTypes.h">
+      <Filter>Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Private\Launch\EngineMain.h">
+      <Filter>Engine\Private\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Private\Platform\Windows\WindowsHeaders.h">
+      <Filter>Engine\Private\Platform\Windows</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Private\Launch\EngineMain.cpp">
+      <Filter>Engine\Private\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp">
+      <Filter>Engine\Private\Platform\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

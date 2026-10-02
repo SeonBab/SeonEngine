@@ -22,7 +22,7 @@
 - 인코딩: UTF-8 (BOM 없음)
 - 줄바꿈: CRLF
 - 파일 끝 newline
-- C++ / HLSL 파일 들여쓰기: Tab, 폭 4
+- C++ / HLSL / C# 파일 들여쓰기: Tab, 폭 4
 
 ## `.clang-format`
 
@@ -46,7 +46,9 @@
 SeonEngine/
 ├─ SeonEngine.slnx
 ├─ Directory.Build.props   모든 프로젝트 공통 설정
+├─ GenerateProjectFiles.bat  프로젝트 파일 목록 / 필터 생성
 ├─ Engine/
+│  ├─ Build/BatchFiles/   빌드 도구 스크립트
 │  ├─ Source/
 │  │  ├─ Engine.vcxproj
 │  │  ├─ Core/            모듈 (Public/, Private/)
@@ -78,6 +80,18 @@ SeonEngine/
 - 게임 프로젝트의 include 경로에는 엔진 모듈의 `Public`만 넣는다. 엔진 내부 헤더를 include하면 빌드가 실패한다(Code Convention 2.1 파일 구성 참고).
 - 프로젝트에서 다른 폴더를 가리킬 때는 `$(SERootDir)`(저장소 루트)을 쓴다. `$(SolutionDir)`은 솔루션 없이 프로젝트만 빌드하면 값이 달라진다.
 
+## 프로젝트 파일 생성 (`GenerateProjectFiles.bat`)
+
+소스 파일을 추가, 삭제, 이동한 뒤 저장소 루트의 `GenerateProjectFiles.bat`을 실행한다. 각 `.vcxproj`의 파일 목록(`ClInclude` / `ClCompile`)과 `.vcxproj.filters`가 폴더 구조대로 다시 만들어진다.
+
+- **준비물**: .NET 10 이상의 SDK. Visual Studio의 C++ 워크로드만으로는 설치되지 않는다. 설치 관리자에서 ".NET 데스크톱 개발" 워크로드를 추가하거나 SDK를 따로 설치한다.
+- **스크립트**: 본체는 `Engine/Build/BatchFiles/GenerateProjectFiles.cs`이고, bat이 `dotnet run`으로 실행한다. 빌드 결과는 `Intermediate/DotNET/`에 생긴다.
+- **대상**: 저장소 안의 모든 `.vcxproj`(`Binaries`, `Intermediate`, `ThirdParty` 제외). `.vcxproj`가 있는 폴더 아래의 `.h` / `.cpp`를 모은다. 필터 이름은 `.vcxproj` 기준 상대 폴더 경로다.
+- **`.vcxproj`의 소스 목록은 직접 고치지 않는다**. 다음 실행 때 폴더 내용으로 덮어쓴다. VS의 "새 항목 추가"로 만든 파일도 실행하면 필터가 폴더에 맞춰진다. 목록 밖의 설정은 그대로 둔다.
+- **파일별 설정은 쓸 수 없다**: 소스 목록 `ItemGroup`에 파일별 설정(메타데이터), `Condition`, 다른 항목이 있으면 오류를 내고 아무 파일도 바꾸지 않는다.
+- 내용이 바뀐 파일만 쓴다. 바뀌지 않았으면 열려 있는 VS가 다시 로드를 묻지 않는다.
+- 출력은 BOM 없는 UTF-8, CRLF다. `.bat`은 첫 줄들에서 코드페이지를 UTF-8(65001)로 바꾼 뒤 한국어를 쓴다(cmd는 배치 파일을 현재 코드페이지로 한 줄씩 읽는다).
+
 ## 공통 설정 (`Directory.Build.props`)
 
 저장소 루트의 `Directory.Build.props`는 MSBuild가 모든 `.vcxproj`에 자동으로 import한다. 새 프로젝트도 따로 설정하지 않아도 공통 설정이 적용된다.
@@ -95,6 +109,7 @@ SeonEngine/
 - 모든 프로젝트의 `.exe`, `.lib`, DLL은 `Binaries`의 같은 폴더에 모은다. 중간 파일은 프로젝트별로 나눈다.
 - 공통 설정은 이 파일을 직접 고친다. VS 속성 페이지에서 바꾼 값은 해당 `.vcxproj`에만 저장된다. 속성 페이지에서는 이 파일에서 온 값이 굵지 않은 글씨로 보인다.
 - 이 파일은 프로젝트 앞부분에서 import되므로 `$(ProjectName)`처럼 프로젝트가 정의하는 속성을 쓸 수 없다. `$(MSBuildProjectName)`처럼 MSBuild가 미리 정의하는 속성을 쓴다.
+- MSBuild는 C# 프로젝트(`dotnet run`으로 실행하는 `.cs` 도구 포함)에도 이 파일을 import한다. 속성(`PropertyGroup`)은 `.vcxproj` 조건을 붙여 C++ 프로젝트에만 적용한다. C#도 쓰는 이름(`OutDir` 등)이 새어 들어가지 않게 하기 위해서다.
 - `.vcxproj`에서 목록형 설정(전처리기 정의, include 경로, 추가 옵션)을 넣을 때는 `%(PreprocessorDefinitions)`처럼 기존 값을 이어 붙인다. 빠뜨리면 공통 값이 사라진다.
 
 ## 플랫폼 / 빌드 구성

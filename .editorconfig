@@ -5,7 +5,7 @@ charset = utf-8
 end_of_line = crlf
 insert_final_newline = true
 
-[*.{h,hpp,inl,cpp,hlsl,hlsli}]
+[*.{h,hpp,inl,cpp,hlsl,hlsli,cs}]
 indent_style = tab
 indent_size = 4
 tab_width = 4
