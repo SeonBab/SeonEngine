@@ -112,7 +112,9 @@
 
 ### 빌드 시스템 / 프로젝트 생성기
 
+- **현재 상태**: 우선 엔진 작업을 위해 전환은 보류하고 `.vcxproj` / 현재 생성기를 유지한다. CMake는 유력한 검토 후보이며 채택은 미확정이다. 보류 근거와 전환 비용은 [프로젝트 설정 결정 기록](../../Docs/ProjectSetupDecisions.md#cmake-전환--우선-작업-이후-재검토-2026-10-01) 참고.
 - **진행 시점**: 아래 중 하나가 필요할 때
+  - 우선 작업을 마친 뒤, 자체 생성기나 빌드 단계에 새 책임을 추가하기 전
   - 엔진 모듈별 프로젝트 분리: 모듈마다 의존성과 include 경로를 손으로 맞추기 번거로워질 때
   - 리플렉션 코드 생성: 헤더를 분석해 코드를 만드는 단계를 빌드에 넣어야 할 때
   - 두 번째 플랫폼이나 IDE 지원: `.vcxproj`는 Windows / Visual Studio 전용
@@ -120,6 +122,12 @@
   - 도구 선택: Sharpmake(C#, Unreal `*.Build.cs`와 비슷한 사용감) / premake(Lua) / CMake / 자체 도구
   - 모듈 의존성 선언 방식 (Unreal `PublicDependencyModuleNames` / `PrivateDependencyModuleNames` 참고)
   - 생성된 `.sln` / `.vcxproj`를 git에 올릴지 여부
+  - 서드파티와의 설정 분리: `.vcxproj` + `Directory.Build.props`는 설정이 저장소 전체에 적용된다. CMake는 컴파일 설정을 타깃마다 두기 쉽지만, 전역 설정을 주면 외부 타깃에도 영향을 준다. 서드파티 문제를 풀기 위해 꼭 바꿔야 하는 것은 아니고, 도구를 고를 때 비교 기준 중 하나로 쓴다.
+- **전환을 선택하면 확인할 것**
+  - Engine / SampleGame의 Debug / Release 빌드, 최종 링크, 실행을 먼저 재현한다.
+  - CRT, 매크로 / 경고 설정, 출력 경로, 실행 작업 폴더, 리소스 복사와 IDE 표시를 비교한다.
+  - 이후 외부 코드 타깃 / 컴파일 정책과 vcpkg manifest 복원을 연결한다. 가능한 경우 다른 PC에서도 확인한다.
+  - 기존 `GenerateProjectFiles`와 생성 파일의 역할을 정하고, 같은 빌드 규칙을 두 방식에서 계속 수동 관리하지 않도록 전환 완료 기준을 정한다.
 - **반영할 곳**: [Project Settings](ProjectSettings.md), [Architecture](Architecture.md) 1. 모듈과 의존성 방향
 
 ---
