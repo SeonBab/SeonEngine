@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 모든 .vcxproj의 마지막에 자동으로 적용된다. 프로젝트 본문에서 정해지는 값(Platform, UseDebugLibraries 등)이 필요한 설정을 둔다. -->
+<Project>
+  <!-- vcpkg 연결. 설정값은 Directory.Build.props에 있다. -->
+  <!-- vcpkg 위치: VCPKG_ROOT 환경 변수가 있으면 그것, 없으면 Visual Studio 내장 vcpkg -->
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <SEVcpkgRoot Condition="'$(VCPKG_ROOT)' != ''">$([MSBuild]::EnsureTrailingSlash('$(VCPKG_ROOT)'))</SEVcpkgRoot>
+    <SEVcpkgRoot Condition="'$(SEVcpkgRoot)' == '' and '$(VsInstallRoot)' != ''">$([MSBuild]::EnsureTrailingSlash('$(VsInstallRoot)'))VC\vcpkg\</SEVcpkgRoot>
+    <SEVcpkgTargets>$(SEVcpkgRoot)scripts\buildsystems\msbuild\vcpkg.targets</SEVcpkgTargets>
+  </PropertyGroup>
+
+  <Import Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(SEVcpkgTargets)')" Project="$(SEVcpkgTargets)" />
+
+  <Target Name="SECheckVcpkg" BeforeTargets="PrepareForBuild" Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and !Exists('$(SEVcpkgTargets)')">
+    <Error Text="vcpkg를 찾을 수 없습니다 ($(SEVcpkgTargets)). Visual Studio Installer에서 'vcpkg 패키지 관리자' 구성 요소를 설치하거나, VCPKG_ROOT 환경 변수에 vcpkg 폴더를 지정하세요." />
+  </Target>
+</Project>

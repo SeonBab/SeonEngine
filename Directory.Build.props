@@ -11,6 +11,20 @@
     <IntDir>$(SERootDir)Intermediate\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
 
+  <!-- vcpkg: 저장소의 manifest(Engine/ThirdParty/vcpkg.json)로 외부 라이브러리를 받는다. 연결(import)은 Directory.Build.targets에서 한다. -->
+  <!-- 이 파일은 사용자 전역 통합(%LOCALAPPDATA%\vcpkg\vcpkg.user.props)보다 먼저 읽히므로, 여기서 정한 값이 vcpkg의 기본값보다 우선한다. -->
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <!-- 개발 PC의 사용자 전역 통합(classic 창고)을 쓰지 않는다. -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestRoot>$(SERootDir)Engine\ThirdParty\</VcpkgManifestRoot>
+    <!-- 빌드할 때 생기는 설치 폴더는 빌드 중간물과 함께 둔다. -->
+    <VcpkgManifestInstalledBaseDir>$(SERootDir)Intermediate\vcpkg_installed\</VcpkgManifestInstalledBaseDir>
+    <!-- x64-windows-static-md: 라이브러리는 정적 링크, CRT는 엔진과 같은 /MD -->
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+    <VcpkgUseMD>true</VcpkgUseMD>
+  </PropertyGroup>
+
   <ItemDefinitionGroup>
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>

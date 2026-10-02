@@ -45,7 +45,8 @@
 ```text
 SeonEngine/
 ├─ SeonEngine.slnx
-├─ Directory.Build.props   모든 프로젝트 공통 설정
+├─ Directory.Build.props   모든 프로젝트 공통 설정 (먼저 읽힘)
+├─ Directory.Build.targets 모든 프로젝트 공통 설정 (마지막에 읽힘, vcpkg 연결)
 ├─ GenerateProjectFiles.bat  프로젝트 파일 목록 / 필터 생성
 ├─ Engine/
 │  ├─ Build/BatchFiles/   빌드 도구 스크립트
@@ -54,6 +55,7 @@ SeonEngine/
 │  │  ├─ Core/            모듈 (Public/, Private/)
 │  │  └─ Engine/          모듈
 │  └─ ThirdParty/
+│     └─ vcpkg.json       vcpkg로 받는 외부 라이브러리 목록 (manifest)
 ├─ SampleGame/            게임 프로젝트
 │  └─ Source/
 │     ├─ SampleGame.vcxproj
@@ -61,6 +63,7 @@ SeonEngine/
 ├─ Docs/
 ├─ Binaries/              빌드 결과 (git 무시)
 └─ Intermediate/          중간 파일 (git 무시)
+   └─ vcpkg_installed/    vcpkg가 빌드할 때 설치하는 라이브러리
 ```
 
 - 엔진과 게임 프로젝트는 같은 구조를 갖는다. 셰이더(`Shaders/`), 에셋(`Content/`), 설정(`Config/`) 폴더는 처음 필요할 때 각 폴더 아래에 추가한다.
@@ -92,7 +95,7 @@ SeonEngine/
 - 내용이 바뀐 파일만 쓴다. 바뀌지 않았으면 열려 있는 VS가 다시 로드를 묻지 않는다.
 - 출력은 BOM 없는 UTF-8, CRLF다. `.bat`은 첫 줄들에서 코드페이지를 UTF-8(65001)로 바꾼 뒤 한국어를 쓴다(cmd는 배치 파일을 현재 코드페이지로 한 줄씩 읽는다).
 
-## 공통 설정 (`Directory.Build.props`)
+## 공통 설정 (`Directory.Build.props` / `.targets`)
 
 저장소 루트의 `Directory.Build.props`는 MSBuild가 모든 `.vcxproj`에 자동으로 import한다. 새 프로젝트도 따로 설정하지 않아도 공통 설정이 적용된다.
 
@@ -111,6 +114,32 @@ SeonEngine/
 - 이 파일은 프로젝트 앞부분에서 import되므로 `$(ProjectName)`처럼 프로젝트가 정의하는 속성을 쓸 수 없다. `$(MSBuildProjectName)`처럼 MSBuild가 미리 정의하는 속성을 쓴다.
 - MSBuild는 C# 프로젝트(`dotnet run`으로 실행하는 `.cs` 도구 포함)에도 이 파일을 import한다. 속성(`PropertyGroup`)은 `.vcxproj` 조건을 붙여 C++ 프로젝트에만 적용한다. C#도 쓰는 이름(`OutDir` 등)이 새어 들어가지 않게 하기 위해서다.
 - `.vcxproj`에서 목록형 설정(전처리기 정의, include 경로, 추가 옵션)을 넣을 때는 `%(PreprocessorDefinitions)`처럼 기존 값을 이어 붙인다. 빠뜨리면 공통 값이 사라진다.
+- 저장소 루트의 `Directory.Build.targets`는 MSBuild가 모든 `.vcxproj`의 **마지막**에 import한다. 프로젝트 본문에서 정해지는 값(`Platform`, `UseDebugLibraries` 등)이 필요한 설정(vcpkg 연결)을 둔다. 이 파일도 `.vcxproj` 조건을 붙인다.
+
+## vcpkg
+
+외부 라이브러리는 vcpkg manifest 모드로 받는다. 목록은 `Engine/ThirdParty/vcpkg.json`이고, 빌드할 때 자동으로 설치된다.
+
+| 설정 | 위치 | 값 |
+|---|---|---|
+| 사용자 전역 통합 끊기 | `Directory.Build.props` | `VCPkgLocalAppDataDisabled` = `true`. 개발 PC에 `vcpkg integrate install`이 되어 있어도 그 설정(classic 창고)을 쓰지 않는다 |
+| manifest 모드 | `Directory.Build.props` | `VcpkgEnableManifest` = `true`, `VcpkgManifestRoot` = `Engine\ThirdParty\` |
+| 설치 폴더 | `Directory.Build.props` | `VcpkgManifestInstalledBaseDir` = `Intermediate\vcpkg_installed\` (git 무시) |
+| triplet | `Directory.Build.props` | `VcpkgUseStatic` + `VcpkgUseMD` = `true` → `x64-windows-static-md` (라이브러리는 정적, CRT는 엔진과 같은 `/MD`) |
+| vcpkg 위치와 연결 | `Directory.Build.targets` | `VCPKG_ROOT` 환경 변수가 있으면 그 vcpkg, 없으면 Visual Studio 내장 vcpkg(`$(VsInstallRoot)\VC\vcpkg\`)의 `vcpkg.targets`를 import한다. 찾지 못하면 빌드 오류로 안내한다 |
+
+**설치 목록** (`builtin-baseline` `eb2d3a32...`, vcpkg 2026-07-27로 확인)
+
+| 패키지 | 버전 | 이유 | 설치되는 것 |
+|---|---|---|---|
+| `directxmath` | 3.21 (2026-06-12) | 엔진 수학 타입의 내부 계산(Architecture 6장) | 헤더 |
+
+- **DirectXMath 출처**: vcpkg판을 쓴다. vcpkg include 경로가 Windows SDK 경로보다 먼저 검색되어 `#include <DirectXMath.h>`는 SDK판(3.19)이 아니라 vcpkg판을 가리킨다. 목록에 적어 버전을 baseline으로 고정한다.
+- **새 PC 준비**: Visual Studio Installer에서 "vcpkg 패키지 관리자" 구성 요소를 설치한다. 다른 vcpkg를 쓰려면 `VCPKG_ROOT` 환경 변수를 지정한다.
+- **첫 빌드**: 목록의 라이브러리를 내려받아 컴파일하므로 인터넷이 필요하고 오래 걸릴 수 있다. 이후에는 캐시를 쓴다.
+- **설치 위치 확인**: 빌드 출력(상세도 "보통" 이상)에 `Using triplet "x64-windows-static-md" from "...\Intermediate\vcpkg_installed\..."`가 나온다.
+- vcpkg는 설치 폴더의 `lib\*.lib`를 전부 자동으로 링크한다(전이 의존성 포함).
+- vcpkg 명령을 직접 실행할 때는 `Engine/ThirdParty/`에서 실행하거나 `--x-manifest-root`로 위치를 넘긴다.
 
 ## 플랫폼 / 빌드 구성
 

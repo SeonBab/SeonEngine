@@ -11,7 +11,7 @@
 | 빌드 / 도구 | 모듈별 프로젝트 분리 | `Engine` 모듈을 `Renderer`, `RHI`, `Platform` 등으로 나눌 때, 또는 역방향 include가 반복해서 생길 때 |
 | 빌드 / 도구 | clang-tidy | 검사할 코드가 어느 정도 쌓였을 때 |
 | 빌드 / 도구 | CI | 빌드할 코드가 저장소에 들어갔을 때 |
-| 빌드 / 도구 | 서드파티 관리 방식 | CI를 도입할 때, 첫 서드파티 라이브러리를 추가할 때, 다른 PC에서 빌드할 때 중 먼저 오는 때 |
+| 빌드 / 도구 | 서드파티 관리 방식 (방향 결정, 적용 대기) | 저장소 안에서 컴파일하는 외부 코드를 들일 때 (CI 도입이나 다른 PC 빌드가 먼저 오면 그때) |
 | 빌드 / 도구 | 빌드 시스템 / 프로젝트 생성기 | 엔진 모듈별 프로젝트 분리, 리플렉션 코드 생성, 두 번째 플랫폼이나 IDE 지원 중 하나가 필요할 때 |
 | 엔진 기반 시스템 | 서브시스템 등록 / 조회 | `NEngine`과 첫 서브시스템을 구현할 때 |
 | 엔진 기반 시스템 | 핸들 시스템 | 리소스(텍스처, 메시 등)나 게임 오브젝트 관리 시스템을 만들 때 |
@@ -79,16 +79,36 @@
 
 ### 서드파티 관리 방식
 
-- **진행 시점**: 아래 중 먼저 오는 때
-  - CI를 도입할 때
-  - 첫 서드파티 라이브러리를 `Engine/ThirdParty/`에 추가할 때
-  - 다른 PC에서 빌드할 때
-- **배경**: 개발 PC에 `vcpkg integrate install`(사용자 전역 통합)이 되어 있으면, VS가 모든 C++ 프로젝트에 vcpkg의 include 경로를 추가하고 설치된 `*.lib`를 전부 링크한다. 저장소에 적히지 않은 라이브러리에 코드가 기대도 그 PC에서는 빌드가 성공해서 알아챌 수 없고, 다른 PC나 CI에서 처음 실패한다.
-- **정할 것**
-  - vcpkg 전역 통합 끄기: `Directory.Build.props`에 `<VcpkgEnabled>false</VcpkgEnabled>`를 넣는다. 각자 `vcpkg integrate remove`를 실행하는 방식은 사람에게 기대고 다른 프로젝트에도 영향을 주므로 쓰지 않는다.
-  - 서드파티를 들여오는 방식: 소스나 빌드된 라이브러리를 `Engine/ThirdParty/`에 직접 넣기 / vcpkg manifest 모드(저장소의 `vcpkg.json`에 라이브러리와 버전 명시) / git submodule
-  - 라이브러리별 include 경로와 링크 설정을 두는 위치 (`Engine.vcxproj` / 라이브러리별 `.props`)
-- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 6.3 예외 조항, [Project Settings](ProjectSettings.md) 공통 설정
+- **상태**: 방향은 정했다(판단 근거는 루트 설계 기록의 프로젝트 설정 결정 기록 "서드파티 관리 — vcpkg manifest"). vcpkg 연결과 라이브러리 설치(아래 순서 1~3)는 적용하고 확인했다([Project Settings](ProjectSettings.md) "vcpkg"). 저장소 안에서 컴파일하는 외부 코드의 연결(순서 4)이 남았다. 모두 적용을 마치면 결과를 [Project Settings](ProjectSettings.md)와 [Code Convention](Conventions/CodeConvention.md) 6.3 예외 조항에 옮기고 이 항목을 지운다.
+- **진행 시점**: 저장소 안에서 컴파일하는 외부 코드를 들일 때. CI 도입이나 다른 PC에서 빌드하는 일이 먼저 오면 그때.
+- **풀려는 문제**
+  - **엔진 설정의 적용 범위**: `Directory.Build.props`는 저장소 아래 모든 `.vcxproj`에 자동으로 적용된다. 엔진용 설정(`/W4`, 경고를 오류로 처리, `SDLCheck`, 예외 / RTTI 끔, `_HAS_EXCEPTIONS=0`, `/permissive-`, `/w14668` `/w14265`)이 저장소 안에서 컴파일하는 외부 `.cpp`에도 걸린다. `<...>`로 include한 외부 헤더만 `TreatAngleIncludeAsExternal` + `ExternalWarningLevel`로 경고가 꺼진다.
+  - **classic 창고에 기대는 상태**: 개발 PC는 `C:\vcpkg`(classic 모드)에 boost가 있고 사용자 전역 통합(`%LOCALAPPDATA%\vcpkg\vcpkg.user.props` / `.targets`)이 켜져 있다. 이 상태에서는 그 창고의 include 경로와 `lib\*.lib`가 SeonEngine에도 붙는다. 여기에 라이브러리를 설치해 쓰면 다른 PC에서 빌드가 안 되고, 버전이 PC와 시점마다 달라진다.
+- **결정**
+
+  | 항목 | 결정 |
+  |---|---|
+  | 외부 라이브러리 (DirectXMath 등) | vcpkg manifest. `Engine/ThirdParty/vcpkg.json`에 적고 `builtin-baseline`으로 버전 선택을 기록한다. 게임 쪽에만 필요한 라이브러리가 생기면 `vcpkg.json`을 저장소 루트로 옮긴다 |
+  | triplet | `x64-windows-static-md` 우선 (정적 라이브러리 + CRT `/MD`). 엔진은 `RuntimeLibrary`를 지정하지 않아 Debug `/MDd`, Release `/MD`다. `x64-windows-static`은 CRT가 `/MT`라 맞지 않는다 |
+  | vcpkg 연결 | 프로젝트에서 vcpkg의 `vcpkg.props` / `vcpkg.targets`를 명시적으로 import한다. 사용자 전역 통합은 `VCPkgLocalAppDataDisabled`로 끊는다. vcpkg 위치는 `VCPKG_ROOT` 환경 변수, 없으면 VS 내장 vcpkg(`$(VsInstallRoot)\VC\vcpkg\`) |
+  | 외부 코드 컴파일 | `Engine.vcxproj` 안에서 컴파일하고, 외부 소스에만 경고를 완화한다 |
+  | 예외 / RTTI | 현재 정책(끔) 유지. 외부 코드에 필요하다고 확인되면 따로 검토한다 |
+
+- **서드파티 공통 규칙**
+  1. 외부 코드는 `Engine/ThirdParty/` 아래에만 둔다.
+  2. 외부 헤더는 `<...>`로 include하고 외부 include 경로로 등록한다.
+  3. 저장소 안에서 컴파일하는 외부 `.cpp`에는 필요한 설정만 완화한다(우선 경고). 생성기가 관리하는 소스 목록이 아니라 라이브러리별 import 파일에서 소스 목록과 파일별 설정을 함께 관리한다. 연결이 복잡해지면 외부 코드 전용 정적 라이브러리 프로젝트로 나눈다(그 프로젝트도 `Directory.Build.props`를 물려받으므로 안에서 덮어쓰고, `GenerateProjectFiles`가 `ThirdParty`를 건너뛰므로 파일 목록을 따로 관리한다).
+  4. vcpkg 패키지가 있고 요구 기능과 빌드 구성을 만족하면 vcpkg manifest를 우선한다. 패키지가 없거나 고쳐 써야 하는 라이브러리는 다른 방식을 쓸 수 있다.
+  5. 외부 코드의 예외 / RTTI 정책은 경고 완화와 따로 정한다. 켤 때는 전역 `_HAS_EXCEPTIONS=0`과 섞이는 영향, 외부 예외가 엔진 호출 경계를 넘는 문제를 함께 검토한다.
+  6. 엔진이나 게임 코드에서 직접 include하는 라이브러리는, 다른 라이브러리의 전이 의존성으로 들어오더라도 `vcpkg.json`에 직접 적는다.
+- **새 PC 준비 조건**: VS의 vcpkg 구성 요소를 설치하거나 `VCPKG_ROOT`를 지정한다. `vcpkg.json`과 설정값만으로는 vcpkg와 MSBuild가 연결되지 않는다.
+- **적용과 검증 순서**
+  1. ~~vcpkg 연결 구성: 명시적 import, 전역 통합 끊기, `VcpkgEnableManifest` 켜기, triplet 지정~~ (완료. 빈 `vcpkg.json`으로 확인)
+  2. ~~manifest 복원: `vcpkg.json`에 `directx-headers`, `directxtex`, `builtin-baseline`을 넣고 빌드해 `Intermediate\vcpkg_installed\`에 설치되는지. 고른 baseline과 툴셋 v145에서 설치가 성공하는지~~ (완료. 이후 사용처가 없어 `directx-headers`, `directxtex`는 목록에서 뺐다. 현재 목록은 [Project Settings](ProjectSettings.md) "vcpkg")
+  3. ~~classic 경로 제외 확인: 빌드 로그와 `*.command.1.tlog`에 `C:\vcpkg\installed`가 없는지~~ (완료. Debug / Release 모두)
+  4. 외부 코드 컴파일과 최종 링크. 정적 라이브러리는 호출되지 않은 코드를 링크에 넣지 않으므로 실제로 호출한 뒤 `SampleGame.exe` 링크를 확인한다. 가능하면 다른 PC에서 clone → 빌드까지 확인한다
+- **적용하면서 확인할 것**: 외부 include 경로 등록 방법(`ExternalIncludePath` 등)
+- **반영할 곳**: [Project Settings](ProjectSettings.md) 공통 설정, [Code Convention](Conventions/CodeConvention.md) 6.3 예외 조항
 
 ### 빌드 시스템 / 프로젝트 생성기
 
