@@ -17,12 +17,18 @@
 | 엔진 기반 시스템 | 서브시스템 등록 / 조회 | `FEngine`과 첫 서브시스템을 구현할 때 |
 | 엔진 기반 시스템 | 핸들 시스템 | 리소스(텍스처, 메시 등)나 게임 오브젝트 관리 시스템을 만들 때 |
 | 엔진 기반 시스템 | `SE_ENUM_CLASS_FLAGS` | 첫 비트 플래그 enum을 만들 때 |
+| 엔진 기반 시스템 | 로그 (`SE_LOG`) | assert를 구현할 때, 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때 (먼저 오는 것) |
+| 엔진 기반 시스템 | assert (`SE_ASSERT` 등) | 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때 (로그와 함께) |
+| 엔진 기반 시스템 | 문자열 변환 (`Utf8ToWide` / `WideToUtf8`) | `FString`을 Windows API에 넘기거나 받는 첫 코드를 쓸 때 (창 제목, 파일 경로 등) |
+| 엔진 기반 시스템 | 엔진 객체 (`FEngine`, `gEngine`) | 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때 |
+| 엔진 기반 시스템 | 수학 타입 (`FVector3`, `FMatrix4` 등) | 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
 | 엔진 기반 시스템 | null이 될 수 없는 공유 참조 (`TSharedRef`) | 공유 소유 객체를 null 없이 주고받는 API가 반복될 때 (UI 위젯 트리 등) |
 | 엔진 기반 시스템 | 델리게이트 / 이벤트 | 객체 간 이벤트 통지(입력, UI, 게임 이벤트 등)가 필요할 때 |
 | 엔진 기반 시스템 | Threading | 렌더 스레드나 워커 스레드(에셋 로딩, 작업 시스템 등)를 도입할 때 |
 | 엔진 기반 시스템 | 프로젝트 경로와 `Saved` 폴더 | 에셋 로딩이나 로그 파일처럼 파일 경로가 필요한 기능을 구현할 때 |
 | 렌더링 | RHI (그래픽스 API 추상화 계층) | D3D12나 Vulkan 등 두 번째 그래픽스 API를 추가할 때 |
+| 렌더링 | 렌더러 / 씬 계약과 이름 | 렌더러와 씬 구조를 설계하거나 첫 렌더러 계약 헤더를 작성할 때 |
 | 렌더링 | 여러 렌더 씬 / 여러 뷰 | 에디터, 에셋 미리보기, 분할 화면처럼 씬이나 뷰가 둘 이상 필요할 때 |
 | 렌더링 | 렌더 리소스 소유자 | 에셋 시스템을 설계할 때 |
 | 렌더링 | Scene Proxy 방식 | 물체 종류별 등록 / 갱신과 캐시 관리가 복잡해질 때. 렌더 스레드 도입 시에도 검토 |
@@ -87,6 +93,7 @@
 
 - **상태**: 방향은 정했다(판단 근거는 루트 설계 기록의 프로젝트 설정 결정 기록 "서드파티 관리 — vcpkg manifest"). vcpkg 연결과 라이브러리 설치(아래 순서 1~3)는 적용하고 확인했다([Project Settings](ProjectSettings.md) "vcpkg"). 저장소 안에서 컴파일하는 외부 코드의 연결(순서 4)이 남았다. 모두 적용을 마치면 결과를 [Project Settings](ProjectSettings.md)와 [Code Convention](Conventions/CodeConvention.md) 6.3 예외 조항에 옮기고 이 항목을 지운다.
 - **진행 시점**: 저장소 안에서 컴파일하는 외부 코드를 들일 때. CI 도입이나 다른 PC에서 빌드하는 일이 먼저 오면 그때.
+- **관련 문서 점검**: 의존성을 추가 / 제거하거나 vcpkg 연결을 바꿀 때, 실제 manifest와 빌드 설정을 기준으로 [Project Settings](ProjectSettings.md), [설정 결정 기록](../../Docs/ProjectSetupDecisions.md), [서드파티 학습 문서](../../Study/ThirdPartyAndVcpkg.md)의 현재 상태를 함께 갱신한다. NoTemplate 제외 상태는 이미 반영됐다. 이전 설치 / 빌드 결과와 예시는 당시 기록으로 남기고, 현재 적용 상태와 구분한다. 문서 수정만으로 복원 / 빌드 성공을 주장하지 않는다.
 - **풀려는 문제**
   - **엔진 설정의 적용 범위**: `Directory.Build.props`는 저장소 아래 모든 `.vcxproj`에 자동으로 적용된다. 엔진용 설정(`/W4`, 경고를 오류로 처리, `SDLCheck`, 예외 / RTTI 끔, `_HAS_EXCEPTIONS=0`, `/permissive-`, `/w14668` `/w14265`)이 저장소 안에서 컴파일하는 외부 `.cpp`에도 걸린다. `<...>`로 include한 외부 헤더만 `TreatAngleIncludeAsExternal` + `ExternalWarningLevel`로 경고가 꺼진다.
   - **classic 창고에 기대는 상태**: 개발 PC는 `C:\vcpkg`(classic 모드)에 boost가 있고 사용자 전역 통합(`%LOCALAPPDATA%\vcpkg\vcpkg.user.props` / `.targets`)이 켜져 있다. 이 상태에서는 그 창고의 include 경로와 `lib\*.lib`가 SeonEngine에도 붙는다. 여기에 라이브러리를 설치해 쓰면 다른 PC에서 빌드가 안 되고, 버전이 PC와 시점마다 달라진다.
@@ -195,9 +202,65 @@
   - 3.9 Macro "매크로 인자는 괄호로 감싼다"의 예외: 타입 이름 인자는 괄호로 감싸면 문법 오류가 난다.
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.7 Enum, 3.9 Macro
 
+### 로그 (`SE_LOG`)
+
+- **진행 시점**: assert를 구현할 때(assert 실패는 Fatal 로그를 남긴다, 5.2), 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때(5.1). 둘 중 먼저 오는 것.
+- **현재**: 규칙(레벨 7단계, 카테고리, `{}` 형식, Release에서 `Error` 미만 제거)만 정해져 있고 코드는 없다.
+- **정할 것**
+  - 카테고리 선언 방식: 헤더 선언 + `.cpp` 정의(Unreal `DECLARE_LOG_CATEGORY_EXTERN` / `DEFINE_LOG_CATEGORY`) / C++17 `inline` 변수로 한 줄
+  - 카테고리별 컴파일 시간 상한을 둘지 (Unreal은 카테고리 선언의 3번째 인자)
+  - 첫 출력 장치: VS 출력 창 / 콘솔 / 파일 (파일은 "프로젝트 경로와 `Saved` 폴더"가 먼저)
+  - 출력 장치 구조: `ILogSink` 인터페이스([Architecture](Architecture.md) 1장 예시) / 출력 함수 하나. Core는 Windows API를 직접 부르지 않으므로 Core와 플랫폼 코드를 잇는 수단은 필요하다.
+  - 조건부 로그(`UE_CLOG`) 같은 부가 기능을 둘지
+  - 레벨이 꺼졌을 때 인자를 계산하지 않게 하는 방법
+  - 여러 스레드에서 동시에 쓸 때의 처리 ("Threading" 참고)
+- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 5.3 Logging, [Architecture](Architecture.md) 1장 역방향 통지 예시
+
+### assert (`SE_ASSERT` 등)
+
+- **진행 시점**: 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때. 실패하면 Fatal 로그를 남기므로 "로그 (`SE_LOG`)"와 함께 진행한다.
+- **현재**: 규칙([Code Convention](Conventions/CodeConvention.md) 5.2)만 정해져 있다. `SE_ASSERT` / `SE_ASSERTF`는 Release에서 식까지 제거하고, `SE_VERIFY` / `SE_ENSURE`는 Release에서도 식을 실행한다.
+- **정할 것**
+  - 실패할 때의 동작: Fatal 로그 → 디버거가 연결돼 있으면 `__debugbreak`, 아니면 종료. 디버거 확인(`IsDebuggerPresent`)은 Windows API라 Core에서 직접 부를 수 없으므로 플랫폼 코드와 잇는 방법
+  - `SE_ENSURE`를 위치마다 한 번만 보고하는 방법 (위치마다 `static` 플래그)
+  - 매크로 인자를 Release에서 제거할 때 "사용하지 않는 변수" 경고를 피하는 방법
+- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 5.2 Assert
+
+### 문자열 변환 (`Utf8ToWide` / `WideToUtf8`)
+
+- **진행 시점**: `FString`(UTF-8)을 Windows API에 넘기거나 Windows API에서 받는 첫 코드를 쓸 때. 창 제목, 파일 경로 등.
+- **현재**: 규칙(엔진 안은 UTF-8, Windows API 경계에서만 UTF-16)만 있다. `FString`(`std::string` 별칭)은 인코딩을 검사하지 않는다.
+- **정할 것**
+  - 위치: `Engine/Private/Platform/Windows/`. Core에 두면 Core가 Windows API를 부르게 된다.
+  - 변환 실패(잘못된 UTF-8 바이트) 처리: 빈 문자열 / 대체 문자(U+FFFD) / 실패를 돌려줌. `MultiByteToWideChar`의 `MB_ERR_INVALID_CHARS` 사용 여부
+  - 반환 형태: `std::wstring`을 돌려줄지, 호출하는 쪽 버퍼에 쓸지
+- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.12 STL 사용 정책(문자열 인코딩), [Architecture](Architecture.md) 3. 플랫폼 추상화
+
+### 엔진 객체 (`FEngine`, `gEngine`)
+
+- **진행 시점**: 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때. 그전에는 `EngineMain()`이 창 생성, 메시지 루프, 정리를 직접 부른다.
+- **현재**: 규칙([Architecture](Architecture.md) 2. 서브시스템과 전역 상태)만 있다. 싱글톤 금지, 전역은 `gEngine` 하나, `Initialize()` 순서의 정확한 역순으로 `Shutdown()`.
+- **정할 것**
+  - `EngineMain()`에 있던 창과 메시지 루프를 `FEngine`으로 옮기는 방식. 메시지 펌프는 `FEngine` 틱 맨 앞에서 부르는 형태가 유력하다(Unreal은 `FEngineLoop::Tick` 맨 앞).
+  - 서브시스템 등록 / 조회 ("서브시스템 등록 / 조회" 참고)
+  - 게임 모듈을 엔진에 연결하는 방식 (`SampleGame.cpp`의 TODO)
+  - `Initialize` 전 호출과 `Shutdown` 누락 검사 (assert 필요)
+- **반영할 곳**: [Architecture](Architecture.md) 2. 서브시스템과 전역 상태, [Code Convention](Conventions/CodeConvention.md) 4.2 객체 생명주기
+
+### 수학 타입 (`FVector3`, `FMatrix4` 등)
+
+- **진행 시점**: 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때(첫 3D 렌더링).
+- **현재**: 규칙([Architecture](Architecture.md) 6. 수학과 좌표계)이 정해져 있다. Z-up, 왼손 좌표계, cm 단위, 행 벡터, 내부 계산은 vcpkg로 받은 DirectXMath.
+- **정할 것**
+  - 첫 범위: `FVector2` / `FVector3` / `FVector4`, `FQuat`, `FMatrix4`, `FTransform`, `FMath` 중 무엇부터
+  - 파일 배치. `FMath`는 `Math.h`가 아니라 `SeonMath.h`([Code Convention](Conventions/CodeConvention.md) 2.1 파일 이름 예외)
+  - DirectXMath 타입과의 변환 위치(헤더에 노출하지 않는 방법)
+- **반영할 곳**: [Architecture](Architecture.md) 6. 수학과 좌표계
+
 ### 메모리 할당자
 
 - **진행 시점**: 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때
+- **컨테이너 변경 시 함께 확인할 것**: 할당자를 별칭에 연결하거나 자체 컨테이너로 교체할 때, 실제 사용처의 멤버 함수 / 반복자 / 반환 타입과 호환되는지 확인한다. STL API 호환 조건은 [설계 원칙](../../Docs/DesignPrinciples.md) 5절에 이미 반영됐다. 별칭 이름만 유지해도 사용처가 그대로라는 전제는 두지 않는다. API 유지 / 사용처 수정 중 필요한 범위를 정하고, 변경한 컨테이너의 실제 사용처를 컴파일해 검증한다. 관련 설명은 [Code Convention](Conventions/CodeConvention.md) 3.12와 [컨벤션 결정 기록](../../Docs/CodeConventionDecisions.md) 3.12에 함께 반영한다.
 - **정할 것**
   - 엔진 할당자 인터페이스와 종류 (일반 / 프레임 / 풀 등)
   - STL 별칭(`TArray` 등)에 할당자를 넣는 방식
@@ -248,6 +311,16 @@
 ---
 
 ## 렌더링
+
+### 렌더러 / 씬 계약과 이름
+
+- **진행 시점**: 렌더러와 씬 구조를 설계하거나 첫 렌더러 계약 헤더를 작성할 때. 첫 창 생성 / 종료 작업의 선행 조건은 아니다.
+- **현재**: 계약 이름은 `IRenderer` / `IRenderScene`이고, [Core 기반 목록](../../Docs/CoreFoundation.md)의 표기도 맞춰져 있다. [렌더러 결정 기록](../../Docs/RendererDecisions.md) 7절의 "SeonEngine 지금" 표에는 이전 이름과 NoTemplate 계획이 남아 있다. 상세 점검 근거는 [최근 작업 점검](../../Docs/RecentWorkReview.md)의 "렌더 씬 이름과 RendererDecisions.md 7절 표" 항목에 있다.
+- **진행 방식**
+  - Unreal의 추상 인터페이스와 구현을 구분해 역할을 대조하고, SeonEngine의 렌더러 교체 계약과 월드 / 시스템 씬 구분에 맞는 이름인지 검토한다. 현재 이름을 기준으로 검토하며, 이름 변경을 미리 확정하지 않는다.
+  - 판단 후 현재 규칙 / 기반 목록 / 학습 예시의 이름을 함께 맞춘다. 결정 기록 7절 표는 최신 비교로 고치거나 당시 비교임을 명시하고 최신 절로 연결한다. 이전 판단의 근거는 보존한다.
+  - 코드가 생겼다면 선언과 사용처를 검색하고 변경 범위에 맞게 컴파일한다. 문서 링크와 코드 블록도 확인한다. 문서 정합성 확인과 실제 렌더링 검증은 구분한다.
+- **반영할 곳**: [Architecture](Architecture.md) 4~5장, [렌더러 결정 기록](../../Docs/RendererDecisions.md) 4.3 / 7 / 10절, [Core 기반 목록](../../Docs/CoreFoundation.md), [렌더러 학습 문서](../../Study/RendererStructure.md). 이름을 유지하더라도 이전 표와 현재 설명의 정합성은 정리한다.
 
 ### RHI (그래픽스 API 추상화 계층)
 
