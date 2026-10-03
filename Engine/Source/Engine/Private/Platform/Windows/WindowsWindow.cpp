@@ -12,8 +12,8 @@ namespace
 
 bool FWindow::Initialize()
 {
-	WNDCLASSEXW windowClass = {};
-	windowClass.cbSize = sizeof(windowClass);
+	WNDCLASSEXW windowClass   = {};
+	windowClass.cbSize        = sizeof(windowClass);
 	windowClass.lpszClassName = WindowClassName;
 	// 아직 직접 처리할 메시지가 없으므로 Windows 기본 처리 함수를 그대로 쓴다
 	windowClass.lpfnWndProc = DefWindowProcW;

@@ -5,12 +5,12 @@
 // (std::int64_t는 플랫폼 헤더가 정한다. Windows에서는 long long, 64비트 Linux에서는 long이다.)
 // 지금은 Windows(MSVC)만 지원하므로 플랫폼별 정의 계층 없이 한 곳에 둔다.
 
-using int8 = signed char;
+using int8  = signed char;
 using int16 = signed short;
 using int32 = signed int;
 using int64 = signed long long;
 
-using uint8 = unsigned char;
+using uint8  = unsigned char;
 using uint16 = unsigned short;
 using uint32 = unsigned int;
 using uint64 = unsigned long long;
