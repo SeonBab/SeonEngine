@@ -51,6 +51,9 @@
     <ClInclude Include="Engine\Private\Launch\EngineMain.h">
       <Filter>Engine\Private\Launch</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Private\Platform\Window.h">
+      <Filter>Engine\Private\Platform</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsHeaders.h">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClInclude>
@@ -60,6 +63,9 @@
       <Filter>Engine\Private\Launch</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp">
+      <Filter>Engine\Private\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Platform\Windows\WindowsWindow.cpp">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClCompile>
   </ItemGroup>
