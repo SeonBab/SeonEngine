@@ -10,6 +10,9 @@
     <Filter Include="Core\Public\Containers">
       <UniqueIdentifier>{2EA4CED6-FDA6-301D-9C88-35E5875D6E8A}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Public\Templates">
+      <UniqueIdentifier>{57347ADC-B9B5-36DA-8E9F-F15B24651EE4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{DCEDBFB7-7356-351C-B584-5097F9AACC9F}</UniqueIdentifier>
     </Filter>
@@ -38,6 +41,12 @@
     </ClInclude>
     <ClInclude Include="Core\Public\CoreTypes.h">
       <Filter>Core\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Templates\SharedPointer.h">
+      <Filter>Core\Public\Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Templates\UniquePtr.h">
+      <Filter>Core\Public\Templates</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Private\Launch\EngineMain.h">
       <Filter>Engine\Private\Launch</Filter>
