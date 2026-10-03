@@ -71,7 +71,7 @@ AlignConsecutiveAssignments: None
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: None
 AlignTrailingComments:
-  Kind: Leave
+  Kind: Never
 
 # 빈 줄
 MaxEmptyLinesToKeep: 1

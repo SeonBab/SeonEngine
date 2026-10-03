@@ -26,7 +26,12 @@
 
 ## `.clang-format`
 
-저장소 루트의 `.clang-format`으로 코드 포매팅을 통일한다(Code Convention 1.1 Formatting). Visual Studio는 내장 clang-format으로 이 파일을 읽는다(도구 → 옵션 → 텍스트 편집기 → C/C++ → 코드 스타일 → 서식에서 clang-format 지원이 켜져 있어야 한다).
+`.clang-format`으로 코드 포매팅을 통일한다(Code Convention 1.1 Formatting, 적용 범위). clang-format은 파일에서 가장 가까운 폴더의 `.clang-format`을 읽는다. Visual Studio는 내장 clang-format으로 이 파일을 읽는다(도구 → 옵션 → 텍스트 편집기 → C/C++ → 코드 스타일 → 서식에서 clang-format 지원이 켜져 있어야 한다).
+
+| 파일 | 적용 대상 | 내용 |
+|---|---|---|
+| `.clang-format` (저장소 루트) | 게임 코드 등 엔진 밖 (권장 기본값) | 공통 서식. 공백으로 줄을 맞추지 않는다 |
+| `Engine/.clang-format` | 엔진 코드 | `BasedOnStyle: InheritParentConfig`로 루트를 물려받고, 정렬 옵션(`AlignConsecutiveAssignments` / `Declarations` / `Macros`: `Consecutive`, `AlignTrailingComments`: `Always`)만 덮어쓴다 |
 
 `Engine/ThirdParty/.clang-format`은 서드파티 폴더의 서식 정리와 include 정렬을 끈다(Code Convention 6.3 예외 조항).
 

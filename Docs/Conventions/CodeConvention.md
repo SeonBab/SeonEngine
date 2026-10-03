@@ -8,6 +8,14 @@
 - [Git Convention](GitConvention.md) — 브랜치, 커밋, 병합
 - Asset / Resource Naming Convention — 별도 문서 (예정)
 
+## 적용 범위
+
+| 대상 | 적용 |
+|---|---|
+| 엔진 코드 (`Engine/`) | **필수**. 이 문서의 모든 규칙을 따른다. 서식은 `Engine/.clang-format`이 적용한다 |
+| 게임 코드 (`SampleGame` 등 게임 모듈) | **권장**. 엔진과 같은 규칙을 권하지만 강제하지 않는다. 서식은 저장소 루트의 `.clang-format`이 기본으로 적용되고, 게임 폴더에 자기 `.clang-format`을 두면 그쪽이 우선한다 |
+| 서드파티 (`Engine/ThirdParty/`) | 적용하지 않는다(6.3 예외 조항) |
+
 ## 목차
 
 - 1장. Style & Naming
@@ -89,6 +97,17 @@
   - 넣는 곳: 제어문 키워드(`if`, `for`, `while`, `switch`) 뒤, 이항·대입 연산자 양쪽, 쉼표와 `for`의 `;` 뒤
   - 넣지 않는 곳: 함수 이름과 `(` 사이, 괄호 안쪽, 단항 연산자 뒤, `template`과 `<` 사이
 - **한 줄에 한 문장** — 한 줄에 문장은 하나, 변수 선언도 하나만 쓴다. 단, 위의 한 줄 early exit와 한 줄 getter는 예외로 허용한다.
+- **정렬** — 엔진 코드는 연속한 줄의 대입(`=`), 선언 이름, 매크로 값, 줄 끝 주석을 공백으로 맞춘다. 빈 줄이나 다른 종류의 줄에서 묶음이 끊긴다. 직접 맞추지 않고 clang-format(`Engine/.clang-format`)에 맡긴다. 게임 코드의 권장 기본값(루트 `.clang-format`)은 맞추지 않는다.
+
+  ```cpp
+  using int8  = signed char;
+  using int16 = signed short;
+
+  HWND hwnd = CreateWindowExW(
+  	0,                   // 확장 스타일
+  	WS_OVERLAPPEDWINDOW, // 스타일
+  	...);
+  ```
 - **인코딩 / 줄바꿈** — UTF-8 (BOM 없음), CRLF. 파일은 newline으로 끝낸다. 관련 프로젝트 설정은 [Project Settings](../ProjectSettings.md) 참고.
 - **빈 줄** — 함수 정의 사이, 함수 안의 논리 단위 사이, `#pragma once` / include 묶음 / 선언 사이에 1개를 둔다. 2개 이상 연속으로 쓰지 않고, 여는 `{` 바로 뒤와 닫는 `}` 바로 앞에는 두지 않는다.
 
@@ -913,7 +932,10 @@
 ### 6.2 자동화 도구 `자동화`
 
 - **`.editorconfig`** — 인코딩, 줄바꿈, 들여쓰기를 에디터에 적용한다([Project Settings](../ProjectSettings.md) 참고).
-- **`.clang-format`** — 1.1 Formatting 규칙을 자동으로 적용한다. Visual Studio에 내장된 clang-format이 저장소 루트의 `.clang-format`을 읽는다. 커밋 전에 문서 서식(Ctrl+K, Ctrl+D)을 실행한다.
+- **`.clang-format`** — 1.1 Formatting 규칙을 자동으로 적용한다. Visual Studio에 내장된 clang-format은 파일에서 가장 가까운 폴더의 `.clang-format`을 읽는다. 커밋 전에 문서 서식(Ctrl+K, Ctrl+D)을 실행한다.
+  - 저장소 루트 `.clang-format`: 공통 서식. 게임 코드의 권장 기본값이다.
+  - `Engine/.clang-format`: 루트 설정을 물려받고(`BasedOnStyle: InheritParentConfig`) 엔진에만 다른 규칙(정렬)을 덮어쓴다.
+  - `Engine/ThirdParty/.clang-format`: 서드파티의 서식을 끈다.
   - 표현하지 못하는 규칙: "한 줄 표기는 early exit만"은 clang-format이 본문 종류를 구분하지 못한다. 대신 줄 길이 제한이 없어(`ColumnLimit: 0`) 작성한 줄바꿈을 그대로 두므로, 한 줄로 쓴 early exit와 여러 줄로 쓴 블록이 모두 유지된다. 규칙은 코드 리뷰로 확인한다.
   - include 순서(2.2 Header 규칙)도 자동으로 정렬한다.
 
