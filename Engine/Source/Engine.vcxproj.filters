@@ -7,6 +7,9 @@
     <Filter Include="Core\Public">
       <UniqueIdentifier>{952E5BDE-3947-38D8-8C36-FD1AE59E332B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Public\Containers">
+      <UniqueIdentifier>{2EA4CED6-FDA6-301D-9C88-35E5875D6E8A}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{DCEDBFB7-7356-351C-B584-5097F9AACC9F}</UniqueIdentifier>
     </Filter>
@@ -24,6 +27,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\Public\Containers\Array.h">
+      <Filter>Core\Public\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Containers\HashMap.h">
+      <Filter>Core\Public\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Containers\SeonString.h">
+      <Filter>Core\Public\Containers</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\CoreTypes.h">
       <Filter>Core\Public</Filter>
     </ClInclude>
