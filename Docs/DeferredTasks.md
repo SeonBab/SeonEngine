@@ -16,6 +16,7 @@
 | 엔진 기반 시스템 | 플랫폼별 기본 타입 정의 | Windows가 아닌 두 번째 플랫폼을 지원할 때 |
 | 엔진 기반 시스템 | 서브시스템 등록 / 조회 | `FEngine`과 첫 서브시스템을 구현할 때 |
 | 엔진 기반 시스템 | 핸들 시스템 | 리소스(텍스처, 메시 등)나 게임 오브젝트 관리 시스템을 만들 때 |
+| 엔진 기반 시스템 | `SE_ENUM_CLASS_FLAGS` | 첫 비트 플래그 enum을 만들 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
 | 엔진 기반 시스템 | null이 될 수 없는 공유 참조 (`TSharedRef`) | 공유 소유 객체를 null 없이 주고받는 API가 반복될 때 (UI 위젯 트리 등) |
 | 엔진 기반 시스템 | 델리게이트 / 이벤트 | 객체 간 이벤트 통지(입력, UI, 게임 이벤트 등)가 필요할 때 |
@@ -180,6 +181,19 @@
   - 타입별 핸들 (`FTextureHandle` 등) 정의 방식
   - 핸들 → 객체 변환(`Resolve`)과 무효 핸들 처리
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 4.1 메모리 소유권
+
+### `SE_ENUM_CLASS_FLAGS`
+
+- **진행 시점**: 첫 비트 플래그 enum을 만들 때. [Code Convention](Conventions/CodeConvention.md) 3.7이 비트 플래그 enum에 이 매크로를 쓰도록 정해 두었으므로, 그 enum보다 먼저 만든다.
+- **현재**: 비트 플래그 enum이 없어 만들지 않았다.
+- **정할 것**
+  - 범위
+    - A. 매크로(연산자 `|`, `&`, `^`, `~`, `|=`, `&=`, `^=`, `!`)만
+    - B. 매크로 + 확인 함수 `EnumHasAnyFlags` / `EnumHasAllFlags`. `&`의 결과가 enum이라 `if (flags & A)`가 컴파일되지 않으므로 확인 함수가 사실상 필요하다.
+    - C. Unreal `Misc/EnumClassFlags.h` 전부: 매크로 + `FRIEND_ENUM_CLASS_FLAGS`(클래스 안 `private` enum용) + 확인 / 조작 함수 11개
+  - 구현: `std::underlying_type_t<Enum>`, `static_cast`, `constexpr` (Unreal의 `__underlying_type`, C 스타일 캐스트, `UE_REWRITE` 대신)
+  - 3.9 Macro "매크로 인자는 괄호로 감싼다"의 예외: 타입 이름 인자는 괄호로 감싸면 문법 오류가 난다.
+- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.7 Enum, 3.9 Macro
 
 ### 메모리 할당자
 
