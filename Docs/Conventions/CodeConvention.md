@@ -401,6 +401,19 @@
   };
   ```
 
+- **`friend`** — 멤버가 아니라 접근 지정자의 영향을 받지 않으므로, 접근 지정자보다 앞인 클래스 맨 위에 둔다. 왜 필요한지 주석을 단다.
+
+  ```cpp
+  class FWindow
+  {
+  	// 메시지 처리 보조 구조체가 창 생성 / 파괴 중에 nativeHandle을 바꾼다
+  	friend struct SE::Private::FWindowsWindowProc;
+
+  public:
+  	...
+  };
+  ```
+
 - **멤버 변수 접근** — class의 멤버 변수는 `private`을 원칙으로 한다. 자식 클래스에 필요하면 `protected` 함수로 제공한다. 단, 다음은 `public`으로 둘 수 있다.
   - 외부에서 구독하는 이벤트(델리게이트). 소유 클래스만 발생시킬 수 있는 이벤트 타입을 쓴다. ([Deferred Tasks](../DeferredTasks.md) 참고)
   - `static constexpr` 상수
