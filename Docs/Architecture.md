@@ -116,6 +116,8 @@
   using FPlatformFile = FWindowsPlatformFile;
   ```
 
+- **이름** — 객체를 만들지 않고 정적 함수로 쓰는 플랫폼 서비스는 `FPlatform` + 이름(`FPlatformFile`, 플랫폼 구현은 `FWindowsPlatformFile`)으로 짓는다. 인스턴스를 만들어 쓰는 플랫폼 객체는 `Platform`을 붙이지 않는다(`FWindow`, 플랫폼 구현 파일은 `Windows/WindowsWindow.cpp`, 플랫폼이 둘 이상이 되면 `FGenericWindow` / `FWindowsWindow`).
+
 - **`Windows.h`** — 직접 include하지 않고 `Platform/Windows/WindowsHeaders.h` 래퍼만 include한다. 래퍼는 Platform과 그래픽스 API 전용 폴더(4장 렌더링 참고)의 `.cpp`(또는 Private 헤더)에서만 include하고, Public 헤더에서는 include하지 않는다.
   - 래퍼는 `WIN32_LEAN_AND_MEAN`, `NOMINMAX`를 정의한 뒤 `Windows.h`를 include하고, 엔진 이름과 충돌하는 매크로(`CreateWindow` 등)를 `#undef`한다.
 
