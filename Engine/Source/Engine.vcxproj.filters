@@ -4,11 +4,20 @@
     <Filter Include="Core">
       <UniqueIdentifier>{1FD72A95-F979-35B5-8A6B-B0D89B8BD9EE}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Private">
+      <UniqueIdentifier>{E66736EA-0F0E-363A-830C-2724EA435C63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Private\Logging">
+      <UniqueIdentifier>{64579C9E-228C-32F8-892A-5ECFD148DA3D}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Public">
       <UniqueIdentifier>{952E5BDE-3947-38D8-8C36-FD1AE59E332B}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\Public\Containers">
       <UniqueIdentifier>{2EA4CED6-FDA6-301D-9C88-35E5875D6E8A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Public\Logging">
+      <UniqueIdentifier>{5F0CC958-0954-30B2-A5AF-CF7D01A73D49}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\Public\Templates">
       <UniqueIdentifier>{57347ADC-B9B5-36DA-8E9F-F15B24651EE4}</UniqueIdentifier>
@@ -42,6 +51,27 @@
     <ClInclude Include="Core\Public\CoreTypes.h">
       <Filter>Core\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\Logging\LogCategory.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\LogMacros.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\LogRecord.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\LogVerbosity.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\OutputDevice.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\OutputDeviceHelper.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\OutputDeviceRedirector.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\Templates\SharedPointer.h">
       <Filter>Core\Public\Templates</Filter>
     </ClInclude>
@@ -59,6 +89,15 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Core\Private\Logging\LogMacros.cpp">
+      <Filter>Core\Private\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Logging\OutputDeviceHelper.cpp">
+      <Filter>Core\Private\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Logging\OutputDeviceRedirector.cpp">
+      <Filter>Core\Private\Logging</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp">
       <Filter>Engine\Private\Launch</Filter>
     </ClCompile>
