@@ -27,6 +27,7 @@
 | 엔진 기반 시스템 | 델리게이트 / 이벤트 | 객체 간 이벤트 통지(입력, UI, 게임 이벤트 등)가 필요할 때 |
 | 엔진 기반 시스템 | Threading | 렌더 스레드나 워커 스레드(에셋 로딩, 작업 시스템 등)를 도입할 때 |
 | 엔진 기반 시스템 | 프로젝트 경로와 `Saved` 폴더 | 에셋 로딩이나 로그 파일처럼 파일 경로가 필요한 기능을 구현할 때 |
+| 엔진 기반 시스템 | 메인 루프 CPU 절약 (프레임 제한, 백그라운드 절약, 메시지 대기) | 렌더러를 붙일 때. 그전에 창을 띄운 동안의 CPU 사용이 불편해지면 메시지 대기를 임시로 |
 | 엔진 기반 시스템 | 메시지 펌프를 창 밖으로 옮기기 | 창이 둘 이상 필요할 때, 창 클래스 등록을 애플리케이션 객체로 옮길 때, 또는 `FEngine`이 메시지 루프를 가져갈 때 (먼저 오는 것) |
 | 엔진 기반 시스템 | 화면 모드 (창 / 테두리 없는 창 / 전체 화면) | 렌더러를 연결한 뒤, 게임 설정에서 화면 모드나 해상도를 바꿔야 할 때 |
 | 렌더링 | RHI (그래픽스 API 추상화 계층) | D3D12나 Vulkan 등 두 번째 그래픽스 API를 추가할 때 |
@@ -208,6 +209,7 @@
 
 - **진행 시점**: assert를 구현할 때(assert 실패는 Fatal 로그를 남긴다, 5.2), 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때(5.1). 둘 중 먼저 오는 것.
 - **현재**: 규칙(레벨 7단계, 카테고리, `{}` 형식, Release에서 `Error` 미만 제거)만 정해져 있고 코드는 없다.
+  - 창 작업(`Platform/Windows/WindowsWindow.cpp`)이 실패 원인을 남길 첫 코드였지만, 임시 출력 없이 `TODO(seon): 로그를 만들면 … 남긴다`만 달고 넘어갔다. 로그를 만들면 이 `TODO`를 검색해 `GetLastError` 값을 남긴다: `RegisterClassExW` 실패, `CreateWindowExW` 실패(해제가 오류 값을 덮어쓸 수 있어 해제보다 먼저 읽는다), `Shutdown`의 `DestroyWindow` / `UnregisterClassW` 실패(남기기만 하고 재시도나 복구는 하지 않는다).
 - **정할 것**
   - 카테고리 선언 방식: 헤더 선언 + `.cpp` 정의(Unreal `DECLARE_LOG_CATEGORY_EXTERN` / `DEFINE_LOG_CATEGORY`) / C++17 `inline` 변수로 한 줄
   - 카테고리별 컴파일 시간 상한을 둘지 (Unreal은 카테고리 선언의 3번째 인자)
@@ -222,6 +224,7 @@
 
 - **진행 시점**: 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때. 실패하면 Fatal 로그를 남기므로 "로그 (`SE_LOG`)"와 함께 진행한다.
 - **현재**: 규칙([Code Convention](Conventions/CodeConvention.md) 5.2)만 정해져 있다. `SE_ASSERT` / `SE_ASSERTF`는 Release에서 식까지 제거하고, `SE_VERIFY` / `SE_ENSURE`는 Release에서도 식을 실행한다.
+  - `FWindow`는 소멸자 정책이 없다(기본 소멸자). [Code Convention](Conventions/CodeConvention.md) 4.2대로 `Shutdown()` 없이 소멸되면 assert로 잡는 것은 assert를 만들 때 함께 한다. 그전에는 `EngineMain()`이 항상 `Shutdown()`을 부르고 곧바로 프로세스가 끝나므로 실제 문제는 없다. 넣을 때는 "초기화에 성공해 `Shutdown()`이 아직 필요한가"를 나타낼 상태(`bInitialized`)가 필요하다. 창이 파괴되어 핸들이 비어도 창 클래스 등록은 남을 수 있어 `nativeHandle`만으로는 판단할 수 없다.
 - **정할 것**
   - 실패할 때의 동작: Fatal 로그 → 디버거가 연결돼 있으면 `__debugbreak`, 아니면 종료. 디버거 확인(`IsDebuggerPresent`)은 Windows API라 Core에서 직접 부를 수 없으므로 플랫폼 코드와 잇는 방법
   - `SE_ENSURE`를 위치마다 한 번만 보고하는 방법 (위치마다 `static` 플래그)
@@ -241,13 +244,24 @@
 ### 메시지 펌프를 창 밖으로 옮기기
 
 - **진행 시점**: 창이 둘 이상 필요할 때, 창 클래스 등록을 애플리케이션 객체로 옮길 때, 또는 `FEngine`이 메시지 루프를 가져갈 때 (먼저 오는 것)
-- **현재**: 메시지 펌프(`PumpMessages`)와 대기(`WaitForMessages`)가 `FWindow`의 멤버다. 창이 하나라 동작에는 문제가 없지만, 메시지 큐는 창이 아니라 스레드에 하나 있어서 `PeekMessageW(nullptr, …)`는 그 스레드의 모든 창과 스레드 메시지를 처리한다. 이름(창 하나의 함수)과 실제 동작(스레드 전체)이 어긋나 있다.
-- **옮기기 쉽게 유지할 것**: 두 함수는 `FWindow`의 멤버 변수를 쓰지 않는다. 닫기 요청 상태(`bCloseRequested`)는 창마다 있어야 하므로 `FWindow`에 남는다.
+- **현재**: 메시지 펌프(`PumpMessages`)가 `FWindow`의 멤버다. 창이 하나라 동작에는 문제가 없지만, 메시지 큐는 창이 아니라 스레드에 하나 있어서 `PeekMessageW(nullptr, …)`는 그 스레드의 모든 창과 스레드 메시지를 처리한다. 이름(창 하나의 함수)과 실제 동작(스레드 전체)이 어긋나 있다.
+- **옮기기 쉽게 유지할 것**: 펌프(대기를 넣으면 대기도)는 `FWindow`의 멤버 변수를 쓰지 않는다. 닫기 요청 상태(`bCloseRequested`)는 창마다 있어야 하므로 `FWindow`에 남는다.
 - **정할 것**
   - 옮길 곳: 정적 플랫폼 서비스(`FPlatformApplicationMisc::PumpMessages`, Architecture 3장 이름 규칙) / 애플리케이션 객체(`FWindowsApplication::PumpMessages`). Unreal은 메인 루프에서 앞의 것을, Slate에서 뒤의 것을 부른다.
-  - 대기(`WaitForMessages`)도 같은 곳으로 옮긴다. 렌더러가 붙어 대기를 이미 뺐다면 펌프만 옮긴다.
+  - 메시지 대기를 넣었다면 같은 곳으로 옮긴다("메인 루프 CPU 절약").
   - 사용처(`EngineMain()` 루프 또는 `FEngine` 틱)의 호출을 `window.PumpMessages()`에서 새 위치로 바꾼다.
 - **반영할 곳**: [Architecture](Architecture.md) 3. 플랫폼 추상화
+
+### 메인 루프 CPU 절약 (프레임 제한, 백그라운드 절약, 메시지 대기)
+
+- **진행 시점**: 렌더러를 붙일 때. 그전에 창을 띄운 동안의 CPU 사용이 불편해지면 메시지 대기를 임시로 넣는다.
+- **현재**: `EngineMain()` 루프는 펌프 → 닫기 요청 확인만 한다. `PeekMessageW`는 빈 큐에서도 바로 돌아오므로 창이 떠 있는 동안 CPU 코어 하나를 계속 쓴다.
+- **정할 것**
+  - 렌더러를 붙일 때: 프레임 제한(수직 동기화, 최대 FPS). 게임 엔진의 기본 방법이다.
+  - 게임 갱신이 생긴 뒤: 창이 포커스를 잃으면 틱 / 렌더링을 건너뛰고 쉬는 모드(Unreal `t.IdleWhenNotForeground`). 포커스 상태(`WM_ACTIVATEAPP`) 처리가 필요하다.
+  - 에디터를 만들 때: 바뀐 것이 없으면 다시 그리지 않는 저전력 모드(Godot 에디터 방식).
+  - 렌더러 전 임시 대기를 넣는다면: 펌프로 큐를 비운 **뒤에** `WaitMessage`. 렌더러를 붙일 때 뺀다.
+- **반영할 곳**: [Architecture](Architecture.md) 2. 서브시스템과 전역 상태(메인 루프)
 
 ### 엔진 객체 (`FEngine`, `gEngine`)
 

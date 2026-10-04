@@ -89,8 +89,10 @@ bool FWindow::Initialize()
 
 	if (RegisterClassExW(&windowClass) == 0)
 	{
+		// TODO(seon): 로그를 만들면 실패 원인(GetLastError)을 남긴다
 		return false;
 	}
+	bClassRegistered = true;
 
 	// 원하는 클라이언트 영역에 테두리와 제목 표시줄을 더해 CreateWindowExW에 넘길 바깥 크기를 구한다
 	RECT windowRect = {0, 0, WindowWidth, WindowHeight};
@@ -112,6 +114,10 @@ bool FWindow::Initialize()
 	// nativeHandle은 반환 전에 창 프로시저가 WM_NCCREATE에서 이미 넣었다
 	if (hwnd == nullptr)
 	{
+		// TODO(seon): 로그를 만들면 실패 원인(GetLastError)을 남긴다. 해제가 오류 값을 덮어쓸 수 있어 해제보다 먼저 읽는다
+		// 창 생성이 실패해도 창 클래스 등록은 남는다. 해제해서 Initialize 전 상태로 되돌린다
+		UnregisterClassW(WindowClassName, GetModuleHandleW(nullptr));
+		bClassRegistered = false;
 		return false;
 	}
 
@@ -122,11 +128,21 @@ bool FWindow::Initialize()
 
 void FWindow::Shutdown()
 {
+	// 남아 있는 것만 정리한다. Initialize가 실패한 뒤나 두 번째 호출에서는 할 일이 없다
+	// TODO(seon): 로그를 만들면 DestroyWindow / UnregisterClassW의 실패를 남긴다. 실패해도 재시도나 복구는 하지 않는다
+
 	// 창 클래스는 그 클래스로 만든 창이 모두 사라진 뒤에만 해제할 수 있어 창을 먼저 없앤다.
 	// nativeHandle은 반환 전에 창 프로시저가 WM_NCDESTROY에서 비운다
-	DestroyWindow(static_cast<HWND>(nativeHandle));
+	if (nativeHandle != nullptr)
+	{
+		DestroyWindow(static_cast<HWND>(nativeHandle));
+	}
 
-	UnregisterClassW(WindowClassName, GetModuleHandleW(nullptr));
+	if (bClassRegistered)
+	{
+		UnregisterClassW(WindowClassName, GetModuleHandleW(nullptr));
+		bClassRegistered = false;
+	}
 }
 
 // TODO(seon): 메시지 큐는 창이 아니라 스레드에 하나 있다. 창이 둘 이상 필요해지면 창 밖으로 옮긴다

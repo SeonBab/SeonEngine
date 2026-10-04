@@ -47,6 +47,9 @@ private:
 	// OS 창 핸들. Windows에서는 HWND이며, 구현 .cpp에서만 실제 타입으로 바꿔 쓴다.
 	void* nativeHandle = nullptr;
 
+	// 해제할 창 클래스 등록이 남아 있는가. 창이 파괴되어도 등록은 남을 수 있어 nativeHandle과 따로 둔다
+	bool bClassRegistered = false;
+
 	// 닫기 버튼 등으로 닫기 요청(WM_CLOSE)이 왔는가. 메시지 처리 보조 구조체가 세운다
 	bool bCloseRequested = false;
 };
