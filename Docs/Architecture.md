@@ -29,25 +29,27 @@
 
   ```cpp
   // Core — 상위를 모른 채 인터페이스만 정의
-  class ILogSink
+  class IOutputDevice
   {
   public:
-  	virtual ~ILogSink() = default;
-  	virtual void Write(const FString& message) = 0;
+  	virtual ~IOutputDevice() = default;
+  	virtual void Write(const FLogRecord& record) = 0;
   };
 
-  // Engine — 구현해서 Core에 등록
-  class FFileLogSink final : public ILogSink
+  // Editor — 구현해서 Core에 등록 (에디터 로그 창이 기록을 받아 보관)
+  class FEditorLogOutputDevice final : public IOutputDevice
   {
   public:
-  	void Write(const FString& message) override;
+  	void Write(const FLogRecord& record) override;
   };
   ```
 
 ## 2. 서브시스템과 전역 상태
 
-- **싱글톤 금지** — 클래스가 스스로 인스턴스를 들고 있는 싱글톤(`GetInstance()`)은 만들지 않는다. 생성 / 파괴 시점을 제어할 수 없어 아래 초기화 / 종료 순서를 깨뜨린다. 서브시스템은 `FEngine`이 소유하고, 전역에는 `gEngine` 하나만 둔다.
-- **초기화 / 종료 순서** — `FEngine::Initialize()` 한 곳에서 초기화 순서를 명시하고, `FEngine::Shutdown()`은 정확히 그 역순으로 정리한다. 전역 / static 객체의 생성자에서는 초기화 작업을 하지 않는다(파일 사이의 전역 초기화 순서는 보장되지 않는다).
+- **싱글톤 금지** — 클래스가 스스로 인스턴스를 들고 있는 싱글톤(`GetInstance()`)은 만들지 않는다. 생성 / 파괴 시점을 제어할 수 없어 아래 초기화 / 종료 순서를 깨뜨린다. 서브시스템은 `FEngine`이 소유한다. 로그 전달기에만 아래의 명시적 예외를 둔다.
+- **로그 전달기 예외** — `FOutputDeviceRedirector`는 `FOutputDeviceRedirector::Get()`(참조 반환) 안의 `static` 객체 하나를 공유하고, 출력 장치 목록은 `TArray`로 관리한다. 생성자는 private이고 복사 / 이동은 막아서 `Get()` 밖에서 전달기를 만들거나 복사하지 못한다. 생성자는 빈 전달기 상태만 준비하며 파일 열기나 같은 로그 경로 호출을 하지 않는다. 엔진 시작 코드가 실제 장치의 준비 / 등록 / 해제 / 종료를 관리한다. 전달기는 장치를 소유하지 않는다.
+- **초기화 / 종료 순서** — `FEngine::Initialize()` 한 곳에서 초기화 순서를 명시하고, `FEngine::Shutdown()`은 정확히 그 역순으로 정리한다. 전역 / static 객체의 생성자에서는 파일 열기 등 외부 자원 초기화 작업을 하지 않는다(파일 사이의 전역 동적 초기화 순서에 의존하지 않는다).
+- **로그 호출 범위** — 장치 등록 전에는 출력 / 보존을 보장하지 않는다. 종료 로그는 장치 해제 전에 남긴다. 전역 객체의 소멸자에서 로그를 사용하지 않으며, 전달기 소멸 이후 접근은 허용하지 않는다. 현재는 단일 스레드에서 전달하고 `Write` 도중 목록을 변경하지 않는다. 최초 `static` 초기화 보호는 이후 로그 처리의 스레드 안전을 보장하지 않는다.
 
   ```cpp
   bool FEngine::Initialize()
@@ -77,7 +79,7 @@
   IRenderer& renderer = IRenderer::GetInstance();
   ```
 
-- **전역 변수** — 새 전역 변수는 만들지 않는다. 이 문서에 적힌 엔진 기반 전역(`gEngine`)만 둔다. 상수(`constexpr`)와 `.cpp` 안의 익명 namespace 변수는 허용한다. 필요한 객체는 가능하면 생성자나 함수 인자로 넘겨받는다.
+- **전역 변수** — 새 전역 변수는 만들지 않는다. 이 문서에 적힌 엔진 기반 전역(`gEngine`)과 로그 전달기의 공유 상태 예외만 둔다. 상수(`constexpr`)와 `.cpp` 안의 익명 namespace 변수는 허용한다. 필요한 객체는 가능하면 생성자나 함수 인자로 넘겨받는다.
 
 ## 3. 플랫폼 추상화
 

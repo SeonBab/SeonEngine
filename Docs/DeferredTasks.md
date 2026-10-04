@@ -209,12 +209,13 @@
 
 - **진행 시점**: assert를 구현할 때(assert 실패는 Fatal 로그를 남긴다, 5.2), 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때(5.1). 둘 중 먼저 오는 것.
 - **현재**: 규칙(레벨 7단계, 카테고리, `{}` 형식, Release에서 `Error` 미만 제거)만 정해져 있고 코드는 없다.
-  - 창 작업(`Platform/Windows/WindowsWindow.cpp`)이 실패 원인을 남길 첫 코드였지만, 임시 출력 없이 `TODO(seon): 로그를 만들면 … 남긴다`만 달고 넘어갔다. 로그를 만들면 이 `TODO`를 검색해 `GetLastError` 값을 남긴다: `RegisterClassExW` 실패, `CreateWindowExW` 실패(해제가 오류 값을 덮어쓸 수 있어 해제보다 먼저 읽는다), `Shutdown`의 `DestroyWindow` / `UnregisterClassW` 실패(남기기만 하고 재시도나 복구는 하지 않는다).
+  - 창 작업(`Platform/Windows/WindowsWindow.cpp`)이 실패 원인을 남길 첫 코드였지만, 임시 출력 없이 `TODO(seon): 로그를 만들면 … 남긴다`만 달고 넘어갔다. 로그를 만들면 이 `TODO`를 검색해 `GetLastError` 값을 남긴다: `RegisterClassExW` 실패, `CreateWindowExW` 실패(해제가 오류 값을 덮어쓸 수 있어 해제보다 먼저 읽는다), `Shutdown`의 `DestroyWindow` / `UnregisterClassW` 실패(남기기만 하고 재시도나 복구는 하지 않는다)
+  - 같은 파일 `PumpMessages` 위의 `TODO(seon)` 주석에 있는 문서 이름 괄호(`(DeferredTasks.md "메시지 펌프를 창 밖으로 옮기기")`)도 이때 뺀다. 주석에 규칙 문서 이름을 쓰지 않는 규칙(Code Convention 1.3)에 걸린다..
 - **정할 것**
   - 카테고리 선언 방식: 헤더 선언 + `.cpp` 정의(Unreal `DECLARE_LOG_CATEGORY_EXTERN` / `DEFINE_LOG_CATEGORY`) / C++17 `inline` 변수로 한 줄
   - 카테고리별 컴파일 시간 상한을 둘지 (Unreal은 카테고리 선언의 3번째 인자)
   - 첫 출력 장치: VS 출력 창 / 콘솔 / 파일 (파일은 "프로젝트 경로와 `Saved` 폴더"가 먼저)
-  - 출력 장치 구조: `ILogSink` 인터페이스([Architecture](Architecture.md) 1장 예시) / 출력 함수 하나. Core는 Windows API를 직접 부르지 않으므로 Core와 플랫폼 코드를 잇는 수단은 필요하다.
+  - 출력 장치 구조: `IOutputDevice` 인터페이스([Architecture](Architecture.md) 1장 예시) / 출력 함수 하나. Core는 Windows API를 직접 부르지 않으므로 Core와 플랫폼 코드를 잇는 수단은 필요하다.
   - 조건부 로그(`UE_CLOG`) 같은 부가 기능을 둘지
   - 레벨이 꺼졌을 때 인자를 계산하지 않게 하는 방법
   - 여러 스레드에서 동시에 쓸 때의 처리 ("Threading" 참고)
@@ -266,7 +267,7 @@
 ### 엔진 객체 (`FEngine`, `gEngine`)
 
 - **진행 시점**: 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때. 그전에는 `EngineMain()`이 창 생성, 메시지 루프, 정리를 직접 부른다.
-- **현재**: 규칙([Architecture](Architecture.md) 2. 서브시스템과 전역 상태)만 있다. 싱글톤 금지, 전역은 `gEngine` 하나, `Initialize()` 순서의 정확한 역순으로 `Shutdown()`.
+- **현재**: 규칙([Architecture](Architecture.md) 2. 서브시스템과 전역 상태)만 있다. 싱글톤 금지(로그 전달기만 예외), 전역은 `gEngine`과 로그 전달기의 공유 상태만, `Initialize()` 순서의 정확한 역순으로 `Shutdown()`.
 - **정할 것**
   - `EngineMain()`에 있던 창과 메시지 루프를 `FEngine`으로 옮기는 방식. 메시지 펌프는 `FEngine` 틱 맨 앞에서 부르는 형태가 유력하다(Unreal은 `FEngineLoop::Tick` 맨 앞).
   - 서브시스템 등록 / 조회 ("서브시스템 등록 / 조회" 참고)
