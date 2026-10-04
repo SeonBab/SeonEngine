@@ -277,11 +277,12 @@
 ### 수학 타입 (`FVector3`, `FMatrix4` 등)
 
 - **진행 시점**: 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때(첫 3D 렌더링).
-- **현재**: 규칙([Architecture](Architecture.md) 6. 수학과 좌표계)이 정해져 있다. Z-up, 왼손 좌표계, cm 단위, 행 벡터, 내부 계산은 vcpkg로 받은 DirectXMath.
+- **현재**: 규칙([Architecture](Architecture.md) 6. 수학과 좌표계)이 정해져 있다. LUF(X 왼쪽, Y 위, Z 앞), 오른손 좌표계, cm 단위, 행 벡터, 내부 계산은 vcpkg로 받은 DirectXMath.
 - **정할 것**
   - 첫 범위: `FVector2` / `FVector3` / `FVector4`, `FQuat`, `FMatrix4`, `FTransform`, `FMath` 중 무엇부터
   - 파일 배치. `FMath`는 `Math.h`가 아니라 `SeonMath.h`([Code Convention](Conventions/CodeConvention.md) 2.1 파일 이름 예외)
   - DirectXMath 타입과의 변환 위치(헤더에 노출하지 않는 방법)
+  - 오일러 각(`FRotator` 같은 타입)을 둘지, 둔다면 축 이름과 적용 순서. LUF에서 Unreal의 Pitch / Yaw / Roll이 어느 축이 되는지 확인한다
 - **반영할 곳**: [Architecture](Architecture.md) 6. 수학과 좌표계
 
 ### 메모리 할당자
