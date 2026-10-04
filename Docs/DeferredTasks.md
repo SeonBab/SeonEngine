@@ -27,6 +27,7 @@
 | 엔진 기반 시스템 | 델리게이트 / 이벤트 | 객체 간 이벤트 통지(입력, UI, 게임 이벤트 등)가 필요할 때 |
 | 엔진 기반 시스템 | Threading | 렌더 스레드나 워커 스레드(에셋 로딩, 작업 시스템 등)를 도입할 때 |
 | 엔진 기반 시스템 | 프로젝트 경로와 `Saved` 폴더 | 에셋 로딩이나 로그 파일처럼 파일 경로가 필요한 기능을 구현할 때 |
+| 엔진 기반 시스템 | 메시지 펌프를 창 밖으로 옮기기 | 창이 둘 이상 필요할 때, 창 클래스 등록을 애플리케이션 객체로 옮길 때, 또는 `FEngine`이 메시지 루프를 가져갈 때 (먼저 오는 것) |
 | 엔진 기반 시스템 | 화면 모드 (창 / 테두리 없는 창 / 전체 화면) | 렌더러를 연결한 뒤, 게임 설정에서 화면 모드나 해상도를 바꿔야 할 때 |
 | 렌더링 | RHI (그래픽스 API 추상화 계층) | D3D12나 Vulkan 등 두 번째 그래픽스 API를 추가할 때 |
 | 렌더링 | 렌더러 / 씬 계약과 이름 | 렌더러와 씬 구조를 설계하거나 첫 렌더러 계약 헤더를 작성할 때 |
@@ -236,6 +237,17 @@
   - 변환 실패(잘못된 UTF-8 바이트) 처리: 빈 문자열 / 대체 문자(U+FFFD) / 실패를 돌려줌. `MultiByteToWideChar`의 `MB_ERR_INVALID_CHARS` 사용 여부
   - 반환 형태: `std::wstring`을 돌려줄지, 호출하는 쪽 버퍼에 쓸지
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.12 STL 사용 정책(문자열 인코딩), [Architecture](Architecture.md) 3. 플랫폼 추상화
+
+### 메시지 펌프를 창 밖으로 옮기기
+
+- **진행 시점**: 창이 둘 이상 필요할 때, 창 클래스 등록을 애플리케이션 객체로 옮길 때, 또는 `FEngine`이 메시지 루프를 가져갈 때 (먼저 오는 것)
+- **현재**: 메시지 펌프(`PumpMessages`)와 대기(`WaitForMessages`)가 `FWindow`의 멤버다. 창이 하나라 동작에는 문제가 없지만, 메시지 큐는 창이 아니라 스레드에 하나 있어서 `PeekMessageW(nullptr, …)`는 그 스레드의 모든 창과 스레드 메시지를 처리한다. 이름(창 하나의 함수)과 실제 동작(스레드 전체)이 어긋나 있다.
+- **옮기기 쉽게 유지할 것**: 두 함수는 `FWindow`의 멤버 변수를 쓰지 않는다. 닫기 요청 상태(`bCloseRequested`)는 창마다 있어야 하므로 `FWindow`에 남는다.
+- **정할 것**
+  - 옮길 곳: 정적 플랫폼 서비스(`FPlatformApplicationMisc::PumpMessages`, Architecture 3장 이름 규칙) / 애플리케이션 객체(`FWindowsApplication::PumpMessages`). Unreal은 메인 루프에서 앞의 것을, Slate에서 뒤의 것을 부른다.
+  - 대기(`WaitForMessages`)도 같은 곳으로 옮긴다. 렌더러가 붙어 대기를 이미 뺐다면 펌프만 옮긴다.
+  - 사용처(`EngineMain()` 루프 또는 `FEngine` 틱)의 호출을 `window.PumpMessages()`에서 새 위치로 바꾼다.
+- **반영할 곳**: [Architecture](Architecture.md) 3. 플랫폼 추상화
 
 ### 엔진 객체 (`FEngine`, `gEngine`)
 

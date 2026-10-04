@@ -37,6 +37,7 @@ namespace SE::Private
 				FWindow*             window       = static_cast<FWindow*>(createStruct->lpCreateParams);
 				SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 				window->nativeHandle = hwnd;
+				// 여기서 끝내지 않고 아래 HandleMessage를 거쳐 기본 처리로 넘긴다. 제목 설정 등 창 생성에 필요한 일을 기본 처리가 한다
 			}
 
 			// 창의 마지막 메시지. 이 뒤로 hwnd는 무효이므로, 객체가 사라진 창을 가리키지 않도록 연결을 끊는다
@@ -50,7 +51,26 @@ namespace SE::Private
 				SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
 			}
 
-			// WM_NCCREATE도 기본 처리로 넘겨야 한다. 제목 설정 등 창 생성에 필요한 일을 기본 처리가 한다
+			FWindow* window = reinterpret_cast<FWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+			// WM_NCCREATE보다 먼저 오는 WM_GETMINMAXINFO처럼 연결 전에 온 메시지와, 연결을 끊은 WM_NCDESTROY는 기본 처리로 넘긴다
+			if (window == nullptr)
+			{
+				return DefWindowProcW(hwnd, message, wParam, lParam);
+			}
+			return HandleMessage(*window, hwnd, message, wParam, lParam);
+		}
+
+		// 창과 연결된 FWindow가 있는 메시지를 처리한다. 직접 처리하지 않는 메시지는 기본 처리로 넘긴다
+		static LRESULT HandleMessage(FWindow& window, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+		{
+			// 창을 바로 없애지 않고 요청만 기록한다. 기본 처리에 넘기면 그 자리에서 창이 파괴되므로,
+			// 실제 파괴는 엔진 종료 순서에서 Shutdown이 한다
+			if (message == WM_CLOSE)
+			{
+				window.bCloseRequested = true;
+				return 0;
+			}
+
 			return DefWindowProcW(hwnd, message, wParam, lParam);
 		}
 	};
@@ -107,4 +127,19 @@ void FWindow::Shutdown()
 	DestroyWindow(static_cast<HWND>(nativeHandle));
 
 	UnregisterClassW(WindowClassName, GetModuleHandleW(nullptr));
+}
+
+// TODO(seon): 메시지 큐는 창이 아니라 스레드에 하나 있다. 창이 둘 이상 필요해지면 창 밖으로 옮긴다
+//             (DeferredTasks.md "메시지 펌프를 창 밖으로 옮기기"). 옮기기 쉽도록 멤버 변수를 쓰지 않는다
+void FWindow::PumpMessages()
+{
+	MSG message = {};
+	// 창 필터를 nullptr로 둬야 창에 속하지 않은 스레드 메시지까지 꺼낸다
+	while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+	{
+		// 키 입력 메시지에서 문자 메시지(WM_CHAR)를 만들어 큐에 넣는다
+		TranslateMessage(&message);
+		// 메시지가 가리키는 창의 창 프로시저를 부른다
+		DispatchMessageW(&message);
+	}
 }

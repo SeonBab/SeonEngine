@@ -15,7 +15,7 @@ namespace SE::Private
 ////////////////////////////////////////////////////////////////////////////////
 class FWindow
 {
-	// 메시지 처리 보조 구조체가 창 생성 / 파괴 중에 nativeHandle을 바꾼다
+	// 메시지 처리 보조 구조체가 창 생성 / 파괴 중에 nativeHandle을, 닫기 요청 때 bCloseRequested를 바꾼다
 	friend struct SE::Private::FWindowsWindowProc;
 
 public:
@@ -37,7 +37,16 @@ public:
 	/** 창을 없애고 창에 쓴 자원을 정리한다. */
 	void Shutdown();
 
+	/** 이 스레드의 메시지 큐에 쌓인 메시지를 모두 꺼내 창 프로시저로 보낸다. */
+	void PumpMessages();
+
+	/** 사용자가 창을 닫으려 했는가. 창은 아직 남아 있으며, 실제로 없애는 것은 Shutdown이다. */
+	bool IsCloseRequested() const { return bCloseRequested; }
+
 private:
 	// OS 창 핸들. Windows에서는 HWND이며, 구현 .cpp에서만 실제 타입으로 바꿔 쓴다.
 	void* nativeHandle = nullptr;
+
+	// 닫기 버튼 등으로 닫기 요청(WM_CLOSE)이 왔는가. 메시지 처리 보조 구조체가 세운다
+	bool bCloseRequested = false;
 };
