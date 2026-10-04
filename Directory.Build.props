@@ -34,6 +34,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SE_PLATFORM_WINDOWS=1;_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <!-- 표준 준수 전처리기(/Zc:preprocessor). 기본 전처리기는 빈 __VA_ARGS__ 앞의 쉼표를 몰래 지우는 등 표준과 다르게 동작하고 __VA_OPT__를 지원하지 않는다. -->
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 /w14668 /w14265 %(AdditionalOptions)</AdditionalOptions>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>

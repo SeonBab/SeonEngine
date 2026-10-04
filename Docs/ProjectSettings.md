@@ -6,6 +6,8 @@
 
 모든 프로젝트, 모든 구성에서 C++20(`/std:c++20`)을 쓴다. (`Directory.Build.props`, 속성 페이지: C/C++ → 언어 → C++ 언어 표준)
 
+전처리기는 표준 준수 전처리기(`/Zc:preprocessor`)를 쓴다. (`Directory.Build.props`의 `UseStandardPreprocessor`, 속성 페이지: C/C++ → 전처리기 → 표준 준수 전처리기 사용) 가변 인자 매크로에서 인자가 없을 때의 쉼표는 C++20 `__VA_OPT__`로 처리한다(`Format __VA_OPT__(,) __VA_ARGS__`). 비표준 확장 `, ##__VA_ARGS__`는 쓰지 않는다.
+
 ## 소스 인코딩
 
 소스 파일은 UTF-8 (BOM 없음)으로 저장한다.
