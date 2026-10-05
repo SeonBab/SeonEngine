@@ -19,7 +19,7 @@
 | 엔진 기반 시스템 | `SE_ENUM_CLASS_FLAGS` | 첫 비트 플래그 enum을 만들 때 |
 | 엔진 기반 시스템 | 로그 (`SE_LOG`) | assert를 구현할 때, 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때 (먼저 오는 것) |
 | 엔진 기반 시스템 | assert (`SE_ASSERT` 등) | 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때 (로그와 함께) |
-| 엔진 기반 시스템 | 문자열 변환 (`UTF8ToWide` / `WideToUTF8`) | `FString`을 Windows API에 넘기거나 받는 첫 코드를 쓸 때 (창 제목, 파일 경로 등) |
+| 엔진 기반 시스템 | 문자열 변환 (`WideToUTF8`, 파일 경로의 깨진 바이트 처리) | Windows API에서 문자열을 받는 첫 코드, 또는 파일 경로를 변환하는 첫 코드를 쓸 때 |
 | 엔진 기반 시스템 | 엔진 객체 (`FEngine`, `gEngine`) | 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때 |
 | 엔진 기반 시스템 | 수학 타입 (`FVector3`, `FMatrix4` 등) | 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
@@ -232,15 +232,14 @@
   - 매크로 인자를 Release에서 제거할 때 "사용하지 않는 변수" 경고를 피하는 방법
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 5.2 Assert
 
-### 문자열 변환 (`UTF8ToWide` / `WideToUTF8`)
+### 문자열 변환 (`WideToUTF8`, 파일 경로의 깨진 바이트 처리)
 
-- **진행 시점**: `FString`(UTF-8)을 Windows API에 넘기거나 Windows API에서 받는 첫 코드를 쓸 때. 창 제목, 파일 경로 등.
-- **현재**: 규칙(엔진 안은 UTF-8, Windows API 경계에서만 UTF-16)만 있다. `FString`(`std::string` 별칭)은 인코딩을 검사하지 않는다.
+- **진행 시점**: Windows API에서 문자열을 받는 첫 코드(`WideToUTF8`), 또는 파일 경로를 UTF-16으로 바꾸는 첫 코드를 쓸 때
+- **현재**: `FWindowsString::UTF8ToWide`(`Platform/Windows/WindowsString.h`)가 있다. 깨진 바이트는 U+FFFD로 바꾸고, 변환 자체가 실패하면 `std::nullopt`. 이 대체 정책은 로그 출력용으로 정했다.
 - **정할 것**
-  - 위치: `Engine/Private/Platform/Windows/`. Core에 두면 Core가 Windows API를 부르게 된다.
-  - 변환 실패(잘못된 UTF-8 바이트) 처리: 빈 문자열 / 대체 문자(U+FFFD) / 실패를 돌려줌. `MultiByteToWideChar`의 `MB_ERR_INVALID_CHARS` 사용 여부
-  - 반환 형태: `std::wstring`을 돌려줄지, 호출하는 쪽 버퍼에 쓸지
-- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.12 STL 사용 정책(문자열 인코딩), [Architecture](Architecture.md) 3. 플랫폼 추상화
+  - `WideToUTF8`: 같은 struct에 둔다. 짝이 맞지 않는 서로게이트 같은 깨진 UTF-16을 어떻게 다룰지(`WideCharToMultiByte`의 `WC_ERR_INVALID_CHARS` 사용 여부)
+  - 파일 경로 변환: 깨진 바이트를 조용히 U+FFFD로 바꾸면 다른 파일을 가리킬 수 있다. 경로용으로는 `MB_ERR_INVALID_CHARS`로 실패시키는 엄격한 변환을 따로 둘지
+- **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.12 STL 사용 정책(문자열 인코딩)
 
 ### 메시지 펌프를 창 밖으로 옮기기
 
@@ -344,7 +343,7 @@
 - **진행 시점**: 렌더러를 연결한 뒤, 게임 설정에서 화면 모드나 해상도를 바꿔야 할 때
 - **현재**: 창은 `WS_OVERLAPPEDWINDOW`(제목, 최소화 / 최대화 / 닫기, 크기 조절) 한 가지로 만든다. 크기와 제목은 `Platform/Windows/WindowsWindow.cpp`의 상수다.
 - **정할 것**
-  - 창 설정 구조체(크기, 제목, 화면 모드)를 `Initialize`에 넘기는 방식. 제목을 `FString`으로 받으면 "문자열 변환"이 먼저 필요하다.
+  - 창 설정 구조체(크기, 제목, 화면 모드)를 `Initialize`에 넘기는 방식. 제목을 `FString`으로 받으면 `FWindowsString::UTF8ToWide`로 바꿔 넘긴다.
   - 테두리 없는 창(`WS_POPUP` + 모니터 크기)으로 바꾸는 방법. 실행 중에는 `SetWindowLongPtrW(GWL_STYLE)`로 스타일을 바꾸고 `SetWindowPos`로 반영한다.
   - 전체 화면(그래픽스 API가 화면 출력을 독점)에서 창과 렌더러가 나누는 역할
   - 모드를 바꿀 때 창 크기 / 위치 재계산과 렌더러 크기 변경 순서
