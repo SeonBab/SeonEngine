@@ -1,8 +1,9 @@
-#include "HAL/PlatformMisc.h"
+#include "Windows/WindowsPlatformMisc.h"
+
 #include "Platform/Windows/WindowsHWrapper.h"
 #include "Platform/Windows/WindowsString.h"
 
-bool FPlatformMisc::IsDebuggerPresent()
+bool FWindowsPlatformMisc::IsDebuggerPresent()
 {
 #if SE_BUILD_RELEASE
 	return false;
@@ -13,7 +14,7 @@ bool FPlatformMisc::IsDebuggerPresent()
 #endif
 }
 
-void FPlatformMisc::LowLevelOutputDebugString(FStringView message)
+void FWindowsPlatformMisc::LowLevelOutputDebugString(FStringView message)
 {
 	if (const std::optional<std::wstring> wideMessage = FWindowsString::UTF8ToWide(message))
 	{

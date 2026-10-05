@@ -1,5 +1,6 @@
+#include "Windows/WindowsPlatformProcess.h"
+
 #include "Containers/SeonString.h"
-#include "HAL/PlatformProcess.h"
 #include "Platform/Windows/WindowsHWrapper.h"
 #include "Platform/Windows/WindowsString.h"
 
@@ -92,14 +93,14 @@ namespace
 	}
 }
 
-std::optional<FString> FPlatformProcess::BaseDir()
+std::optional<FString> FWindowsPlatformProcess::BaseDir()
 {
 	// 실행 중에 실행 파일 위치는 바뀌지 않으므로 처음 부를 때 한 번만 구한다
 	static const std::optional<FString> baseDir = ComputeBaseDir();
 	return baseDir;
 }
 
-std::optional<FString> FPlatformProcess::ExecutableName()
+std::optional<FString> FWindowsPlatformProcess::ExecutableName()
 {
 	// 실행 중에 실행 파일 이름은 바뀌지 않으므로 처음 부를 때 한 번만 구한다
 	static const std::optional<FString> executableName = ComputeExecutableName();

@@ -36,6 +36,9 @@
 
 `Engine/ThirdParty/.clang-format`은 서드파티 폴더의 서식 정리와 include 정렬을 끈다(Code Convention 6.3 예외 조항).
 
+- **`WhitespaceSensitiveMacros`** — 인자 안의 공백이 결과에 영향을 주는 매크로를 등록한다. 엔진의 `SE_STRINGIZE`(플랫폼 헤더 경로)와 clang-format 기본 다섯 이름(`BOOST_PP_STRINGIZE`, `CF_SWIFT_NAME`, `NS_SWIFT_NAME`, `PP_STRINGIZE`, `STRINGIZE`)을 함께 적는다. 이 목록은 기본 목록을 앞에서부터 덮어쓰므로, 기본 이름을 빼지 않으려면 함께 적어야 한다. clang-format 버전을 바꾸면 `clang-format --dump-config`로 실제로 읽힌 목록과 새 기본 이름을 확인한다.
+- 옵션은 파일 마지막 줄 `...`(YAML 문서 끝 표시) 앞에 넣는다. 뒤에 넣으면 clang-format이 설정을 읽지 못한다.
+
 ## `.gitattributes`
 
 줄바꿈을 각자의 `core.autocrlf` 설정과 관계없이 고정한다.
@@ -164,4 +167,4 @@ SeonEngine/
 | 외부 헤더 | `<>` include를 외부 헤더로 취급, 경고 끔 | 외부 포함 → 괄호로 묶인 포함을 외부로 처리 / 외부 헤더 경고 수준 |
 | C++ 예외 | 끔 (`_HAS_EXCEPTIONS=0` 정의) | 코드 생성 → C++ 예외 처리 가능 |
 | RTTI | 끔 (`/GR-`) | 언어 → 런타임 형식 정보 사용 |
-| 전처리기 정의 | `SE_PLATFORM_WINDOWS`, `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` (구성별 0 / 1) | 전처리기 → 전처리기 정의 |
+| 전처리기 정의 | `SE_PLATFORM_WINDOWS`, `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` (구성별 0 / 1), `SE_PLATFORM_HEADER_NAME=Windows`(플랫폼 헤더 경로를 만드는 이름, Architecture 3장 "플랫폼 헤더 고르기") | 전처리기 → 전처리기 정의 |

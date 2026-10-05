@@ -638,7 +638,7 @@
 
   상수는 `constexpr`, 함수는 inline 함수나 템플릿으로 쓴다(`#define SE_MAX_LIGHTS 16` 같은 매크로 상수는 쓰지 않는다).
 
-- **분기 매크로** — 항상 `0` 또는 `1`로 정의하고 `#if`로 검사한다. 꺼진 기능도 정의를 생략하지 않고 `0`으로 둔다(`#define SE_WITH_EDITOR 0` → `#if SE_WITH_EDITOR`). `#ifdef`는 쓰지 않는다. 이름은 종류에 따라 접두사를 나눈다.
+- **분기 매크로** — 항상 `0` 또는 `1`로 정의하고 `#if`로 검사한다. 꺼진 기능도 정의를 생략하지 않고 `0`으로 둔다(`#define SE_WITH_EDITOR 0` → `#if SE_WITH_EDITOR`). `#ifdef`는 쓰지 않는다. 예외로, 헤더 경로 생성용 이름 매크로(`SE_PLATFORM_HEADER_NAME`)처럼 0 / 1이 아닌 필수 입력이 정의되었는지 확인할 때는 `#if !defined(MACRO)` → `#error`를 쓸 수 있다. 이름은 종류에 따라 접두사를 나눈다.
 
   | 접두사 | 용도 | 예시 |
   |---|---|---|

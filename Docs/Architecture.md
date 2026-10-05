@@ -83,40 +83,69 @@
 
 ## 3. 플랫폼 추상화
 
-- **분기 코드 위치** — 플랫폼별 코드는 `Platform/` 폴더에만 둔다. 그 외에는 Core의 플랫폼 매크로 정의 헤더만 `#if SE_PLATFORM_*` 분기를 쓸 수 있다. 일반 코드는 플랫폼에 따라 나뉘지 않는다.
+- **분기 코드 위치** — 플랫폼별 코드(OS API를 부르는 코드)는 `Engine/Private/Platform/` 폴더에만 둔다. 예외는 HAL의 플랫폼 선언 헤더(`Core/Public/<플랫폼>/`, 아래 "구현 방식")로, OS 헤더를 include하지 않고 선언과 `using`만 둔다. 그 외에는 Core의 플랫폼 매크로 정의 헤더만 `#if SE_PLATFORM_*` 분기를 쓸 수 있다. 일반 코드는 플랫폼에 따라 나뉘지 않는다.
 
   ```text
-  Engine/
-  └─ Private/
-     └─ Platform/
-        ├─ PlatformFile.h
-        └─ Windows/
-           └─ WindowsPlatformFile.cpp
+  Engine/Source/
+  ├─ Core/Public/
+  │  ├─ HAL/PlatformMisc.h                    입구 (쓰는 코드가 include)
+  │  ├─ GenericPlatform/GenericPlatformMisc.h 모든 플랫폼이 제공할 함수 목록과 설명
+  │  └─ Windows/WindowsPlatformMisc.h         Windows 선언, using FPlatformMisc = FWindowsPlatformMisc
+  └─ Engine/Private/Platform/Windows/
+     └─ WindowsPlatformMisc.cpp               Windows 본문 (OS API 호출)
   ```
 
-- **플랫폼별 상수** — 줄바꿈(`LineTerminator`)처럼 플랫폼마다 값이 다른 상수는 `Core/Public/HAL/Platform.h`에 둔다. 지원 플랫폼이 하나인 동안은 이 헤더에 그 플랫폼의 값을 바로 두고, 플랫폼이 두 개 이상이 되면 플랫폼별 헤더(`Windows/WindowsPlatform.h` 등)로 나눈 뒤 `HAL/Platform.h`가 골라 include한다. 쓰는 코드는 항상 `HAL/Platform.h`만 include한다.
-- **구현 방식** — 지원 플랫폼이 하나인 동안은 공통 헤더에 선언하고 플랫폼별 `.cpp`에서 구현한다. 플랫폼이 두 개 이상이 되면 `Generic` 공통 구현을 두고 플랫폼 구현이 상속한 뒤 `using`으로 고르는 방식으로 바꾼다. 두 방식 모두 사용하는 코드는 `FPlatformFile`이라는 같은 이름을 쓰므로 전환할 때 사용처를 고치지 않는다.
+- **플랫폼별 상수** — 줄바꿈(`LineTerminator`)처럼 플랫폼마다 값이 다른 C++ 상수는 플랫폼별 헤더(`Core/Public/Windows/WindowsPlatform.h` 등)에 같은 이름의 `constexpr` 전역 상수로 정의한다. 플랫폼마다 반드시 정의한다(기본값 없음). 쓰는 코드는 입구 `Core/Public/HAL/Platform.h`만 include한다. 여러 플랫폼의 값을 함께 다루거나 공통 기본값을 묶어 관리해야 하면 struct(`FPlatformProperties`) 도입을 검토한다.
+- **플랫폼 헤더 고르기** — 입구 헤더는 `HAL/PreprocessorHelpers.h`의 `SE_COMPILED_PLATFORM_HEADER`로 빌드하는 플랫폼의 헤더를 include한다. 플랫폼별 `#if` / `#elif`를 입구마다 쓰지 않는다.
 
   ```cpp
-  // 플랫폼이 하나일 때
-  // PlatformFile.h
-  class FPlatformFile
+  // HAL/PlatformMisc.h
+  #include "GenericPlatform/GenericPlatformMisc.h"
+  #include "HAL/PreprocessorHelpers.h"
+
+  #include SE_COMPILED_PLATFORM_HEADER(PlatformMisc.h)    // Windows 빌드: "Windows/WindowsPlatformMisc.h"
+  ```
+
+  - 플랫폼 이름(`SE_PLATFORM_HEADER_NAME`)은 빌드 설정이 준다([Project Settings](ProjectSettings.md)). 없으면 `HAL/PreprocessorHelpers.h`가 `#error`로 멈춘다.
+  - 플랫폼 헤더는 `<플랫폼>/<플랫폼><이름>.h`(예: `Windows/WindowsPlatformMisc.h`)로 둔다.
+  - 플랫폼 헤더는 맨 위에서 자기 플랫폼 빌드인지 확인한다. 플랫폼 값과 이름이 어긋나면 여기서 멈춘다.
+
+    ```cpp
+    #if !SE_PLATFORM_WINDOWS
+    #error "Windows 헤더가 Windows가 아닌 빌드에서 include됐습니다. SE_PLATFORM_HEADER_NAME을 확인하세요."
+    #endif
+    ```
+- **구현 방식** — 정적 함수로 쓰는 플랫폼 서비스(HAL)는 세 층으로 만든다. 지원 플랫폼이 하나여도 같다.
+  - `GenericPlatform/Generic….h`: 모든 플랫폼이 제공할 함수를 선언하고 설명한다. 본문은 모든 플랫폼에서 같은 것만 둔다.
+  - `<플랫폼>/<플랫폼>….h`: Generic을 상속하고 그 플랫폼이 구현하는 함수를 다시 선언한 뒤, `using`으로 공통 이름을 붙인다. 설명 주석은 Generic에만 둔다.
+  - `HAL/….h`: 입구. 위 "플랫폼 헤더 고르기"로 플랫폼 헤더를 include한다. 쓰는 코드는 이것만 include한다.
+  - 본문은 `Engine/Private/Platform/<플랫폼>/`의 `.cpp`에 `F<플랫폼>Platform…::함수`로 정의한다.
+
+  ```cpp
+  // GenericPlatform/GenericPlatformFile.h
+  struct FGenericPlatformFile
   {
-  public:
+  	/** 파일이 있는지 알려 준다. */
   	static bool Exists(const FString& path);
   };
 
-  // Windows/WindowsPlatformFile.cpp
-  bool FPlatformFile::Exists(const FString& path)
+  // Windows/WindowsPlatformFile.h (OS 헤더 없이 선언만)
+  struct FWindowsPlatformFile : public FGenericPlatformFile
+  {
+  	static bool Exists(const FString& path);
+  };
+
+  using FPlatformFile = FWindowsPlatformFile;
+
+  // Engine/Private/Platform/Windows/WindowsPlatformFile.cpp
+  bool FWindowsPlatformFile::Exists(const FString& path)
   {
   	...
   }
 
-  // 플랫폼이 둘 이상일 때
-  struct FGenericPlatformFile { ... };
-  struct FWindowsPlatformFile : FGenericPlatformFile { ... };
-
-  using FPlatformFile = FWindowsPlatformFile;
+  // 쓰는 코드
+  #include "HAL/PlatformFile.h"
+  FPlatformFile::Exists(path);
   ```
 
 - **이름** — 객체를 만들지 않고 정적 함수로 쓰는 플랫폼 서비스는 `FPlatform` + 이름(`FPlatformFile`, 플랫폼 구현은 `FWindowsPlatformFile`)으로 짓는다. 인스턴스를 만들어 쓰는 플랫폼 객체는 `Platform`을 붙이지 않는다(`FWindow`, 플랫폼 구현 파일은 `Windows/WindowsWindow.cpp`, 플랫폼이 둘 이상이 되면 `FGenericWindow` / `FWindowsWindow`).

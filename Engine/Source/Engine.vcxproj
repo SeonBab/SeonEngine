@@ -59,9 +59,12 @@
     <ClInclude Include="Core\Public\Containers\HashMap.h" />
     <ClInclude Include="Core\Public\Containers\SeonString.h" />
     <ClInclude Include="Core\Public\CoreTypes.h" />
+    <ClInclude Include="Core\Public\GenericPlatform\GenericPlatformMisc.h" />
+    <ClInclude Include="Core\Public\GenericPlatform\GenericPlatformProcess.h" />
     <ClInclude Include="Core\Public\HAL\Platform.h" />
     <ClInclude Include="Core\Public\HAL\PlatformMisc.h" />
     <ClInclude Include="Core\Public\HAL\PlatformProcess.h" />
+    <ClInclude Include="Core\Public\HAL\PreprocessorHelpers.h" />
     <ClInclude Include="Core\Public\Logging\LogCategory.h" />
     <ClInclude Include="Core\Public\Logging\LogMacros.h" />
     <ClInclude Include="Core\Public\Logging\LogRecord.h" />
@@ -72,6 +75,9 @@
     <ClInclude Include="Core\Public\Logging\OutputDeviceRedirector.h" />
     <ClInclude Include="Core\Public\Templates\SharedPointer.h" />
     <ClInclude Include="Core\Public\Templates\UniquePtr.h" />
+    <ClInclude Include="Core\Public\Windows\WindowsPlatform.h" />
+    <ClInclude Include="Core\Public\Windows\WindowsPlatformMisc.h" />
+    <ClInclude Include="Core\Public\Windows\WindowsPlatformProcess.h" />
     <ClInclude Include="Engine\Private\Launch\EngineMain.h" />
     <ClInclude Include="Engine\Private\Platform\Window.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsHWrapper.h" />

@@ -16,6 +16,9 @@
     <Filter Include="Core\Public\Containers">
       <UniqueIdentifier>{2EA4CED6-FDA6-301D-9C88-35E5875D6E8A}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Public\GenericPlatform">
+      <UniqueIdentifier>{6AE07915-74D1-333A-9916-97692548F323}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Public\HAL">
       <UniqueIdentifier>{A9708FBB-1C0C-3E98-B721-81335F9CF2BC}</UniqueIdentifier>
     </Filter>
@@ -24,6 +27,9 @@
     </Filter>
     <Filter Include="Core\Public\Templates">
       <UniqueIdentifier>{57347ADC-B9B5-36DA-8E9F-F15B24651EE4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Public\Windows">
+      <UniqueIdentifier>{EB957412-6040-32A4-8CB2-C71D220CF010}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{DCEDBFB7-7356-351C-B584-5097F9AACC9F}</UniqueIdentifier>
@@ -54,6 +60,12 @@
     <ClInclude Include="Core\Public\CoreTypes.h">
       <Filter>Core\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\GenericPlatform\GenericPlatformMisc.h">
+      <Filter>Core\Public\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\GenericPlatform\GenericPlatformProcess.h">
+      <Filter>Core\Public\GenericPlatform</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\HAL\Platform.h">
       <Filter>Core\Public\HAL</Filter>
     </ClInclude>
@@ -61,6 +73,9 @@
       <Filter>Core\Public\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Core\Public\HAL\PlatformProcess.h">
+      <Filter>Core\Public\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\HAL\PreprocessorHelpers.h">
       <Filter>Core\Public\HAL</Filter>
     </ClInclude>
     <ClInclude Include="Core\Public\Logging\LogCategory.h">
@@ -92,6 +107,15 @@
     </ClInclude>
     <ClInclude Include="Core\Public\Templates\UniquePtr.h">
       <Filter>Core\Public\Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Windows\WindowsPlatform.h">
+      <Filter>Core\Public\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Windows\WindowsPlatformMisc.h">
+      <Filter>Core\Public\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Windows\WindowsPlatformProcess.h">
+      <Filter>Core\Public\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Private\Launch\EngineMain.h">
       <Filter>Engine\Private\Launch</Filter>

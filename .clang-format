@@ -103,4 +103,15 @@ IncludeCategories:
 FixNamespaceComments: false
 InsertNewlineAtEOF: true
 LineEnding: CRLF
+
+# 인자 안의 공백이 결과에 영향을 주는 매크로(문자열화 등). 이 목록은 기본 목록을 앞에서부터 덮어쓰므로
+# 기본 다섯 이름을 함께 적어 유지하고 엔진의 SE_STRINGIZE(플랫폼 헤더 경로 등)를 더한다.
+# clang-format 버전을 바꾸면 --dump-config로 실제 목록과 새 기본 이름을 확인한다
+WhitespaceSensitiveMacros:
+  - BOOST_PP_STRINGIZE
+  - CF_SWIFT_NAME
+  - NS_SWIFT_NAME
+  - PP_STRINGIZE
+  - STRINGIZE
+  - SE_STRINGIZE
 ...
