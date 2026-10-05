@@ -37,3 +37,36 @@ std::optional<std::wstring> FWindowsString::UTF8ToWide(FStringView utf8)
 	}
 	return wide;
 }
+
+std::optional<FString> FWindowsString::WideToUTF8(std::wstring_view wide, EInvalidCharacter invalidCharacter)
+{
+	// WideCharToMultiByte도 길이 0을 잘못된 인자로 보고 실패한다
+	if (wide.empty())
+	{
+		return FString();
+	}
+
+	if (wide.size() > static_cast<size_t>(std::numeric_limits<int32>::max()))
+	{
+		return std::nullopt;
+	}
+	const int32 wideLength = static_cast<int32>(wide.size());
+
+	// WC_ERR_INVALID_CHARS를 주면 깨진 글자에서 실패하고, 주지 않으면 U+FFFD로 바꾸고 계속한다.
+	// CP_UTF8에서는 마지막 두 인자(대체 문자 지정, 대체했는지 받기)를 반드시 nullptr로 줘야 한다
+	const DWORD flags = invalidCharacter == EInvalidCharacter::Fail ? WC_ERR_INVALID_CHARS : 0;
+	const int32 utf8Length = ::WideCharToMultiByte(CP_UTF8, flags, wide.data(), wideLength, nullptr, 0, nullptr, nullptr);
+	if (utf8Length == 0)
+	{
+		return std::nullopt;
+	}
+
+	FString utf8(static_cast<size_t>(utf8Length), '\0');
+	const int32 written =
+		::WideCharToMultiByte(CP_UTF8, flags, wide.data(), wideLength, utf8.data(), utf8Length, nullptr, nullptr);
+	if (written != utf8Length)
+	{
+		return std::nullopt;
+	}
+	return utf8;
+}

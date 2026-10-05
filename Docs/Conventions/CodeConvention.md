@@ -739,7 +739,8 @@
 - **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Core/Public/CoreTypes.h`). 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
 - **문자열 인코딩** — 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다. 변환은 `Platform/Windows/WindowsString.h`의 `FWindowsString`으로 한다.
   - `FWindowsString::UTF8ToWide`는 깨진 UTF-8 바이트를 U+FFFD로 바꾸고 계속한다. 변환 자체가 실패하면 `std::nullopt`를 돌려주므로 값이 있는지 확인하고 쓴다.
-  - 파일 경로를 변환할 때 깨진 바이트를 어떻게 다룰지는 정하지 않았다([Deferred Tasks](../DeferredTasks.md) "문자열 변환").
+  - `FWindowsString::WideToUTF8`은 Windows API가 돌려준 UTF-16을 엔진 문자열로 받을 때 쓴다. 깨진 UTF-16(짝이 없는 서로게이트)을 만났을 때 할 일은 부르는 쪽이 `EInvalidCharacter`로 고른다. 사람이 읽을 글자는 `Replace`(기본, U+FFFD로 바꾸고 계속), 경로처럼 OS에 다시 넘길 값은 `Fail`(`std::nullopt`)이다. Windows는 파일 이름에 깨진 UTF-16을 허용하므로, 바꿔서 쓰면 다른 파일을 가리킨다.
+  - 엔진의 UTF-8 경로를 UTF-16으로 바꿀 때 깨진 바이트를 어떻게 다룰지는 정하지 않았다([Deferred Tasks](../DeferredTasks.md) "문자열 변환").
 
   ```cpp
   FString message = "창 생성 완료";
@@ -749,6 +750,9 @@
   {
   	OutputDebugStringW(wideMessage->c_str());
   }
+
+  // 경로는 OS에 다시 넘기므로 깨진 글자가 있으면 실패시킨다
+  const std::optional<FString> path = FWindowsString::WideToUTF8(modulePath, EInvalidCharacter::Fail);
   ```
 
 ---

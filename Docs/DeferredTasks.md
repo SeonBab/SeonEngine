@@ -19,7 +19,7 @@
 | 엔진 기반 시스템 | `SE_ENUM_CLASS_FLAGS` | 첫 비트 플래그 enum을 만들 때 |
 | 엔진 기반 시스템 | 로그 (`SE_LOG`) | assert를 구현할 때, 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때 (먼저 오는 것) |
 | 엔진 기반 시스템 | assert (`SE_ASSERT` 등) | 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때 (로그와 함께) |
-| 엔진 기반 시스템 | 문자열 변환 (`WideToUTF8`, 파일 경로의 깨진 바이트 처리) | Windows API에서 문자열을 받는 첫 코드, 또는 파일 경로를 변환하는 첫 코드를 쓸 때 |
+| 엔진 기반 시스템 | 문자열 변환 (UTF-8 경로의 깨진 바이트 처리, 경로 전용 타입) | 엔진의 UTF-8 경로를 UTF-16으로 바꾸는 첫 코드를 쓸 때, 또는 OS에서 받는 경로가 여럿이 될 때 |
 | 엔진 기반 시스템 | 엔진 객체 (`FEngine`, `gEngine`) | 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때 |
 | 엔진 기반 시스템 | 수학 타입 (`FVector3`, `FMatrix4` 등) | 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
@@ -232,13 +232,13 @@
   - 매크로 인자를 Release에서 제거할 때 "사용하지 않는 변수" 경고를 피하는 방법
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 5.2 Assert
 
-### 문자열 변환 (`WideToUTF8`, 파일 경로의 깨진 바이트 처리)
+### 문자열 변환 (UTF-8 경로의 깨진 바이트 처리, 경로 전용 타입)
 
-- **진행 시점**: Windows API에서 문자열을 받는 첫 코드(`WideToUTF8`), 또는 파일 경로를 UTF-16으로 바꾸는 첫 코드를 쓸 때
-- **현재**: `FWindowsString::UTF8ToWide`(`Platform/Windows/WindowsString.h`)가 있다. 깨진 바이트는 U+FFFD로 바꾸고, 변환 자체가 실패하면 `std::nullopt`. 이 대체 정책은 로그 출력용으로 정했다.
+- **진행 시점**: 엔진의 UTF-8 경로를 UTF-16으로 바꿔 Windows API에 넘기는 첫 코드를 쓸 때, 또는 OS에서 받는 경로가 여럿이 될 때(파일 대화상자, 폴더 훑기 등)
+- **현재**: `FWindowsString`(`Platform/Windows/WindowsString.h`)에 두 방향이 있다. `UTF8ToWide`는 깨진 바이트를 U+FFFD로 바꾸고 계속한다(로그 출력용으로 정함). `WideToUTF8`은 깨진 UTF-16을 만났을 때 할 일을 부르는 쪽이 `EInvalidCharacter`(`Replace` / `Fail`)로 고른다. OS가 준 경로는 `Fail`로 받는다.
 - **정할 것**
-  - `WideToUTF8`: 같은 struct에 둔다. 짝이 맞지 않는 서로게이트 같은 깨진 UTF-16을 어떻게 다룰지(`WideCharToMultiByte`의 `WC_ERR_INVALID_CHARS` 사용 여부)
-  - 파일 경로 변환: 깨진 바이트를 조용히 U+FFFD로 바꾸면 다른 파일을 가리킬 수 있다. 경로용으로는 `MB_ERR_INVALID_CHARS`로 실패시키는 엄격한 변환을 따로 둘지
+  - `UTF8ToWide`에도 `EInvalidCharacter`를 둘지. 경로에 깨진 UTF-8이 섞이면 조용히 다른 파일을 가리킬 수 있다(`MB_ERR_INVALID_CHARS`)
+  - 경로 전용 타입: OS 형식을 그대로 보관해 깨진 이름도 잃지 않는 타입을 둘지(Chromium `FilePath`는 Windows에서 `std::wstring`, Rust `OsString`은 WTF-8). 후보는 `std::filesystem::path` 등
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.12 STL 사용 정책(문자열 인코딩)
 
 ### 메시지 펌프를 창 밖으로 옮기기
