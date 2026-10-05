@@ -61,6 +61,7 @@
     <ClInclude Include="Core\Public\CoreTypes.h" />
     <ClInclude Include="Core\Public\HAL\Platform.h" />
     <ClInclude Include="Core\Public\HAL\PlatformMisc.h" />
+    <ClInclude Include="Core\Public\HAL\PlatformProcess.h" />
     <ClInclude Include="Core\Public\Logging\LogCategory.h" />
     <ClInclude Include="Core\Public\Logging\LogMacros.h" />
     <ClInclude Include="Core\Public\Logging\LogRecord.h" />
@@ -84,6 +85,7 @@
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformMisc.cpp" />
+    <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformProcess.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsString.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsWindow.cpp" />
   </ItemGroup>

@@ -20,6 +20,7 @@
 | 엔진 기반 시스템 | 로그 (`SE_LOG`) | assert를 구현할 때, 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때 (먼저 오는 것) |
 | 엔진 기반 시스템 | assert (`SE_ASSERT` 등) | 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때 (로그와 함께) |
 | 엔진 기반 시스템 | 문자열 변환 (UTF-8 경로의 깨진 바이트 처리, 경로 전용 타입) | 엔진의 UTF-8 경로를 UTF-16으로 바꾸는 첫 코드를 쓸 때, 또는 OS에서 받는 경로가 여럿이 될 때 |
+| 엔진 기반 시스템 | 긴 경로 지원 (260자 초과) | 파일 시스템 작업(에셋 읽기, `FPlatformFile` 등)을 시작할 때, 또는 긴 경로 문제를 실제로 만났을 때 |
 | 엔진 기반 시스템 | 엔진 객체 (`FEngine`, `gEngine`) | 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때 |
 | 엔진 기반 시스템 | 수학 타입 (`FVector3`, `FMatrix4` 등) | 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
@@ -240,6 +241,18 @@
   - `UTF8ToWide`에도 `EInvalidCharacter`를 둘지. 경로에 깨진 UTF-8이 섞이면 조용히 다른 파일을 가리킬 수 있다(`MB_ERR_INVALID_CHARS`)
   - 경로 전용 타입: OS 형식을 그대로 보관해 깨진 이름도 잃지 않는 타입을 둘지(Chromium `FilePath`는 Windows에서 `std::wstring`, Rust `OsString`은 WTF-8). 후보는 `std::filesystem::path` 등
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 3.12 STL 사용 정책(문자열 인코딩)
+
+### 긴 경로 지원 (260자 초과)
+
+- **진행 시점**: 파일 시스템 작업(에셋 읽기, `FPlatformFile` 등)을 시작할 때, 또는 긴 경로 문제를 실제로 만났을 때
+- **현재**: 지원하지 않는다. `FPlatformProcess::BaseDir()`은 실행 파일 경로를 최대 길이 버퍼로 받아 잘리지 않지만, 그 경로를 260자를 넘는 곳에서 쓸 수는 없다.
+  - `SampleGame`에 `longPathAware` 매니페스트가 없어, Windows 긴 경로 설정(`LongPathsEnabled`)이 켜져 있어도 260자를 넘는 경로를 보통 형식으로 쓸 수 없다.
+  - `\\?\`로 실행하면 받은 경로에 접두사가 붙고, `\` → `/` 변환으로 `//?/`가 되어 긴 경로로는 쓸 수 없다.
+- **할 것**
+  - 실행 파일 매니페스트에 `longPathAware` 추가 (Unreal: `Engine/Build/Windows/Resources/Default-Win64.manifest`)
+  - OS에서 받은 경로의 `\\?\`(`\\?\UNC\`) 떼기 (Unreal: `FWindowsPlatformFile::GetFilenameOnDisk`, Godot: `trim_prefix`)
+  - 260자 이상인 경로를 Windows API에 넘길 때 `\\?\` 붙이기 (Unreal: `WindowsPlatformFile.cpp`의 경로 정규화)
+- **반영할 곳**: [Architecture](Architecture.md) 3장(플랫폼), 파일 입출력 규칙
 
 ### 메시지 펌프를 창 밖으로 옮기기
 

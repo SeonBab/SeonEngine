@@ -60,6 +60,9 @@
     <ClInclude Include="Core\Public\HAL\PlatformMisc.h">
       <Filter>Core\Public\HAL</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\HAL\PlatformProcess.h">
+      <Filter>Core\Public\HAL</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\Logging\LogCategory.h">
       <Filter>Core\Public\Logging</Filter>
     </ClInclude>
@@ -123,6 +126,9 @@
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformMisc.cpp">
+      <Filter>Engine\Private\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformProcess.cpp">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsString.cpp">
