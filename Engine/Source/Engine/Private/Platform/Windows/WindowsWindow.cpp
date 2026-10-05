@@ -1,7 +1,7 @@
 #include "Platform/Window.h"
 
 #include "CoreTypes.h"
-#include "Platform/Windows/WindowsHeaders.h"
+#include "Platform/Windows/WindowsHWrapper.h"
 
 // Window.h에 선언한 플랫폼 창의 Windows 구현이다. Win32 호출은 이 파일에만 둔다.
 

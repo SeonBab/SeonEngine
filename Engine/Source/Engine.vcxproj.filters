@@ -84,7 +84,7 @@
     <ClInclude Include="Engine\Private\Platform\Window.h">
       <Filter>Engine\Private\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Private\Platform\Windows\WindowsHeaders.h">
+    <ClInclude Include="Engine\Private\Platform\Windows\WindowsHWrapper.h">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClInclude>
   </ItemGroup>
