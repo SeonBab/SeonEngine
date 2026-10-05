@@ -32,15 +32,15 @@
   class IOutputDevice
   {
   public:
-  	virtual ~IOutputDevice() = default;
-  	virtual void Write(const FLogRecord& record) = 0;
+    virtual ~IOutputDevice() = default;
+    virtual void Write(const FLogRecord& record) = 0;
   };
 
   // Editor — 구현해서 Core에 등록 (에디터 로그 창이 기록을 받아 보관)
   class FEditorLogOutputDevice final : public IOutputDevice
   {
   public:
-  	void Write(const FLogRecord& record) override;
+    void Write(const FLogRecord& record) override;
   };
   ```
 
@@ -54,17 +54,17 @@
   ```cpp
   bool FEngine::Initialize()
   {
-  	if (!platform->Initialize()) { return false; }
-  	if (!renderer->Initialize(rendererDesc)) { return false; }
-  	if (!input->Initialize()) { return false; }
-  	return true;
+    if (!platform->Initialize()) { return false; }
+    if (!renderer->Initialize(rendererDesc)) { return false; }
+    if (!input->Initialize()) { return false; }
+    return true;
   }
 
   void FEngine::Shutdown()
   {
-  	input->Shutdown();
-  	renderer->Shutdown();
-  	platform->Shutdown();
+    input->Shutdown();
+    renderer->Shutdown();
+    platform->Shutdown();
   }
   ```
 
@@ -125,14 +125,14 @@
   // GenericPlatform/GenericPlatformFile.h
   struct FGenericPlatformFile
   {
-  	/** 파일이 있는지 알려 준다. */
-  	static bool Exists(const FString& path);
+    /** 파일이 있는지 알려 준다. */
+    static bool Exists(const FString& path);
   };
 
   // Windows/WindowsPlatformFile.h (OS 헤더 없이 선언만)
   struct FWindowsPlatformFile : public FGenericPlatformFile
   {
-  	static bool Exists(const FString& path);
+    static bool Exists(const FString& path);
   };
 
   using FPlatformFile = FWindowsPlatformFile;
@@ -140,7 +140,7 @@
   // Engine/Private/Platform/Windows/WindowsPlatformFile.cpp
   bool FWindowsPlatformFile::Exists(const FString& path)
   {
-  	...
+    ...
   }
 
   // 쓰는 코드

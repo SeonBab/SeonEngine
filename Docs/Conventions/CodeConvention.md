@@ -74,7 +74,7 @@
 
   // 금지 — 중괄호 생략
   if (!device)
-  	return;
+    return;
 
   // 금지 — early exit가 아닌 본문은 Allman
   if (mesh) { mesh->Upload(); }
@@ -86,8 +86,8 @@
   class FMesh
   {
   public:
-  	uint32 GetVertexCount() const { return vertexCount; }
-  	bool IsVisible() const { return bVisible; }
+    uint32 GetVertexCount() const { return vertexCount; }
+    bool IsVisible() const { return bVisible; }
   };
   ```
 
@@ -104,9 +104,9 @@
   using int16 = signed short;
 
   HWND hwnd = CreateWindowExW(
-  	0,                   // 확장 스타일
-  	WS_OVERLAPPEDWINDOW, // 스타일
-  	...);
+    0,                   // 확장 스타일
+    WS_OVERLAPPEDWINDOW, // 스타일
+    ...);
   ```
 - **인코딩 / 줄바꿈** — UTF-8 (BOM 없음), CRLF. 파일은 newline으로 끝낸다. 관련 프로젝트 설정은 [Project Settings](../ProjectSettings.md) 참고.
 - **빈 줄** — 함수 정의 사이, 함수 안의 논리 단위 사이, `#pragma once` / include 묶음 / 선언 사이에 1개를 둔다. 2개 이상 연속으로 쓰지 않고, 여는 `{` 바로 뒤와 닫는 `}` 바로 앞에는 두지 않는다.
@@ -167,7 +167,7 @@
   class TRingBuffer
   {
   public:
-  	using ElementType = InElementType;
+    using ElementType = InElementType;
   };
   ```
 
@@ -178,18 +178,18 @@
   class FMesh
   {
   public:
-  	explicit FMesh(uint32 initialVertexCount)
-  		: vertexCount(initialVertexCount)
-  	{
-  	}
+    explicit FMesh(uint32 initialVertexCount)
+        : vertexCount(initialVertexCount)
+    {
+    }
 
-  	void SetVertexCount(uint32 newVertexCount)
-  	{
-  		vertexCount = newVertexCount;
-  	}
+    void SetVertexCount(uint32 newVertexCount)
+    {
+        vertexCount = newVertexCount;
+    }
 
   private:
-  	uint32 vertexCount = 0;
+    uint32 vertexCount = 0;
   };
   ```
 
@@ -265,18 +265,18 @@
   class FRenderer
   {
   public:
-  	/**
-  	 * 한 프레임을 렌더링한다.
-  	 * BeginFrame()을 먼저 호출하지 않으면 assert가 발생한다.
-  	 */
-  	void Render();
+    /**
+     * 한 프레임을 렌더링한다.
+     * BeginFrame()을 먼저 호출하지 않으면 assert가 발생한다.
+     */
+    void Render();
 
   private:
-  	void SubmitCommands()
-  	{
-  		// 드라이버가 빈 커맨드 리스트 제출을 에러로 처리한다
-  		if (commandCount == 0) { return; }
-  	}
+    void SubmitCommands()
+    {
+        // 드라이버가 빈 커맨드 리스트 제출을 에러로 처리한다
+        if (commandCount == 0) { return; }
+    }
   };
   ```
 
@@ -384,20 +384,20 @@
   class FRenderer
   {
   public:
-  	using Callback = void(*)();
+    using Callback = void(*)();
 
-  	FRenderer();
-  	~FRenderer();
+    FRenderer();
+    ~FRenderer();
 
-  	void Render();
+    void Render();
 
   protected:
-  	virtual void OnResize();
+    virtual void OnResize();
 
   private:
-  	void CreateDevice();
+    void CreateDevice();
 
-  	FRenderDevice* device = nullptr;
+    FRenderDevice* device = nullptr;
   };
   ```
 
@@ -406,11 +406,11 @@
   ```cpp
   class FWindow
   {
-  	// 메시지 처리 보조 구조체가 창 생성 / 파괴 중에 nativeHandle을 바꾼다
-  	friend struct SE::Private::FWindowsWindowProc;
+    // 메시지 처리 보조 구조체가 창 생성 / 파괴 중에 nativeHandle을 바꾼다
+    friend struct SE::Private::FWindowsWindowProc;
 
   public:
-  	...
+    ...
   };
   ```
 
@@ -422,11 +422,11 @@
   ```cpp
   struct FVector3
   {
-  	float x = 0.0f;
-  	float y = 0.0f;
-  	float z = 0.0f;
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
 
-  	float Length() const;
+    float Length() const;
   };
   ```
 
@@ -436,13 +436,13 @@
   class FTexture
   {
   public:
-  	explicit FTexture(const FTextureDesc& desc);
-  	~FTexture();
+    explicit FTexture(const FTextureDesc& desc);
+    ~FTexture();
 
-  	FTexture(const FTexture&) = delete;
-  	FTexture& operator=(const FTexture&) = delete;
-  	FTexture(FTexture&&) noexcept;
-  	FTexture& operator=(FTexture&&) noexcept;
+    FTexture(const FTexture&) = delete;
+    FTexture& operator=(const FTexture&) = delete;
+    FTexture(FTexture&&) noexcept;
+    FTexture& operator=(FTexture&&) noexcept;
   };
   ```
 
@@ -458,14 +458,14 @@
   class IRenderDevice
   {
   public:
-  	virtual ~IRenderDevice() = default;
-  	virtual void Present() = 0;
+    virtual ~IRenderDevice() = default;
+    virtual void Present() = 0;
   };
 
   class FD3D12RenderDevice final : public IRenderDevice
   {
   public:
-  	void Present() override;
+    void Present() override;
   };
   ```
 
@@ -480,8 +480,8 @@
   ```cpp
   struct FMath
   {
-  	static float Lerp(float a, float b, float t);
-  	static float Clamp(float value, float minValue, float maxValue);
+    static float Lerp(float a, float b, float t);
+    static float Clamp(float value, float minValue, float maxValue);
   };
 
   float x = FMath::Lerp(0.0f, 1.0f, 0.5f);
@@ -553,13 +553,13 @@
   class FRenderPass
   {
   public:
-  	explicit FRenderPass(FRenderDevice& targetDevice)
-  		: device(&targetDevice)
-  	{
-  	}
+    explicit FRenderPass(FRenderDevice& targetDevice)
+        : device(&targetDevice)
+    {
+    }
 
   private:
-  	FRenderDevice* device = nullptr;
+    FRenderDevice* device = nullptr;
   };
   ```
 
@@ -577,7 +577,7 @@
   auto it = textureMap.find(name);
   for (const auto& [name, texture] : textureMap)
   {
-  	...
+    ...
   }
   ```
 
@@ -609,10 +609,10 @@
   ```cpp
   enum class ETextureUsageFlags : uint8
   {
-  	None = 0,
-  	ShaderRead = 1 << 0,
-  	RenderTarget = 1 << 1,
-  	DepthStencil = 1 << 2
+    None = 0,
+    ShaderRead = 1 << 0,
+    RenderTarget = 1 << 1,
+    DepthStencil = 1 << 2
   };
   SE_ENUM_CLASS_FLAGS(ETextureUsageFlags)
 
@@ -653,13 +653,13 @@
 
   ```cpp
   #define SE_ASSERT(condition) \
-  	do \
-  	{ \
-  		if (!(condition)) \
-  		{ \
-  			SE::Private::AssertFailed(#condition, __FILE__, __LINE__); \
-  		} \
-  	} while (0)
+    do \
+    { \
+        if (!(condition)) \
+        { \
+            SE::Private::AssertFailed(#condition, __FILE__, __LINE__); \
+        } \
+    } while (0)
   ```
 
 ### 3.10 Template `중요`
@@ -669,7 +669,7 @@
 
   ```cpp
   template<typename T>
-  	requires std::is_arithmetic_v<T>
+    requires std::is_arithmetic_v<T>
   T Clamp(T value, T minValue, T maxValue);
 
   // 금지
@@ -683,7 +683,7 @@
   template<typename T>
   concept CHashable = requires(const T& value)
   {
-  	{ GetTypeHash(value) } -> std::convertible_to<uint32>;
+    { GetTypeHash(value) } -> std::convertible_to<uint32>;
   };
 
   template<CHashable KeyType, typename ValueType>
@@ -703,7 +703,7 @@
   ```cpp
   auto isVisible = [&camera, maxDistance](const FRenderObject* object)   // 캡처 대상을 명시 ([&]나 [=]는 쓰지 않음)
   {
-  	...
+    ...
   };
   ```
 
@@ -712,7 +712,7 @@
   ```cpp
   std::sort(lights.begin(), lights.end(), [](const FLight& a, const FLight& b)
   {
-  	return a.priority > b.priority;
+    return a.priority > b.priority;
   });
   ```
 
@@ -748,7 +748,7 @@
   // Platform/Windows 내부
   if (const std::optional<std::wstring> wideMessage = FWindowsString::UTF8ToWide(message))
   {
-  	OutputDebugStringW(wideMessage->c_str());
+    OutputDebugStringW(wideMessage->c_str());
   }
 
   // 경로는 OS에 다시 넘기므로 깨진 글자가 있으면 실패시킨다
@@ -776,13 +776,13 @@
   class FRenderer
   {
   private:
-  	TUniquePtr<FRenderDevice> device;   // 소유
+    TUniquePtr<FRenderDevice> device;   // 소유
   };
 
   class FRenderPass
   {
   private:
-  	FRenderDevice* device = nullptr;    // 비소유
+    FRenderDevice* device = nullptr;    // 비소유
   };
   ```
 
@@ -795,7 +795,7 @@
 
   if (FTexture* resolved = resourceManager.Resolve(texture))
   {
-  	...
+    ...
   }
   ```
 
@@ -820,16 +820,16 @@
   class FTexture
   {
   public:
-  	FTexture() = default;
-  	~FTexture();                  // Shutdown()을 호출하지 않았으면 assert
+    FTexture() = default;
+    ~FTexture();                  // Shutdown()을 호출하지 않았으면 assert
 
-  	[[nodiscard]] bool Initialize(const FTextureDesc& desc);
-  	void Shutdown();
+    [[nodiscard]] bool Initialize(const FTextureDesc& desc);
+    void Shutdown();
 
-  	bool IsInitialized() const { return bInitialized; }
+    bool IsInitialized() const { return bInitialized; }
 
   private:
-  	bool bInitialized = false;
+    bool bInitialized = false;
   };
   ```
 
@@ -848,10 +848,10 @@
   // 원인에 따라 처리가 달라야 할 때
   enum class EFileError : uint8
   {
-  	None,
-  	NotFound,
-  	AccessDenied,
-  	DiskFull
+    None,
+    NotFound,
+    AccessDenied,
+    DiskFull
   };
 
   [[nodiscard]] EFileError SaveFile(const FString& path, const TArray<uint8>& data);
@@ -884,7 +884,7 @@
 
   if (!SE_ENSURE(texture != nullptr))
   {
-  	return;
+    return;
   }
   ```
 
@@ -980,10 +980,10 @@
   // clang-format off
   constexpr float Identity[16] =
   {
-  	1, 0, 0, 0,
-  	0, 1, 0, 0,
-  	0, 0, 1, 0,
-  	0, 0, 0, 1,
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
   };
   // clang-format on
   ```
