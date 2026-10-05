@@ -743,7 +743,7 @@
   FString path = "Textures/한글.png";
 
   // Platform/Windows 내부
-  std::wstring widePath = Utf8ToWide(path);
+  std::wstring widePath = UTF8ToWide(path);
   CreateFileW(widePath.c_str(), ...);
   ```
 

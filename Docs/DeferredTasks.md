@@ -19,7 +19,7 @@
 | 엔진 기반 시스템 | `SE_ENUM_CLASS_FLAGS` | 첫 비트 플래그 enum을 만들 때 |
 | 엔진 기반 시스템 | 로그 (`SE_LOG`) | assert를 구현할 때, 또는 실패 원인을 남겨야 하는 첫 코드를 쓸 때 (먼저 오는 것) |
 | 엔진 기반 시스템 | assert (`SE_ASSERT` 등) | 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때 (로그와 함께) |
-| 엔진 기반 시스템 | 문자열 변환 (`Utf8ToWide` / `WideToUtf8`) | `FString`을 Windows API에 넘기거나 받는 첫 코드를 쓸 때 (창 제목, 파일 경로 등) |
+| 엔진 기반 시스템 | 문자열 변환 (`UTF8ToWide` / `WideToUTF8`) | `FString`을 Windows API에 넘기거나 받는 첫 코드를 쓸 때 (창 제목, 파일 경로 등) |
 | 엔진 기반 시스템 | 엔진 객체 (`FEngine`, `gEngine`) | 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때 |
 | 엔진 기반 시스템 | 수학 타입 (`FVector3`, `FMatrix4` 등) | 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
@@ -232,7 +232,7 @@
   - 매크로 인자를 Release에서 제거할 때 "사용하지 않는 변수" 경고를 피하는 방법
 - **반영할 곳**: [Code Convention](Conventions/CodeConvention.md) 5.2 Assert
 
-### 문자열 변환 (`Utf8ToWide` / `WideToUtf8`)
+### 문자열 변환 (`UTF8ToWide` / `WideToUTF8`)
 
 - **진행 시점**: `FString`(UTF-8)을 Windows API에 넘기거나 Windows API에서 받는 첫 코드를 쓸 때. 창 제목, 파일 경로 등.
 - **현재**: 규칙(엔진 안은 UTF-8, Windows API 경계에서만 UTF-16)만 있다. `FString`(`std::string` 별칭)은 인코딩을 검사하지 않는다.
