@@ -59,12 +59,14 @@
     <ClInclude Include="Core\Public\Containers\HashMap.h" />
     <ClInclude Include="Core\Public\Containers\SeonString.h" />
     <ClInclude Include="Core\Public\CoreTypes.h" />
+    <ClInclude Include="Core\Public\HAL\Platform.h" />
     <ClInclude Include="Core\Public\HAL\PlatformMisc.h" />
     <ClInclude Include="Core\Public\Logging\LogCategory.h" />
     <ClInclude Include="Core\Public\Logging\LogMacros.h" />
     <ClInclude Include="Core\Public\Logging\LogRecord.h" />
     <ClInclude Include="Core\Public\Logging\LogVerbosity.h" />
     <ClInclude Include="Core\Public\Logging\OutputDevice.h" />
+    <ClInclude Include="Core\Public\Logging\OutputDeviceDebug.h" />
     <ClInclude Include="Core\Public\Logging\OutputDeviceHelper.h" />
     <ClInclude Include="Core\Public\Logging\OutputDeviceRedirector.h" />
     <ClInclude Include="Core\Public\Templates\SharedPointer.h" />
@@ -76,6 +78,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp" />
+    <ClCompile Include="Core\Private\Logging\OutputDeviceDebug.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceHelper.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceRedirector.cpp" />
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp" />

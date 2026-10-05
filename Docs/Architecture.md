@@ -94,6 +94,7 @@
            └─ WindowsPlatformFile.cpp
   ```
 
+- **플랫폼별 상수** — 줄바꿈(`LineTerminator`)처럼 플랫폼마다 값이 다른 상수는 `Core/Public/HAL/Platform.h`에 둔다. 지원 플랫폼이 하나인 동안은 이 헤더에 그 플랫폼의 값을 바로 두고, 플랫폼이 두 개 이상이 되면 플랫폼별 헤더(`Windows/WindowsPlatform.h` 등)로 나눈 뒤 `HAL/Platform.h`가 골라 include한다. 쓰는 코드는 항상 `HAL/Platform.h`만 include한다.
 - **구현 방식** — 지원 플랫폼이 하나인 동안은 공통 헤더에 선언하고 플랫폼별 `.cpp`에서 구현한다. 플랫폼이 두 개 이상이 되면 `Generic` 공통 구현을 두고 플랫폼 구현이 상속한 뒤 `using`으로 고르는 방식으로 바꾼다. 두 방식 모두 사용하는 코드는 `FPlatformFile`이라는 같은 이름을 쓰므로 전환할 때 사용처를 고치지 않는다.
 
   ```cpp

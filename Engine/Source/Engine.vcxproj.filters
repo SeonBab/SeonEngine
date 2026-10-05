@@ -54,6 +54,9 @@
     <ClInclude Include="Core\Public\CoreTypes.h">
       <Filter>Core\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\HAL\Platform.h">
+      <Filter>Core\Public\HAL</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\HAL\PlatformMisc.h">
       <Filter>Core\Public\HAL</Filter>
     </ClInclude>
@@ -70,6 +73,9 @@
       <Filter>Core\Public\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Core\Public\Logging\OutputDevice.h">
+      <Filter>Core\Public\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Logging\OutputDeviceDebug.h">
       <Filter>Core\Public\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Core\Public\Logging\OutputDeviceHelper.h">
@@ -99,6 +105,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp">
+      <Filter>Core\Private\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Logging\OutputDeviceDebug.cpp">
       <Filter>Core\Private\Logging</Filter>
     </ClCompile>
     <ClCompile Include="Core\Private\Logging\OutputDeviceHelper.cpp">
