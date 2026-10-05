@@ -43,6 +43,9 @@
     <Filter Include="Engine\Private\Platform">
       <UniqueIdentifier>{45EB86B4-E177-3B7A-8F28-F114BE4678C4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Private\Platform\GenericPlatform">
+      <UniqueIdentifier>{4D454FE4-41B8-3F5C-99F1-28DCB60A1CEF}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Private\Platform\Windows">
       <UniqueIdentifier>{BAE0A9CD-C20A-3296-9AC1-1F52B54BE001}</UniqueIdentifier>
     </Filter>
@@ -120,13 +123,16 @@
     <ClInclude Include="Engine\Private\Launch\EngineMain.h">
       <Filter>Engine\Private\Launch</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Private\Platform\Window.h">
-      <Filter>Engine\Private\Platform</Filter>
+    <ClInclude Include="Engine\Private\Platform\GenericPlatform\GenericWindow.h">
+      <Filter>Engine\Private\Platform\GenericPlatform</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsHWrapper.h">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsString.h">
+      <Filter>Engine\Private\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Private\Platform\Windows\WindowsWindow.h">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClInclude>
   </ItemGroup>

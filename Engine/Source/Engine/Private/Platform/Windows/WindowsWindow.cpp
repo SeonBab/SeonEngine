@@ -1,9 +1,9 @@
-#include "Platform/Window.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 #include "CoreTypes.h"
 #include "Platform/Windows/WindowsHWrapper.h"
 
-// Window.h에 선언한 플랫폼 창의 Windows 구현이다. Win32 호출은 이 파일에만 둔다.
+// 공통 기반 클래스를 사용하는 쪽에 Win32 타입과 호출을 노출하지 않는다.
 
 namespace
 {
@@ -23,18 +23,18 @@ namespace
 
 namespace SE::Private
 {
-	// Window.h에서 FWindow의 friend로 지정한 구조체다. 헤더의 이름과 같은 타입이 되도록 익명 namespace가 아닌 여기에 정의한다
+	// WindowsWindow.h의 friend와 같은 타입이어야 하므로 익명 namespace가 아닌 여기에 정의한다.
 	struct FWindowsWindowProc
 	{
 		// 창 클래스에 등록하는 창 프로시저. Windows가 이 창에 보내는 모든 메시지가 여기로 온다
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
-			// 창 생성 초기에 객체를 연결한다. CREATESTRUCTW에서 CreateWindowExW에 넘긴 FWindow를 꺼내,
+			// 창 생성 초기에 객체를 연결한다. CREATESTRUCTW에서 CreateWindowExW에 넘긴 FWindowsWindow를 꺼내,
 			// 이후 메시지에서 찾을 수 있도록 창마다 있는 사용자 칸에 적어 둔다
 			if (message == WM_NCCREATE)
 			{
 				const CREATESTRUCTW* createStruct = reinterpret_cast<const CREATESTRUCTW*>(lParam);
-				FWindow* window = static_cast<FWindow*>(createStruct->lpCreateParams);
+				FWindowsWindow* window = static_cast<FWindowsWindow*>(createStruct->lpCreateParams);
 				SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 				window->nativeHandle = hwnd;
 				// 여기서 끝내지 않고 아래 HandleMessage를 거쳐 기본 처리로 넘긴다. 제목 설정 등 창 생성에 필요한 일을 기본 처리가 한다
@@ -43,15 +43,18 @@ namespace SE::Private
 			// 창의 마지막 메시지. 이 뒤로 hwnd는 무효이므로, 객체가 사라진 창을 가리키지 않도록 연결을 끊는다
 			if (message == WM_NCDESTROY)
 			{
-				FWindow* window = reinterpret_cast<FWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+				FWindowsWindow* window = reinterpret_cast<FWindowsWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 				if (window != nullptr)
 				{
 					window->nativeHandle = nullptr;
+					window->clientWidth = 0;
+					window->clientHeight = 0;
+					window->bMinimized = false;
 				}
 				SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
 			}
 
-			FWindow* window = reinterpret_cast<FWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+			FWindowsWindow* window = reinterpret_cast<FWindowsWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 			// WM_NCCREATE보다 먼저 오는 WM_GETMINMAXINFO처럼 연결 전에 온 메시지와, 연결을 끊은 WM_NCDESTROY는 기본 처리로 넘긴다
 			if (window == nullptr)
 			{
@@ -60,9 +63,18 @@ namespace SE::Private
 			return HandleMessage(*window, hwnd, message, wParam, lParam);
 		}
 
-		// 창과 연결된 FWindow가 있는 메시지를 처리한다. 직접 처리하지 않는 메시지는 기본 처리로 넘긴다
-		static LRESULT HandleMessage(FWindow& window, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+		// 창과 연결된 객체의 메시지를 처리한다. 직접 처리하지 않는 메시지는 기본 처리로 넘긴다.
+		static LRESULT HandleMessage(FWindowsWindow& window, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
+			if (message == WM_SIZE)
+			{
+				// 생성 중에도 올 수 있으므로 렌더러를 호출하지 않고 최신 상태만 저장한다.
+				window.clientWidth = static_cast<uint32>(LOWORD(lParam));
+				window.clientHeight = static_cast<uint32>(HIWORD(lParam));
+				window.bMinimized = (wParam == SIZE_MINIMIZED);
+				return 0;
+			}
+
 			// 창을 바로 없애지 않고 요청만 기록한다. 기본 처리에 넘기면 그 자리에서 창이 파괴되므로,
 			// 실제 파괴는 엔진 종료 순서에서 Shutdown이 한다
 			if (message == WM_CLOSE)
@@ -76,7 +88,7 @@ namespace SE::Private
 	};
 }
 
-bool FWindow::Initialize()
+bool FWindowsWindow::Initialize()
 {
 	WNDCLASSEXW windowClass = {};
 	windowClass.cbSize = sizeof(windowClass);
@@ -126,7 +138,7 @@ bool FWindow::Initialize()
 	return true;
 }
 
-void FWindow::Shutdown()
+void FWindowsWindow::Shutdown()
 {
 	// 남아 있는 것만 정리한다. Initialize가 실패한 뒤나 두 번째 호출에서는 할 일이 없다
 	// TODO(seon): 로그를 만들면 DestroyWindow / UnregisterClassW의 실패를 남긴다. 실패해도 재시도나 복구는 하지 않는다
@@ -146,8 +158,8 @@ void FWindow::Shutdown()
 }
 
 // TODO(seon): 메시지 큐는 창이 아니라 스레드에 하나 있다. 창이 둘 이상 필요해지면 창 밖으로 옮긴다
-//             (DeferredTasks.md "메시지 펌프를 창 밖으로 옮기기"). 옮기기 쉽도록 멤버 변수를 쓰지 않는다
-void FWindow::PumpMessages()
+//             옮기기 쉽도록 멤버 변수를 쓰지 않는다
+void FWindowsWindow::PumpMessages()
 {
 	MSG message = {};
 	// 창 필터를 nullptr로 둬야 창에 속하지 않은 스레드 메시지까지 꺼낸다

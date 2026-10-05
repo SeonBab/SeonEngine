@@ -1,11 +1,10 @@
 #include "Launch/EngineMain.h"
 
-#include "Platform/Window.h"
+#include "Platform/GenericPlatform/GenericWindow.h"
 
-int EngineMain()
+int EngineMain(FGenericWindow& window)
 {
-	// TODO(seon): FEngine을 구현하면 창 생성, 메인 루프, 정리를 FEngine으로 옮긴다
-	FWindow window;
+	// TODO(seon): FEngine을 구현하면 창 초기화, 메인 루프, 정리를 FEngine으로 옮긴다
 	if (!window.Initialize())
 	{
 		return 1;

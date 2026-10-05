@@ -9,3 +9,4 @@
 
 // 엔진 함수 이름과 충돌하는 매크로
 #undef CreateWindow
+#undef IsMinimized

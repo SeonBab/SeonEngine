@@ -226,7 +226,7 @@
 
 - **진행 시점**: 사전 조건이나 호출 순서를 검사해야 하는 첫 코드를 쓸 때. 실패하면 Fatal 로그를 남기므로 "로그 (`SE_LOG`)"와 함께 진행한다.
 - **현재**: 규칙([Code Convention](Conventions/CodeConvention.md) 5.2)만 정해져 있다. `SE_ASSERT` / `SE_ASSERTF`는 Release에서 식까지 제거하고, `SE_VERIFY` / `SE_ENSURE`는 Release에서도 식을 실행한다.
-  - `FWindow`는 소멸자 정책이 없다(기본 소멸자). [Code Convention](Conventions/CodeConvention.md) 4.2대로 `Shutdown()` 없이 소멸되면 assert로 잡는 것은 assert를 만들 때 함께 한다. 그전에는 `EngineMain()`이 항상 `Shutdown()`을 부르고 곧바로 프로세스가 끝나므로 실제 문제는 없다. 넣을 때는 "초기화에 성공해 `Shutdown()`이 아직 필요한가"를 나타낼 상태(`bInitialized`)가 필요하다. 창이 파괴되어 핸들이 비어도 창 클래스 등록은 남을 수 있어 `nativeHandle`만으로는 판단할 수 없다.
+  - `FWindowsWindow`는 소멸자 정책이 없다(기본 소멸자). [Code Convention](Conventions/CodeConvention.md) 4.2대로 `Shutdown()` 없이 소멸되면 assert로 잡는 것은 assert를 만들 때 함께 한다. 그전에는 `EngineMain()`이 항상 `Shutdown()`을 부르고 곧바로 프로세스가 끝나므로 실제 문제는 없다. 넣을 때는 "초기화에 성공해 `Shutdown()`이 아직 필요한가"를 나타낼 상태(`bInitialized`)가 필요하다. 창이 파괴되어 핸들이 비어도 창 클래스 등록은 남을 수 있어 `nativeHandle`만으로는 판단할 수 없다.
 - **정할 것**
   - 실패할 때의 동작: Fatal 로그 → 디버거가 연결돼 있으면 `__debugbreak`, 아니면 종료. 디버거 확인(`IsDebuggerPresent`)은 Windows API라 Core에서 직접 부를 수 없으므로 플랫폼 코드와 잇는 방법
   - `SE_ENSURE`를 위치마다 한 번만 보고하는 방법 (위치마다 `static` 플래그)
@@ -257,8 +257,9 @@
 ### 메시지 펌프를 창 밖으로 옮기기
 
 - **진행 시점**: 창이 둘 이상 필요할 때, 창 클래스 등록을 애플리케이션 객체로 옮길 때, 또는 `FEngine`이 메시지 루프를 가져갈 때 (먼저 오는 것)
-- **현재**: 메시지 펌프(`PumpMessages`)가 `FWindow`의 멤버다. 창이 하나라 동작에는 문제가 없지만, 메시지 큐는 창이 아니라 스레드에 하나 있어서 `PeekMessageW(nullptr, …)`는 그 스레드의 모든 창과 스레드 메시지를 처리한다. 이름(창 하나의 함수)과 실제 동작(스레드 전체)이 어긋나 있다.
-- **옮기기 쉽게 유지할 것**: 펌프(대기를 넣으면 대기도)는 `FWindow`의 멤버 변수를 쓰지 않는다. 닫기 요청 상태(`bCloseRequested`)는 창마다 있어야 하므로 `FWindow`에 남는다.
+- **현재**: 메시지 펌프(`PumpMessages`)가 `FWindowsWindow`의 멤버다. 창이 하나라 동작에는 문제가 없지만, 메시지 큐는 창이 아니라 스레드에 하나 있어서 `PeekMessageW(nullptr, …)`는 그 스레드의 모든 창과 스레드 메시지를 처리한다. 이름(창 하나의 함수)과 실제 동작(스레드 전체)이 어긋나 있다.
+- **현재 창 구조 (2026-10-06)**: `FGenericWindow` / `FWindowsWindow`로 분리했다. Windows 진입점이 구체 객체를 만들고 공통 진입점에 기반 참조로 넘긴다. `FWindow` 별칭은 제거했다. 크기 / 최소화 상태 기록과 `GetOSWindowHandle()` 조회는 구현했다. 렌더러에 전달하는 연결 코드는 아직 없다.
+- **옮기기 쉽게 유지할 것**: 펌프(대기를 넣으면 대기도)는 `FWindowsWindow`의 멤버 변수를 쓰지 않는다. 닫기 요청 상태(`bCloseRequested`)는 창마다 있어야 하므로 공통 기반 `FGenericWindow`에 남는다.
 - **정할 것**
   - 옮길 곳: 정적 플랫폼 서비스(`FPlatformApplicationMisc::PumpMessages`, Architecture 3장 이름 규칙) / 애플리케이션 객체(`FWindowsApplication::PumpMessages`). Unreal은 메인 루프에서 앞의 것을, Slate에서 뒤의 것을 부른다.
   - 메시지 대기를 넣었다면 같은 곳으로 옮긴다("메인 루프 CPU 절약").
@@ -367,6 +368,7 @@
 
 ### 렌더러 / 씬 계약과 이름
 
+- **출력 대상 연결 계약 (2026-10-06)**: [Architecture](Architecture.md) 4장 "창과 출력 대상"에 핸들 + 픽셀 크기, 소유권, 초기화 / 종료 순서, 펌프 뒤 크기 전달, 최소화 시 출력 정지를 확정했다. 창의 핸들 / 크기 / 최소화 조회와 상태 기록은 구현했고 실제 창 생성, 크기 변경, 최소화 / 복원, 파괴 후 핸들 해제를 실험했다. 렌더러 계약 헤더와 D3D11 구현은 아직 없다. DPI와 실제 픽셀 크기, 시작부터 최소화 후 복원 / 종료, 같은 크기 복원, 연속 크기 변경과 렌더러를 포함한 파괴 순서는 연결 구현에서 확인한다. 씬 / 리소스 계약과 이름 점검은 별도로 남는다.
 - **진행 시점**: 렌더러와 씬 구조를 설계하거나 첫 렌더러 계약 헤더를 작성할 때. 첫 창 생성 / 종료 작업의 선행 조건은 아니다.
 - **현재**: 계약 이름은 `IRenderer` / `IRenderScene`이고, [Core 기반 목록](../../Docs/CoreFoundation.md)의 표기도 맞춰져 있다. [렌더러 결정 기록](../../Docs/RendererDecisions.md) 7절의 "SeonEngine 지금" 표에는 이전 이름과 NoTemplate 계획이 남아 있다. 상세 점검 근거는 [최근 작업 점검](../../Docs/RecentWorkReview.md)의 "렌더 씬 이름과 RendererDecisions.md 7절 표" 항목에 있다.
 - **진행 방식**

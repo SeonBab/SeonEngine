@@ -79,9 +79,10 @@
     <ClInclude Include="Core\Public\Windows\WindowsPlatformMisc.h" />
     <ClInclude Include="Core\Public\Windows\WindowsPlatformProcess.h" />
     <ClInclude Include="Engine\Private\Launch\EngineMain.h" />
-    <ClInclude Include="Engine\Private\Platform\Window.h" />
+    <ClInclude Include="Engine\Private\Platform\GenericPlatform\GenericWindow.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsHWrapper.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsString.h" />
+    <ClInclude Include="Engine\Private\Platform\Windows\WindowsWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp" />
