@@ -14,10 +14,10 @@ public:
 	~FOutputDeviceRedirector() = default;
 
 	// 장치 목록은 Get()이 돌려주는 객체 하나에만 있다. 복사본에 등록한 장치는 로그를 받지 못하므로 복사와 이동을 막는다
-	FOutputDeviceRedirector(const FOutputDeviceRedirector&)            = delete;
+	FOutputDeviceRedirector(const FOutputDeviceRedirector&) = delete;
 	FOutputDeviceRedirector& operator=(const FOutputDeviceRedirector&) = delete;
-	FOutputDeviceRedirector(FOutputDeviceRedirector&&)                 = delete;
-	FOutputDeviceRedirector& operator=(FOutputDeviceRedirector&&)      = delete;
+	FOutputDeviceRedirector(FOutputDeviceRedirector&&) = delete;
+	FOutputDeviceRedirector& operator=(FOutputDeviceRedirector&&) = delete;
 
 	/**
 	 * 엔진 전체가 함께 쓰는 전달기를 돌려준다. 처음 부를 때 만들어진다.

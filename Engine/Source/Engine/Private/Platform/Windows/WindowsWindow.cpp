@@ -9,7 +9,7 @@ namespace
 {
 	// 창 클래스 등록, 창 생성, 해제에 같은 이름을 써야 한다
 	constexpr const wchar_t* WindowClassName = L"SeonEngineWindow";
-	constexpr const wchar_t* WindowTitle     = L"SeonEngine";
+	constexpr const wchar_t* WindowTitle = L"SeonEngine";
 
 	// 창 크기를 계산할 때와 창을 만들 때 같은 스타일을 써야 한다. 다르면 클라이언트 영역 크기가 틀어진다
 	constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW;
@@ -17,7 +17,7 @@ namespace
 	constexpr DWORD WindowExStyle = 0;
 
 	// 클라이언트 영역(테두리와 제목 표시줄을 뺀, 그림이 그려지는 영역)의 크기다
-	constexpr int32 WindowWidth  = 1280;
+	constexpr int32 WindowWidth = 1280;
 	constexpr int32 WindowHeight = 720;
 }
 
@@ -34,7 +34,7 @@ namespace SE::Private
 			if (message == WM_NCCREATE)
 			{
 				const CREATESTRUCTW* createStruct = reinterpret_cast<const CREATESTRUCTW*>(lParam);
-				FWindow*             window       = static_cast<FWindow*>(createStruct->lpCreateParams);
+				FWindow* window = static_cast<FWindow*>(createStruct->lpCreateParams);
 				SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 				window->nativeHandle = hwnd;
 				// 여기서 끝내지 않고 아래 HandleMessage를 거쳐 기본 처리로 넘긴다. 제목 설정 등 창 생성에 필요한 일을 기본 처리가 한다
@@ -78,10 +78,10 @@ namespace SE::Private
 
 bool FWindow::Initialize()
 {
-	WNDCLASSEXW windowClass   = {};
-	windowClass.cbSize        = sizeof(windowClass);
+	WNDCLASSEXW windowClass = {};
+	windowClass.cbSize = sizeof(windowClass);
 	windowClass.lpszClassName = WindowClassName;
-	windowClass.lpfnWndProc   = SE::Private::FWindowsWindowProc::WindowProc;
+	windowClass.lpfnWndProc = SE::Private::FWindowsWindowProc::WindowProc;
 	// 창 프로시저가 든 모듈이 실행 파일이라 실행 파일의 인스턴스를 쓴다. 엔진을 DLL로 나누면 다시 정한다
 	windowClass.hInstance = GetModuleHandleW(nullptr);
 	// 비워 두면 클라이언트 영역에 들어온 커서가 직전 모양(테두리의 크기 조절 화살표 등) 그대로 남는다

@@ -19,13 +19,13 @@ class FWindow
 	friend struct SE::Private::FWindowsWindowProc;
 
 public:
-	FWindow()  = default;
+	FWindow() = default;
 	~FWindow() = default;
 
-	FWindow(const FWindow&)            = delete;
+	FWindow(const FWindow&) = delete;
 	FWindow& operator=(const FWindow&) = delete;
-	FWindow(FWindow&&)                 = delete;
-	FWindow& operator=(FWindow&&)      = delete;
+	FWindow(FWindow&&) = delete;
+	FWindow& operator=(FWindow&&) = delete;
 
 	/**
 	 * 창을 만들어 화면에 보인다.

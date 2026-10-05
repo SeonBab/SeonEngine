@@ -32,8 +32,7 @@
 
 | 파일 | 적용 대상 | 내용 |
 |---|---|---|
-| `.clang-format` (저장소 루트) | 게임 코드 등 엔진 밖 (권장 기본값) | 공통 서식. 공백으로 줄을 맞추지 않는다 |
-| `Engine/.clang-format` | 엔진 코드 | `BasedOnStyle: InheritParentConfig`로 루트를 물려받고, 정렬 옵션(`AlignConsecutiveAssignments` / `Declarations` / `Macros`: `Consecutive`, `AlignTrailingComments`: `Always`)만 덮어쓴다 |
+| `.clang-format` (저장소 루트) | 엔진 코드, 게임 코드 (게임 코드는 권장 기본값) | 공통 서식. 공백으로 줄을 맞추지 않고(`AlignConsecutiveAssignments` / `Declarations` / `Macros`: `None`), 줄 끝 주석만 맞춘다(`AlignTrailingComments`: `Always`) |
 
 `Engine/ThirdParty/.clang-format`은 서드파티 폴더의 서식 정리와 include 정렬을 끈다(Code Convention 6.3 예외 조항).
 

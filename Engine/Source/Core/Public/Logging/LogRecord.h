@@ -14,7 +14,7 @@ using FLogTime = std::chrono::system_clock::time_point;
 struct FLogRecord
 {
 	const FLogCategory& category;
-	ELogVerbosity       verbosity;
+	ELogVerbosity verbosity;
 	// 출력 장치의 Write 호출 중에만 유효하다. 기록을 보관하는 장치는 FString으로 복사한다
 	FStringView message;
 	// 전달기가 한 번 재서 넣으므로 모든 출력 장치가 같은 시각을 쓴다
