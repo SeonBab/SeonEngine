@@ -197,6 +197,18 @@ void FD3D11Device::Resize(uint32 InSizeX, uint32 InSizeY)
 
 void FD3D11Device::RenderFrame()
 {
+	// Resize의 ClearState와 flip 방식 Present 뒤에도 그리기 대상이 연결되도록 매 프레임 설정한다.
+	ID3D11RenderTargetView* RTArray[] = {BackBufferRenderTargetView.Get()};
+	Direct3DDeviceIMContext->OMSetRenderTargets(1, RTArray, nullptr);
+
+	// Resize에서 적용한 출력 크기를 사용한다. ClearState 뒤에도 그릴 영역이 복원되도록 매 프레임 설정한다.
+	D3D11_VIEWPORT Viewport{};
+	Viewport.Width = static_cast<float>(SizeX);
+	Viewport.Height = static_cast<float>(SizeY);
+	Viewport.MinDepth = 0.0f;
+	Viewport.MaxDepth = 1.0f;
+	Direct3DDeviceIMContext->RSSetViewports(1, &Viewport);
+
 	// 기본 창 배경과 첫 출력 결과를 구분하기 위한 마젠타다.
 	constexpr float ClearColor[4] = {1.0f, 0.0f, 1.0f, 1.0f};
 	// 지우기는 뷰 전체에 직접 작용하므로 Draw용 출력 바인딩 / viewport 설정이 필요 없다.

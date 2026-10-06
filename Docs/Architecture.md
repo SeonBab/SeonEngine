@@ -185,8 +185,8 @@
 
   | 구분 | 내용 |
   |---|---|
-  | 현재 | IRenderer 계약, FRenderer의 D3D11 연결, 내부 장치 초기화 / 종료 / 크기 변경 / 배경색 제출 구현. 메인 루프 연결, Debug / Release 실제 실행과 클라이언트 마젠타 캡처 / 크기 변경 / 최소화·복원 / 종료 확인 |
-  | 다음 | 초기화 실패 원인 기록과 디버그 레이어 진단 검토 |
+  | 현재 | IRenderer / FRenderer와 메인 루프 연결, D3D11 별도 생성 / 종료 / Resize / 배경색 제출, 출력 뷰 바인딩과 viewport 설정 구현. Debug / Release 실행과 마젠타 캡처 / 크기 변경 / 최소화·복원 / 종료 확인. 실제 Draw는 미구현 |
+  | 다음 | 최소 vertex shader 준비, 이후 pixel shader / 삼각형 데이터 / Draw. 초기화 실패 진단은 Deferred Tasks에서 별도 보류 |
   | 장기 | D3D12 백엔드를 시작할 때 RHI 추출, 이후 Vulkan ([Deferred Tasks](DeferredTasks.md) "RHI") |
 
 - **경계 두 개** — 렌더러를 통째로 바꾸는 경계와, SeonEngine 렌더러 아래에서 그래픽스 API를 바꾸는 경계를 나눈다.
