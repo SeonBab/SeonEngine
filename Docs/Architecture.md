@@ -186,12 +186,13 @@
   | 구분 | 내용 |
   |---|---|
   | 현재 | IRenderer 계약, FRenderer의 D3D11 연결, 내부 장치 초기화 / 종료 / 크기 변경 / 배경색 제출 구현. 메인 루프 연결, Debug / Release 실제 실행과 클라이언트 마젠타 캡처 / 크기 변경 / 최소화·복원 / 종료 확인 |
-  | 다음 | 장치와 스왑체인 별도 생성 전환 검토, 디버그 레이어 진단 / 실패 원인 기록 보완 |
+  | 다음 | 초기화 실패 원인 기록과 디버그 레이어 진단 검토 |
   | 장기 | D3D12 백엔드를 시작할 때 RHI 추출, 이후 Vulkan ([Deferred Tasks](DeferredTasks.md) "RHI") |
 
 - **경계 두 개** — 렌더러를 통째로 바꾸는 경계와, SeonEngine 렌더러 아래에서 그래픽스 API를 바꾸는 경계를 나눈다.
 
   - 현재 기본 구현은 `Private/Renderer/Renderer.h`의 `FRenderer`이며 `IRenderer`의 네 호출을 내부 `FD3D11Device`에 연결한다. 계약은 `Public/Renderer/RendererInterface.h`에 둔다. 기본 구현은 D3D11 고정 구성이며 RHI 분리는 아직 미구현이다. 실제 그래픽스 API 호출과 COM 자원 관리는 D3D11 전용 폴더에 둔다.
+  - D3D11 장치 / 컨텍스트와 단일 창 스왑체인은 같은 클래스 안에서 별도 호출로 생성한다. `D3D11CreateDevice`로 만든 장치에 대응하는 DXGI adapter / factory를 확보하고 `CreateSwapChain`을 호출한다. 생성 호출 분리는 RHI / viewport 클래스 분리를 뜻하지 않는다.
 
   ```text
   Engine (월드, 컴포넌트)

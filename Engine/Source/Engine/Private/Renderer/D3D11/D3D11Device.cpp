@@ -34,7 +34,7 @@ bool FD3D11Device::Init(void* InWindowHandle, uint32 InSizeX, uint32 InSizeY)
 	D3D_FEATURE_LEVEL ActualFeatureLevel{};
 	// 기본 하드웨어 adapter를 사용하며 기능 수준은 11.0 하나만 요구한다.
 	// 출력 주소는 첫 초기화의 빈 ComPtr에만 사용한다. 기존 참조를 자동 해제하지 않는다.
-	const HRESULT Result = D3D11CreateDeviceAndSwapChain(
+	const HRESULT DeviceResult = D3D11CreateDevice(
 		nullptr,
 		DriverType,
 		nullptr,
@@ -42,15 +42,56 @@ bool FD3D11Device::Init(void* InWindowHandle, uint32 InSizeX, uint32 InSizeY)
 		&FeatureLevel,
 		1,
 		D3D11_SDK_VERSION,
-		&SwapChainDesc,
-		SwapChain.GetAddressOf(),
 		Direct3DDevice.GetAddressOf(),
 		&ActualFeatureLevel,
 		Direct3DDeviceIMContext.GetAddressOf());
 
-	if (FAILED(Result))
+	if (FAILED(DeviceResult))
 	{
 		// 호출자는 초기화 실패 후 Shutdown을 호출하지 않으므로 부분 자원은 여기서 정리한다.
+		Shutdown();
+		return false;
+	}
+
+	// 생성된 장치에 대응하는 adapter / factory를 사용해 다른 생성 경로와 섞이지 않게 한다.
+	Microsoft::WRL::ComPtr<IDXGIDevice> DXGIDevice;
+	const HRESULT DXGIDeviceResult = Direct3DDevice->QueryInterface(IID_PPV_ARGS(DXGIDevice.GetAddressOf()));
+	if (FAILED(DXGIDeviceResult))
+	{
+		DXGIDevice.Reset();
+		Shutdown();
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<IDXGIAdapter> DXGIAdapter;
+	const HRESULT AdapterResult = DXGIDevice->GetAdapter(DXGIAdapter.GetAddressOf());
+	if (FAILED(AdapterResult))
+	{
+		DXGIAdapter.Reset();
+		DXGIDevice.Reset();
+		Shutdown();
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<IDXGIFactory> Factory;
+	const HRESULT FactoryResult = DXGIAdapter->GetParent(IID_PPV_ARGS(Factory.GetAddressOf()));
+	if (FAILED(FactoryResult))
+	{
+		Factory.Reset();
+		DXGIAdapter.Reset();
+		DXGIDevice.Reset();
+		Shutdown();
+		return false;
+	}
+
+	// 기존 출력 설정을 유지하여 생성 호출 분리와 출력 방식 변경을 구분한다.
+	const HRESULT SwapChainResult = Factory->CreateSwapChain(Direct3DDevice.Get(), &SwapChainDesc, SwapChain.GetAddressOf());
+	// 생성 경로를 찾는 데만 쓴 참조는 성공 / 실패 모두 장치 정리 전에 내려놓는다.
+	Factory.Reset();
+	DXGIAdapter.Reset();
+	DXGIDevice.Reset();
+	if (FAILED(SwapChainResult))
+	{
 		Shutdown();
 		return false;
 	}
