@@ -13,6 +13,7 @@
 // <windows.h>를 include하지 않는다. 이 헤더는 FPlatformProcess를 쓰는 모든 파일이 보기 때문이다.
 struct FWindowsPlatformProcess : public FGenericPlatformProcess
 {
+	static void Sleep(float seconds);
 	static std::optional<FString> BaseDir();
 	static std::optional<FString> ExecutableName();
 };

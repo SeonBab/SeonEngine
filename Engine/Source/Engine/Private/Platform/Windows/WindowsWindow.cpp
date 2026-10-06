@@ -29,7 +29,8 @@ namespace SE::Private
 		// 창 클래스에 등록하는 창 프로시저. Windows가 이 창에 보내는 모든 메시지가 여기로 온다
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
-			// 창 생성 초기에 객체를 연결한다. CREATESTRUCTW에서 CreateWindowExW에 넘긴 FWindowsWindow를 꺼내,
+			// CreateWindowExW가 반환하기 전에도 메시지가 오므로 WM_NCCREATE에서 객체를 연결한다.
+			// CREATESTRUCTW에서 CreateWindowExW에 넘긴 FWindowsWindow를 꺼내,
 			// 이후 메시지에서 찾을 수 있도록 창마다 있는 사용자 칸에 적어 둔다
 			if (message == WM_NCCREATE)
 			{

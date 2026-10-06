@@ -87,6 +87,8 @@ SeonEngine/
 | `SampleGame` | 실행 파일 (`.exe`, Windows 서브시스템) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈 폴더 |
 
 - `SampleGame`은 `Engine`을 프로젝트 참조로 연결한다. 빌드 순서와 `Engine.lib` 링크가 자동으로 처리된다.
+- 엔진을 사용하는 프로젝트는 `Microsoft.Cpp.props`를 읽고 프로젝트 종류를 정한 뒤 `Engine/Build/SeonEngine.props`를 명시적으로 import한다. 이 파일은 엔진의 Public include 경로와 현재 D3D11 구현에 필요한 `d3d11.lib` 링크를 제공한다. 프로젝트 자체 include 경로는 기존 값을 이어 붙인다. Engine 프로젝트 참조는 각 소비 프로젝트에 유지하며 props가 자동으로 생성하지 않는다.
+- `SeonEngine.props`는 import한 프로젝트에만 적용한다. 실행 파일 / DLL 프로젝트에는 링크 의존성을 제공하고 정적 라이브러리 프로젝트에서는 최종 링크를 수행하지 않는다. 별도 import가 없는 도구에는 D3D11 의존성을 전파하지 않는다. 루트의 공통 빌드 설정과 엔진 소비 설정은 구분한다.
 - 진입점(`WinMain`)은 `Engine.lib`에 있다(Architecture 3. 플랫폼 추상화). 게임 프로젝트는 엔진과 게임 코드를 실행 파일로 링크하는 단위다.
 - 게임 프로젝트에는 `.cpp`가 하나 이상 있어야 한다. 컴파일된 `.obj`가 없으면 CRT가 링크되지 않아 시작 코드(`WinMainCRTStartup`)를 찾지 못한다.
 - 게임 프로젝트의 include 경로에는 엔진 모듈의 `Public`만 넣는다. 엔진 내부 헤더를 include하면 빌드가 실패한다(Code Convention 2.1 파일 구성 참고).
@@ -111,6 +113,7 @@ SeonEngine/
 | 파일 | 담는 설정 |
 |---|---|
 | `Directory.Build.props` | 루트 경로(`SERootDir`), 출력 / 중간 디렉터리, 아래 "컴파일러 설정" 전부 |
+| `Engine/Build/SeonEngine.props` | 엔진 소비 프로젝트의 Public include 경로, 현재 D3D11 링크 의존성. 명시적으로 import |
 | 각 `.vcxproj` | 프로젝트 종류, include 경로, 프로젝트 전용 전처리기 정의(`_LIB`, `_WINDOWS`), 링커 / 매니페스트, 프로젝트 참조 |
 
 | 설정 | 값 |

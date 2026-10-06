@@ -49,6 +49,18 @@
     <Filter Include="Engine\Private\Platform\Windows">
       <UniqueIdentifier>{BAE0A9CD-C20A-3296-9AC1-1F52B54BE001}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Private\Renderer">
+      <UniqueIdentifier>{43FD1894-B2B8-3F0F-932D-C82C38B79E21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Private\Renderer\D3D11">
+      <UniqueIdentifier>{9C95902A-295F-3493-A221-518497711985}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Public">
+      <UniqueIdentifier>{C6A93A3B-6A67-39D9-9CD7-D279F328B158}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Public\Renderer">
+      <UniqueIdentifier>{2B3349A1-15FB-3021-88F8-34C9F84A06C0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Public\Containers\Array.h">
@@ -135,6 +147,15 @@
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsWindow.h">
       <Filter>Engine\Private\Platform\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Private\Renderer\D3D11\D3D11Device.h">
+      <Filter>Engine\Private\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Private\Renderer\Renderer.h">
+      <Filter>Engine\Private\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
+      <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp">
@@ -166,6 +187,12 @@
     </ClCompile>
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsWindow.cpp">
       <Filter>Engine\Private\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Device.cpp">
+      <Filter>Engine\Private\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Renderer\Renderer.cpp">
+      <Filter>Engine\Private\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -47,10 +47,12 @@
 
   <PropertyGroup Label="UserMacros" />
 
+  <Import Project="$(SERootDir)Engine\Build\SeonEngine.props" />
+
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SERootDir)Engine\Source\Core\Public;$(SERootDir)Engine\Source\Engine\Public;$(ProjectDir)SampleGame;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SampleGame;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

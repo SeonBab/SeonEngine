@@ -10,6 +10,14 @@
 struct FGenericPlatformProcess
 {
 	/**
+	 * 현재 스레드를 지정한 시간 동안 쉬게 한다. 메시지를 처리하거나 메시지 도착으로 깨어나지는 않는다.
+	 * 밀리초 미만은 버리며 0밀리초이면 다른 스레드에 실행 기회를 양보한다.
+	 * 실제 재개 시점은 OS 스케줄링에 따라 달라진다.
+	 * @param seconds 유한한 0 이상의 초. 밀리초 환산값은 Windows의 INFINITE 값보다 작아야 한다.
+	 */
+	static void Sleep(float seconds);
+
+	/**
 	 * 실행 파일이 있는 폴더. 구분자는 '/'이고 끝에 '/'가 붙는다. 예: "C:/Git/SE/SeonEngine/Binaries/x64/Debug/"
 	 * 처음 부를 때 한 번 구해 두고 같은 값을 돌려준다.
 	 *

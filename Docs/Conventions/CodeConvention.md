@@ -131,6 +131,8 @@
 | static 멤버 변수 | 일반 멤버 변수와 동일 (접두사 없음) | `liveCount` |
 | Macro | `SE_` + UPPER_SNAKE_CASE | `SE_ASSERT`, `SE_PLATFORM_WINDOWS` |
 
+- **렌더러의 Unreal 대응 이름** — 직접 확인한 Unreal 코드와 역할이 대응하는 렌더러 변수 / 매개변수는 원본 이름을 우선한다. 이 범위에서는 PascalCase와 입력 매개변수의 `In` 접두사를 허용한다(예: `Direct3DDevice`, `SizeX`, `InSizeX`). 역할이 다르면 이름을 억지로 맞추지 않고 차이를 설명한다. 다른 시스템에는 위 기본 표기를 유지한다.
+
 - **타입 접두사** — 모든 타입에 접두사를 붙이며, 각 글자는 타입의 종류를 나타낸다. 표기는 Unreal 관례를 따른다.
 
   | 접두사 | 뜻 | 대상 |
@@ -318,6 +320,7 @@
   ```
 
   - 예외: 대소문자를 무시했을 때 C / C++ 표준 헤더나 Windows SDK 헤더와 같아지는 이름(`String.h`, `Math.h`, `Memory.h` 등)이면 엔진 이름 `Seon`을 앞에 붙인다(`SeonString.h` → `FString`). Windows는 파일 이름의 대소문자를 구분하지 않아서, 표준 헤더를 찾을 때 엔진 헤더가 대신 잡힐 수 있다.
+  - 렌더러 계약 예외: `IRenderer`는 `RendererInterface.h`, 기본 구현 `FRenderer`는 `Renderer.h`에 둔다. Public / Private include 경로에서 같은 파일 이름이 겹치지 않도록 계약과 구현을 구분한다. 다른 인터페이스에 일괄 적용하는 규칙은 아니다.
 
 - **파일 단위** — 파일마다 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다(예: `Texture.h`에 `FTextureDesc`, `ETextureFormat`, `FTexture`).
 - **Public / Private 분리** — 엔진 모듈마다 `Public`과 `Private` 폴더를 둔다.

@@ -93,6 +93,20 @@ namespace
 	}
 }
 
+void FWindowsPlatformProcess::Sleep(float seconds)
+{
+	const uint32 milliseconds = static_cast<uint32>(seconds * 1000.0);
+	if (milliseconds == 0)
+	{
+		// 0밀리초에서는 시간 대기 대신 다른 스레드에 실행 기회를 양보한다.
+		::SwitchToThread();
+	}
+	else
+	{
+		::Sleep(milliseconds);
+	}
+}
+
 std::optional<FString> FWindowsPlatformProcess::BaseDir()
 {
 	// 실행 중에 실행 파일 위치는 바뀌지 않으므로 처음 부를 때 한 번만 구한다
