@@ -61,6 +61,12 @@
     <Filter Include="Engine\Public\Renderer">
       <UniqueIdentifier>{2B3349A1-15FB-3021-88F8-34C9F84A06C0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{E62B007C-16CA-3545-A9A0-0AF87D9B5DF2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Private">
+      <UniqueIdentifier>{DC6B7202-09E3-3DD6-B3A5-470432747168}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Public\Containers\Array.h">
@@ -194,5 +200,13 @@
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp">
       <Filter>Engine\Private\Renderer</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\Shaders\Private\TrianglePixelShader.hlsl">
+      <Filter>Shaders\Private</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Shaders\Private\TriangleVertexShader.hlsl">
+      <Filter>Shaders\Private</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

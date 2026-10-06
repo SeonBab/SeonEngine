@@ -76,6 +76,7 @@ SeonEngine/
 ```
 
 - 엔진과 게임 프로젝트는 같은 구조를 갖는다. 셰이더(`Shaders/`), 에셋(`Content/`), 설정(`Config/`) 폴더는 처음 필요할 때 각 폴더 아래에 추가한다.
+- 현재 엔진 내부 셰이더 소스는 `Engine/Shaders/Private/`에 `.hlsl` 파일로 둔다. `TriangleVertexShader.hlsl`은 Engine.vcxproj의 FxCompile로 Vertex / 5.0 / Main / TreatWarningAsError=true를 지정하고 `$(OutDir)Shaders\TriangleVertexShader.cso`에 자동 컴파일한다. `TrianglePixelShader.hlsl`도 같은 설정에서 종류를 Pixel로 지정하고 `$(OutDir)Shaders\TrianglePixelShader.cso`에 자동 컴파일한다. 런타임은 실행 파일 폴더의 Shaders 아래 두 .cso를 Init에서 읽는다. 어느 파일이든 없거나 비어 있으면 초기화 실패다. vertex / pixel GPU 객체 생성까지 연결했으며 유효하지 않은 코드도 초기화 실패다. vertex / pixel 셰이더와 정점 버퍼 / input layout을 바인딩하고 triangle list Draw로 고정 흰 삼각형을 출력한다.
 - 게임 프로젝트 이름은 `<이름>Game`으로 짓고, 게임 모듈 이름은 프로젝트 이름과 같게 한다.
 - `Engine/`과 게임 폴더에는 빌드 결과를 두지 않는다.
 
@@ -96,13 +97,14 @@ SeonEngine/
 
 ## 프로젝트 파일 생성 (`GenerateProjectFiles.bat`)
 
-소스 파일을 추가, 삭제, 이동한 뒤 저장소 루트의 `GenerateProjectFiles.bat`을 실행한다. 각 `.vcxproj`의 파일 목록(`ClInclude` / `ClCompile`)과 `.vcxproj.filters`가 폴더 구조대로 다시 만들어진다.
+소스 파일을 추가, 삭제, 이동한 뒤 저장소 루트의 `GenerateProjectFiles.bat`을 실행한다. 각 `.vcxproj`의 파일 목록(`ClInclude` / `ClCompile` / `None`)과 `.vcxproj.filters`가 폴더 구조대로 다시 만들어진다.
 
 - **준비물**: .NET 10 이상의 SDK. Visual Studio의 C++ 워크로드만으로는 설치되지 않는다. 설치 관리자에서 ".NET 데스크톱 개발" 워크로드를 추가하거나 SDK를 따로 설치한다.
 - **스크립트**: 본체는 `Engine/Build/BatchFiles/GenerateProjectFiles.cs`이고, bat이 `dotnet run`으로 실행한다. 빌드 결과는 `Intermediate/DotNET/`에 생긴다.
 - **대상**: 저장소 안의 모든 `.vcxproj`(`Binaries`, `Intermediate`, `ThirdParty` 제외). `.vcxproj`가 있는 폴더 아래의 `.h` / `.cpp`를 모은다. 필터 이름은 `.vcxproj` 기준 상대 폴더 경로다.
+- **셰이더**: `.vcxproj`가 `Source/`에 있으면 옆의 `Shaders/` 아래 `.hlsl` / `.hlsli`도 `None` 항목으로 넣는다(예: `Engine/Shaders` → Engine 프로젝트의 `Shaders\Private` 필터). 명시적인 FxCompile 등록이 없는 파일의 기본값은 편집용 None이다. FxCompile 전용 ItemGroup은 손으로 관리하며 생성기가 메타데이터를 보존하고 None 중복을 제거한다. .filters도 해당 파일을 FxCompile로 표시한다. 등록은 검색 범위에 있는 단일 .hlsl 상대 경로만 허용하고 중복 / 변수 / 와일드카드 경로는 오류로 처리한다.
 - **`.vcxproj`의 소스 목록은 직접 고치지 않는다**. 다음 실행 때 폴더 내용으로 덮어쓴다. VS의 "새 항목 추가"로 만든 파일도 실행하면 필터가 폴더에 맞춰진다. 목록 밖의 설정은 그대로 둔다.
-- **파일별 설정은 쓸 수 없다**: 소스 목록 `ItemGroup`에 파일별 설정(메타데이터), `Condition`, 다른 항목이 있으면 오류를 내고 아무 파일도 바꾸지 않는다.
+- **자동 생성 목록에 파일별 설정은 쓸 수 없다**: 소스 목록 `ItemGroup`에 파일별 설정(메타데이터), `Condition`, 다른 항목이 있으면 오류를 내고 아무 파일도 바꾸지 않는다.
 - 내용이 바뀐 파일만 쓴다. 바뀌지 않았으면 열려 있는 VS가 다시 로드를 묻지 않는다.
 - 출력은 BOM 없는 UTF-8, CRLF다. `.bat`은 첫 줄들에서 코드페이지를 UTF-8(65001)로 바꾼 뒤 한국어를 쓴다(cmd는 배치 파일을 현재 코드페이지로 한 줄씩 읽는다).
 

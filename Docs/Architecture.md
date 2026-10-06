@@ -185,8 +185,8 @@
 
   | 구분 | 내용 |
   |---|---|
-  | 현재 | IRenderer / FRenderer와 메인 루프 연결, D3D11 별도 생성 / 종료 / Resize / 배경색 제출, 출력 뷰 바인딩과 viewport 설정 구현. Debug / Release 실행과 마젠타 캡처 / 크기 변경 / 최소화·복원 / 종료 확인. 실제 Draw는 미구현 |
-  | 다음 | 최소 vertex shader 준비, 이후 pixel shader / 삼각형 데이터 / Draw. 초기화 실패 진단은 Deferred Tasks에서 별도 보류 |
+  | 현재 | IRenderer / FRenderer와 메인 루프 연결, D3D11 별도 생성 / 종료 / Resize, 셰이더 자동 빌드·배치와 읽기·GPU 생성, 정점 버퍼 / input layout 생성·바인딩 / triangle list topology / 비인덱스 Draw 구현. Debug / Release에서 마젠타 배경과 흰 삼각형 픽셀 샘플 / 크기 변경 / 최소화·복원 / 종료 확인 |
+  | 다음 | 고정 삼각형의 rasterizer 상태 명시를 위한 설명 구조체 준비 제안, 이후 생성 / 바인딩. 카메라 / 깊이 / 텍스처와 초기화 실패 진단은 별도 후속 작업 |
   | 장기 | D3D12 백엔드를 시작할 때 RHI 추출, 이후 Vulkan ([Deferred Tasks](DeferredTasks.md) "RHI") |
 
 - **경계 두 개** — 렌더러를 통째로 바꾸는 경계와, SeonEngine 렌더러 아래에서 그래픽스 API를 바꾸는 경계를 나눈다.

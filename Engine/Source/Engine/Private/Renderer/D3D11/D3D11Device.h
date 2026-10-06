@@ -7,7 +7,7 @@
 #include <wrl/client.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-// D3D11 장치와 단일 창의 출력 자원을 함께 관리한다. OS 창은 소유하지 않는다.
+// D3D11 장치와 단일 창의 출력 / 셰이더 자원을 함께 관리한다. OS 창은 소유하지 않는다.
 // 장치와 출력 상태의 종료 책임이 하나여야 하므로 복사와 이동을 금지한다.
 ////////////////////////////////////////////////////////////////////////////////
 class FD3D11Device
@@ -22,7 +22,8 @@ public:
 	FD3D11Device& operator=(FD3D11Device&&) = delete;
 
 	/**
-	 * 장치와 출력 자원을 한 번 준비한다. 종료 후 재초기화는 지원하지 않는다.
+	 * 장치와 출력 / 셰이더 자원을 한 번 준비한다. 종료 후 재초기화는 지원하지 않는다.
+	 * 실행 파일 폴더의 Shaders/TriangleVertexShader.cso와 TrianglePixelShader.cso가 필요하다.
 	 * @param InWindowHandle 초기화와 정상 종료 동안 살아 있는 Windows 창의 핸들.
 	 * @param InSizeX 0보다 큰 클라이언트 영역의 가로 픽셀 수.
 	 * @param InSizeY 0보다 큰 클라이언트 영역의 세로 픽셀 수.
@@ -48,7 +49,7 @@ public:
 	void Resize(uint32 InSizeX, uint32 InSizeY);
 
 	/**
-	 * 백버퍼를 검증용 색으로 지우고 화면에 제출한다. 제출 실패 시 치명 종료한다.
+	 * 백버퍼를 마젠타로 지우고 고정 흰 삼각형을 그려 화면에 제출한다. 제출 실패 시 치명 종료한다.
 	 * Init 성공 후 필요한 크기 변경을 적용하고, 최소화가 아니며 출력 크기가 양수일 때만 호출한다.
 	 */
 	void RenderFrame();
@@ -56,6 +57,11 @@ public:
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> Direct3DDevice;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> Direct3DDeviceIMContext;
+
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain> SwapChain;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> BackBufferRenderTargetView;

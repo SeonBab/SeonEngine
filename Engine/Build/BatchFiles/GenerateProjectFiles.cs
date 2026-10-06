@@ -1,5 +1,5 @@
 // 소스 폴더를 훑어 .vcxproj의 파일 목록과 .vcxproj.filters를 만든다.
-// .vcxproj는 손으로 관리하는 파일이라 ClInclude / ClCompile 목록만 바꾸고 나머지는 그대로 둔다.
+// .vcxproj는 손으로 관리하는 파일이라 ClInclude / ClCompile / None 목록만 바꾸고 나머지는 그대로 둔다.
 
 using System.Security.Cryptography;
 using System.Text;
@@ -19,9 +19,10 @@ try
 		List<string> sources = CollectSources(projectDir);
 
 		XDocument project = XDocument.Load(projectPath, LoadOptions.PreserveWhitespace);
-		ReplaceSourceItems(project, sources, projectPath);
+		HashSet<string> compiledShaders = ReadCompiledShaders(project, sources, projectPath);
+		ReplaceSourceItems(project, sources, projectPath, compiledShaders);
 
-		outputs.Add((Path.GetFileNameWithoutExtension(projectPath), projectPath, project, MakeFilters(sources), sources.Count));
+		outputs.Add((Path.GetFileNameWithoutExtension(projectPath), projectPath, project, MakeFilters(sources, compiledShaders), sources.Count));
 	}
 }
 catch (InvalidOperationException e)
@@ -70,19 +71,48 @@ static List<string> FindProjects(string rootDir)
 }
 
 // 프로젝트 폴더 아래의 소스 파일을 프로젝트 폴더 기준 상대 경로로 모은다.
+// 프로젝트가 Source 폴더에 있으면 옆의 Shaders 폴더도 모은다(Engine/Source -> Engine/Shaders).
+// Unreal도 셰이더를 Source 밖에 두고, 프로젝트 파일을 만들 때 편집용으로 넣는다(ProjectFileGenerator.cs의 AddEngineShaderSource).
 static List<string> CollectSources(string projectDir)
 {
-	var sources = new List<string>();
-	foreach (string path in Directory.EnumerateFiles(projectDir, "*", SearchOption.AllDirectories))
+	var searchDirs = new List<string> { projectDir };
+	if (string.Equals(Path.GetFileName(projectDir), "Source", StringComparison.OrdinalIgnoreCase))
 	{
-		if (GetItemType(path) != null)
+		string shadersDir = Path.Combine(Path.GetDirectoryName(projectDir)!, "Shaders");
+		if (Directory.Exists(shadersDir))
 		{
-			sources.Add(Path.GetRelativePath(projectDir, path));
+			searchDirs.Add(shadersDir);
+		}
+	}
+
+	var sources = new List<string>();
+	foreach (string searchDir in searchDirs)
+	{
+		foreach (string path in Directory.EnumerateFiles(searchDir, "*", SearchOption.AllDirectories))
+		{
+			if (GetItemType(path) != null)
+			{
+				sources.Add(Path.GetRelativePath(projectDir, path));
+			}
 		}
 	}
 
 	sources.Sort(StringComparer.OrdinalIgnoreCase);
 	return sources;
+}
+
+// 솔루션 탐색기에 보일 필터 이름. 프로젝트 폴더 밖의 파일(..\Shaders\...)은 앞의 ..\를 떼어 Shaders\...로 보이게 한다.
+// null이면 필터 없이 프로젝트 바로 아래에 보인다.
+static string? GetFilter(string source)
+{
+	string? dir = Path.GetDirectoryName(source);
+	string parentPrefix = ".." + Path.DirectorySeparatorChar;
+	while (dir != null && dir.StartsWith(parentPrefix, StringComparison.Ordinal))
+	{
+		dir = dir[parentPrefix.Length..];
+	}
+
+	return string.IsNullOrEmpty(dir) ? null : dir;
 }
 
 // 확장자에 맞는 MSBuild 항목 종류. null이면 프로젝트에 넣지 않는 파일이다.
@@ -93,16 +123,47 @@ static string? GetItemType(string path)
 	{
 		".h" => "ClInclude",
 		".cpp" => "ClCompile",
+		// 명시적인 FxCompile 등록이 없는 셰이더는 편집용으로만 보인다.
+		".hlsl" or ".hlsli" => "None",
 		_ => null,
 	};
 }
 
-// .vcxproj에서 ClInclude / ClCompile만 담은 ItemGroup을 지우고, 첫 그룹이 있던 자리에 새 목록을 넣는다.
-// 그룹이 없으면 Microsoft.Cpp.targets import 앞에 넣는다.
-static void ReplaceSourceItems(XDocument project, List<string> sources, string projectPath)
+// 컴파일 설정은 .vcxproj에서 관리한다. 명시적으로 등록된 HLSL만 읽어 None 중복을 막고 필터 종류를 맞춘다.
+// FxCompile 전용 ItemGroup과 그 메타데이터는 다시 쓰지 않는다.
+static HashSet<string> ReadCompiledShaders(XDocument project, List<string> sources, string projectPath)
 {
 	XNamespace ns = project.Root!.Name.Namespace;
-	string[] sourceItemTypes = ["ClInclude", "ClCompile"];
+	string projectDir = Path.GetDirectoryName(projectPath)!;
+	var compiledShaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+	var knownSources = new HashSet<string>(sources, StringComparer.OrdinalIgnoreCase);
+	foreach (XElement item in project.Root.Elements(ns + "ItemGroup").Elements(ns + "FxCompile"))
+	{
+		string? include = (string?)item.Attribute("Include");
+		if (string.IsNullOrWhiteSpace(include) || include.IndexOfAny(['$', '*', '?', ';', '%']) >= 0)
+		{
+			throw new InvalidOperationException($"{projectPath}: FxCompile은 명시적인 단일 HLSL 파일 경로가 필요하다.");
+		}
+
+		string source = Path.GetRelativePath(projectDir, Path.GetFullPath(Path.Combine(projectDir, include)));
+		if (!string.Equals(Path.GetExtension(source), ".hlsl", StringComparison.OrdinalIgnoreCase) || !knownSources.Contains(source))
+		{
+			throw new InvalidOperationException($"{projectPath}: FxCompile 파일이 검색 범위의 HLSL이 아니다: {include}");
+		}
+		if (!compiledShaders.Add(source))
+		{
+			throw new InvalidOperationException($"{projectPath}: FxCompile 파일이 중복 등록되어 있다: {include}");
+		}
+	}
+	return compiledShaders;
+}
+
+// .vcxproj에서 ClInclude / ClCompile / None만 담은 ItemGroup을 지우고, 첫 그룹이 있던 자리에 새 목록을 넣는다.
+// 그룹이 없으면 Microsoft.Cpp.targets import 앞에 넣는다.
+static void ReplaceSourceItems(XDocument project, List<string> sources, string projectPath, HashSet<string> compiledShaders)
+{
+	XNamespace ns = project.Root!.Name.Namespace;
+	string[] sourceItemTypes = ["ClInclude", "ClCompile", "None"];
 
 	var oldGroups = new List<XElement>();
 	foreach (XElement group in project.Root.Elements(ns + "ItemGroup"))
@@ -130,7 +191,7 @@ static void ReplaceSourceItems(XDocument project, List<string> sources, string p
 	foreach (string itemType in sourceItemTypes)
 	{
 		var group = new XElement(ns + "ItemGroup");
-		foreach (string source in sources.Where(source => GetItemType(source) == itemType))
+		foreach (string source in sources.Where(source => GetItemType(source) == itemType && !compiledShaders.Contains(source)))
 		{
 			group.Add(new XText("\n    "), new XElement(ns + itemType, new XAttribute("Include", source)));
 		}
@@ -169,8 +230,8 @@ static void ReplaceSourceItems(XDocument project, List<string> sources, string p
 	}
 }
 
-// .vcxproj.filters 내용을 만든다. 배치는 VS가 저장하는 모양(필터 / ClInclude / ClCompile을 각각 다른 ItemGroup에)을 따른다.
-static XDocument MakeFilters(List<string> sources)
+// .vcxproj.filters 내용을 만든다. 배치는 VS가 저장하는 모양(필터 / ClInclude / ClCompile / None / FxCompile을 각각 다른 ItemGroup에)을 따른다.
+static XDocument MakeFilters(List<string> sources, HashSet<string> compiledShaders)
 {
 	XNamespace ns = "http://schemas.microsoft.com/developer/msbuild/2003";
 	var project = new XElement(ns + "Project", new XAttribute("ToolsVersion", "4.0"));
@@ -179,7 +240,7 @@ static XDocument MakeFilters(List<string> sources)
 	var filters = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 	foreach (string source in sources)
 	{
-		for (string? dir = Path.GetDirectoryName(source); !string.IsNullOrEmpty(dir); dir = Path.GetDirectoryName(dir))
+		for (string? dir = GetFilter(source); !string.IsNullOrEmpty(dir); dir = Path.GetDirectoryName(dir))
 		{
 			filters.Add(dir);
 		}
@@ -193,16 +254,16 @@ static XDocument MakeFilters(List<string> sources)
 				new XElement(ns + "UniqueIdentifier", MakeFilterGuid(filter).ToString("B").ToUpperInvariant())))));
 	}
 
-	foreach (string itemType in new[] { "ClInclude", "ClCompile" })
+	foreach (string itemType in new[] { "ClInclude", "ClCompile", "None", "FxCompile" })
 	{
 		var items = new List<XElement>();
-		foreach (string source in sources.Where(source => GetItemType(source) == itemType))
+		foreach (string source in sources.Where(source => (compiledShaders.Contains(source) ? "FxCompile" : GetItemType(source)) == itemType))
 		{
 			var item = new XElement(ns + itemType, new XAttribute("Include", source));
 
 			// 프로젝트 폴더 바로 아래의 파일은 필터 없이 프로젝트 아래에 보인다.
-			string? dir = Path.GetDirectoryName(source);
-			if (!string.IsNullOrEmpty(dir))
+			string? dir = GetFilter(source);
+			if (dir != null)
 			{
 				item.Add(new XElement(ns + "Filter", dir));
 			}

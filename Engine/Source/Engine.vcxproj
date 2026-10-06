@@ -101,6 +101,22 @@
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Device.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\Shaders\Private\TriangleVertexShader.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\TriangleVertexShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="..\Shaders\Private\TrianglePixelShader.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\TrianglePixelShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
