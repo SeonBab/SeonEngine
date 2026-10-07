@@ -171,5 +171,5 @@ SeonEngine/
 | 추가 경고 | `/w14668 /w14265` | 명령줄 → 추가 옵션 |
 | 외부 헤더 | `<>` include를 외부 헤더로 취급, 경고 끔 | 외부 포함 → 괄호로 묶인 포함을 외부로 처리 / 외부 헤더 경고 수준 |
 | C++ 예외 | 끔 (`_HAS_EXCEPTIONS=0` 정의) | 코드 생성 → C++ 예외 처리 가능 |
-| RTTI | 끔 (`/GR-`) | 언어 → 런타임 형식 정보 사용 |
+| RTTI | 켬 (`/GR`) | 언어 → 런타임 형식 정보 사용 |
 | 전처리기 정의 | `SE_PLATFORM_WINDOWS`, `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` (구성별 0 / 1), `SE_PLATFORM_HEADER_NAME=Windows`(플랫폼 헤더 경로를 만드는 이름, Architecture 3장 "플랫폼 헤더 고르기") | 전처리기 → 전처리기 정의 |

@@ -10,6 +10,9 @@
     <Filter Include="Core\Private\Logging">
       <UniqueIdentifier>{64579C9E-228C-32F8-892A-5ECFD148DA3D}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Private\Math">
+      <UniqueIdentifier>{49270B34-44EF-3621-BAB6-AF69CE6AD62A}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Public">
       <UniqueIdentifier>{952E5BDE-3947-38D8-8C36-FD1AE59E332B}</UniqueIdentifier>
     </Filter>
@@ -24,6 +27,9 @@
     </Filter>
     <Filter Include="Core\Public\Logging">
       <UniqueIdentifier>{5F0CC958-0954-30B2-A5AF-CF7D01A73D49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Public\Math">
+      <UniqueIdentifier>{13916B0C-FE31-3603-AAF4-35DF3E21DCAD}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\Public\Templates">
       <UniqueIdentifier>{57347ADC-B9B5-36DA-8E9F-F15B24651EE4}</UniqueIdentifier>
@@ -123,6 +129,21 @@
     <ClInclude Include="Core\Public\Logging\OutputDeviceRedirector.h">
       <Filter>Core\Public\Logging</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\Math\Matrix4.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Math\Quat.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Math\Rotator.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Math\Transform.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Math\Vector3.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\Templates\SharedPointer.h">
       <Filter>Core\Public\Templates</Filter>
     </ClInclude>
@@ -159,8 +180,20 @@
     <ClInclude Include="Engine\Private\Renderer\Renderer.h">
       <Filter>Engine\Private\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Actor.h">
+      <Filter>Engine\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\ActorComponent.h">
+      <Filter>Engine\Public</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
       <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\TransformComponent.h">
+      <Filter>Engine\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\World.h">
+      <Filter>Engine\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +208,24 @@
     </ClCompile>
     <ClCompile Include="Core\Private\Logging\OutputDeviceRedirector.cpp">
       <Filter>Core\Private\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Math\Matrix4.cpp">
+      <Filter>Core\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Math\Quat.cpp">
+      <Filter>Core\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Math\Rotator.cpp">
+      <Filter>Core\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Math\Transform.cpp">
+      <Filter>Core\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Actor.cpp">
+      <Filter>Engine\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\ActorComponent.cpp">
+      <Filter>Engine\Private</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp">
       <Filter>Engine\Private\Launch</Filter>
@@ -199,6 +250,12 @@
     </ClCompile>
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp">
       <Filter>Engine\Private\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\TransformComponent.cpp">
+      <Filter>Engine\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\World.cpp">
+      <Filter>Engine\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

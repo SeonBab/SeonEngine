@@ -73,6 +73,11 @@
     <ClInclude Include="Core\Public\Logging\OutputDeviceDebug.h" />
     <ClInclude Include="Core\Public\Logging\OutputDeviceHelper.h" />
     <ClInclude Include="Core\Public\Logging\OutputDeviceRedirector.h" />
+    <ClInclude Include="Core\Public\Math\Matrix4.h" />
+    <ClInclude Include="Core\Public\Math\Quat.h" />
+    <ClInclude Include="Core\Public\Math\Rotator.h" />
+    <ClInclude Include="Core\Public\Math\Transform.h" />
+    <ClInclude Include="Core\Public\Math\Vector3.h" />
     <ClInclude Include="Core\Public\Templates\SharedPointer.h" />
     <ClInclude Include="Core\Public\Templates\UniquePtr.h" />
     <ClInclude Include="Core\Public\Windows\WindowsPlatform.h" />
@@ -85,13 +90,23 @@
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="Engine\Private\Renderer\D3D11\D3D11Device.h" />
     <ClInclude Include="Engine\Private\Renderer\Renderer.h" />
+    <ClInclude Include="Engine\Public\Actor.h" />
+    <ClInclude Include="Engine\Public\ActorComponent.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
+    <ClInclude Include="Engine\Public\TransformComponent.h" />
+    <ClInclude Include="Engine\Public\World.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceDebug.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceHelper.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceRedirector.cpp" />
+    <ClCompile Include="Core\Private\Math\Matrix4.cpp" />
+    <ClCompile Include="Core\Private\Math\Quat.cpp" />
+    <ClCompile Include="Core\Private\Math\Rotator.cpp" />
+    <ClCompile Include="Core\Private\Math\Transform.cpp" />
+    <ClCompile Include="Engine\Private\Actor.cpp" />
+    <ClCompile Include="Engine\Private\ActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformMisc.cpp" />
@@ -100,6 +115,8 @@
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Device.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
+    <ClCompile Include="Engine\Private\TransformComponent.cpp" />
+    <ClCompile Include="Engine\Private\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Shaders\Private\TriangleVertexShader.hlsl">
