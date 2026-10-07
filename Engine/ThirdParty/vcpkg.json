@@ -1,6 +1,14 @@
 {
   "dependencies": [
-    "directxmath"
+    "directxmath",
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental",
+        "win32-binding",
+        "dx11-binding"
+      ]
+    }
   ],
   "builtin-baseline": "eb2d3a3279fd019cb7733072d86900d0ad2a1aef"
 }
