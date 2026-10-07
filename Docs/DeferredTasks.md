@@ -22,7 +22,7 @@
 | 엔진 기반 시스템 | 문자열 변환 (UTF-8 경로의 깨진 바이트 처리, 경로 전용 타입) | 엔진의 UTF-8 경로를 UTF-16으로 바꾸는 첫 코드를 쓸 때, 또는 OS에서 받는 경로가 여럿이 될 때 |
 | 엔진 기반 시스템 | 긴 경로 지원 (260자 초과) | 파일 시스템 작업(에셋 읽기, `FPlatformFile` 등)을 시작할 때, 또는 긴 경로 문제를 실제로 만났을 때 |
 | 엔진 기반 시스템 | 엔진 객체 (`FEngine`, `gEngine`) | 창 말고도 초기화 / 종료 순서를 관리할 시스템(렌더러 등)이 생길 때 |
-| 엔진 기반 시스템 | 수학 타입 (`FVector3`, `FMatrix4` 등) | 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때 |
+| 엔진 기반 시스템 | 수학 타입의 나머지 데이터 / 계산 (`FMatrix4` 등). FVector3 / FRotator / FQuat / FTransform 데이터와 기본값은 구현됨 | 필수 트랜스폼 준비와 렌더러에 트랜스폼 / 카메라 행렬을 넘기는 단계에서 필요한 조각을 연결 |
 | 엔진 기반 시스템 | 메모리 할당자 | 메모리 사용량 추적, 누수 검사, 프레임 단위 임시 할당 등이 필요해질 때 |
 | 엔진 기반 시스템 | null이 될 수 없는 공유 참조 (`TSharedRef`) | 공유 소유 객체를 null 없이 주고받는 API가 반복될 때 (UI 위젯 트리 등) |
 | 엔진 기반 시스템 | 델리게이트 / 이벤트 | 객체 간 이벤트 통지(입력, UI, 게임 이벤트 등)가 필요할 때 |
@@ -99,7 +99,7 @@
 - **진행 시점**: 저장소 안에서 컴파일하는 외부 코드를 들일 때. CI 도입이나 다른 PC에서 빌드하는 일이 먼저 오면 그때.
 - **관련 문서 점검**: 의존성을 추가 / 제거하거나 vcpkg 연결을 바꿀 때, 실제 manifest와 빌드 설정을 기준으로 [Project Settings](ProjectSettings.md), [설정 결정 기록](../../Docs/ProjectSetupDecisions.md), [서드파티 학습 문서](../../Study/ThirdPartyAndVcpkg.md)의 현재 상태를 함께 갱신한다. NoTemplate 제외 상태는 이미 반영됐다. 이전 설치 / 빌드 결과와 예시는 당시 기록으로 남기고, 현재 적용 상태와 구분한다. 문서 수정만으로 복원 / 빌드 성공을 주장하지 않는다.
 - **풀려는 문제**
-  - **엔진 설정의 적용 범위**: `Directory.Build.props`는 저장소 아래 모든 `.vcxproj`에 자동으로 적용된다. 엔진용 설정(`/W4`, 경고를 오류로 처리, `SDLCheck`, 예외 / RTTI 끔, `_HAS_EXCEPTIONS=0`, `/permissive-`, `/w14668` `/w14265`)이 저장소 안에서 컴파일하는 외부 `.cpp`에도 걸린다. `<...>`로 include한 외부 헤더만 `TreatAngleIncludeAsExternal` + `ExternalWarningLevel`로 경고가 꺼진다.
+  - **엔진 설정의 적용 범위**: `Directory.Build.props`는 저장소 아래 모든 `.vcxproj`에 자동으로 적용된다. 엔진용 설정(`/W4`, 경고를 오류로 처리, `SDLCheck`, 예외 끔 / RTTI 켬, `_HAS_EXCEPTIONS=0`, `/permissive-`, `/w14668` `/w14265`)이 저장소 안에서 컴파일하는 외부 `.cpp`에도 걸린다. `<...>`로 include한 외부 헤더만 `TreatAngleIncludeAsExternal` + `ExternalWarningLevel`로 경고가 꺼진다.
   - **classic 창고에 기대는 상태**: 개발 PC는 `C:\vcpkg`(classic 모드)에 boost가 있고 사용자 전역 통합(`%LOCALAPPDATA%\vcpkg\vcpkg.user.props` / `.targets`)이 켜져 있다. 이 상태에서는 그 창고의 include 경로와 `lib\*.lib`가 SeonEngine에도 붙는다. 여기에 라이브러리를 설치해 쓰면 다른 PC에서 빌드가 안 되고, 버전이 PC와 시점마다 달라진다.
 - **결정**
 
@@ -109,14 +109,14 @@
   | triplet | `x64-windows-static-md` 우선 (정적 라이브러리 + CRT `/MD`). 엔진은 `RuntimeLibrary`를 지정하지 않아 Debug `/MDd`, Release `/MD`다. `x64-windows-static`은 CRT가 `/MT`라 맞지 않는다 |
   | vcpkg 연결 | 프로젝트에서 vcpkg의 `vcpkg.props` / `vcpkg.targets`를 명시적으로 import한다. 사용자 전역 통합은 `VCPkgLocalAppDataDisabled`로 끊는다. vcpkg 위치는 `VCPKG_ROOT` 환경 변수, 없으면 VS 내장 vcpkg(`$(VsInstallRoot)\VC\vcpkg\`) |
   | 외부 코드 컴파일 | `Engine.vcxproj` 안에서 컴파일하고, 외부 소스에만 경고를 완화한다 |
-  | 예외 / RTTI | 현재 정책(끔) 유지. 외부 코드에 필요하다고 확인되면 따로 검토한다 |
+  | 예외 / RTTI | 예외 끔 / RTTI 켬을 유지. 외부 코드 요구가 다르면 따로 검토한다 |
 
 - **서드파티 공통 규칙**
   1. 외부 코드는 `Engine/ThirdParty/` 아래에만 둔다.
   2. 외부 헤더는 `<...>`로 include하고 외부 include 경로로 등록한다.
   3. 저장소 안에서 컴파일하는 외부 `.cpp`에는 필요한 설정만 완화한다(우선 경고). 생성기가 관리하는 소스 목록이 아니라 라이브러리별 import 파일에서 소스 목록과 파일별 설정을 함께 관리한다. 연결이 복잡해지면 외부 코드 전용 정적 라이브러리 프로젝트로 나눈다(그 프로젝트도 `Directory.Build.props`를 물려받으므로 안에서 덮어쓰고, `GenerateProjectFiles`가 `ThirdParty`를 건너뛰므로 파일 목록을 따로 관리한다).
   4. vcpkg 패키지가 있고 요구 기능과 빌드 구성을 만족하면 vcpkg manifest를 우선한다. 패키지가 없거나 고쳐 써야 하는 라이브러리는 다른 방식을 쓸 수 있다.
-  5. 외부 코드의 예외 / RTTI 정책은 경고 완화와 따로 정한다. 켤 때는 전역 `_HAS_EXCEPTIONS=0`과 섞이는 영향, 외부 예외가 엔진 호출 경계를 넘는 문제를 함께 검토한다.
+  5. 외부 코드의 예외 / RTTI 정책은 경고 완화와 따로 정한다. 현재 예외는 끄고 RTTI는 켠다. 외부 코드에 예외를 켤 때는 전역 `_HAS_EXCEPTIONS=0`과 섞이는 영향, 외부 예외가 엔진 호출 경계를 넘는 문제를 함께 검토한다.
   6. 엔진이나 게임 코드에서 직접 include하는 라이브러리는, 다른 라이브러리의 전이 의존성으로 들어오더라도 `vcpkg.json`에 직접 적는다.
 - **새 PC 준비 조건**: VS의 vcpkg 구성 요소를 설치하거나 `VCPKG_ROOT`를 지정한다. `vcpkg.json`과 설정값만으로는 vcpkg와 MSBuild가 연결되지 않는다.
 - **적용과 검증 순서**
@@ -165,7 +165,7 @@
 
 - **진행 시점**: `FEngine`과 첫 서브시스템을 구현할 때
 - **정할 것**
-  - `GetSubsystem<T>()`가 타입을 구분하는 방법. RTTI(`typeid`)를 쓰지 않기로 했으므로 템플릿 정적 타입 ID나 리플렉션을 쓴다.
+  - `GetSubsystem<T>()`가 타입을 구분하는 방법. 현재 RTTI를 허용하므로 RTTI 기반 조회 / 템플릿 정적 타입 ID / 리플렉션 중 실제 요구에 맞춰 정한다.
     - 참고: Unreal의 `GetEngineSubsystem<T>()`는 리플렉션의 `T::StaticClass()`(UClass 포인터)를 키로 쓴다.
     - 리플렉션 전에는 템플릿 정적 타입 ID를 쓸 수 있다. 타입마다 함수가 따로 만들어지므로 처음 호출될 때 받은 번호가 타입별로 고유하다.
 
@@ -290,13 +290,13 @@
 
 ### 수학 타입 (`FVector3`, `FMatrix4` 등)
 
-- **진행 시점**: 렌더러에 트랜스폼이나 카메라 행렬을 넘길 때(첫 3D 렌더링).
-- **현재**: 규칙([Architecture](Architecture.md) 6. 수학과 좌표계)이 정해져 있다. LUF(X 왼쪽, Y 위, Z 앞), 오른손 좌표계, cm 단위, 행 벡터, 내부 계산은 vcpkg로 받은 DirectXMath.
+- **진행 시점**: 필수 트랜스폼 준비와 렌더러에 트랜스폼이나 카메라 행렬을 넘기는 단계(첫 3D 렌더링).
+- **현재**: FVector3 / FQuat / FTransform의 데이터와 기본값은 구현했으며 액터가 생성하는 FTransformComponent에 보관한다. 별도로 FRotator의 도 단위 각도 데이터와 기본값 0을 구현했다. 컴포넌트의 위치와 크기 배율 조회·변경과 FRotator::ToQuat / FQuat::ToRotator 계산은 가능하다. 컴포넌트의 GetRotation / GetQuaternion 회전 조회도 가능하다. SetRotation(FRotator / FQuat)도 가능하다. FTransform::ToMatrixWithScale / ToMatrixNoScale 행렬 생성도 가능하다. 나머지 계산과 렌더러 연결은 아직 없다. 규칙([Architecture](Architecture.md) 6. 수학과 좌표계)은 LUF(X 왼쪽, Y 위, Z 앞), 오른손 좌표계, cm 단위, 행 벡터, 내부 계산은 vcpkg로 받은 DirectXMath다.
 - **정할 것**
-  - 첫 범위: `FVector2` / `FVector3` / `FVector4`, `FQuat`, `FMatrix4`, `FTransform`, `FMath` 중 무엇부터
-  - 파일 배치. `FMath`는 `Math.h`가 아니라 `SeonMath.h`([Code Convention](Conventions/CodeConvention.md) 2.1 파일 이름 예외)
+  - 벡터 / 쿼터니언 / 트랜스폼 계산과 `FVector2` / `FVector4`, `FMatrix4`, `FMath`는 사용처에 맞춰 범위를 정한다.
+  - 나머지 파일 배치. `FMath`는 `Math.h`가 아니라 `SeonMath.h`([Code Convention](Conventions/CodeConvention.md) 2.1 파일 이름 예외)
   - DirectXMath 타입과의 변환 위치(헤더에 노출하지 않는 방법)
-  - 오일러 각(`FRotator` 같은 타입)을 둘지, 둔다면 축 이름과 적용 순서. LUF에서 Unreal의 Pitch / Yaw / Roll이 어느 축이 되는지 확인한다
+  - 회전 변환과 설정의 입력 검증 정책. GetRotation / GetQuaternion 조회와 SetRotation(FRotator / FQuat)은 구현됨. FQuat 설정은 유한한 단위 입력 전제로 그대로 저장함. ToQuat은 유한한 각도, ToRotator는 유한한 단위 쿼터니언 입력 전제로 구현됨. 역변환은 기본 수식만 구현했으며 yaw 특이점 처리와 정밀도 보강은 필요할 때 정함. 데이터 타입 / 도 단위 / pitch X·yaw Y·roll Z 및 오른손 부호는 구현됨. 회전 해석은 고정 기준 축 X → Y → Z의 외재적 순서로 확정함
 - **반영할 곳**: [Architecture](Architecture.md) 6. 수학과 좌표계
 
 ### 메모리 할당자
