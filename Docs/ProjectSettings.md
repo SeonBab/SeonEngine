@@ -49,6 +49,8 @@
 
 ## 폴더 구조
 
+CoreUObject의 최소 UObject를 구현하고 Engine/Source/CoreUObject/Public/UObject/Object.h와 Private/UObject/Object.cpp를 생성기로 등록했다. Engine 프로젝트는 CoreUObject/Public·Private를 include 경로에 추가하고 SampleGame은 CoreUObject/Public과 Engine/Public을 추가했다. 최소 UEngine의 Engine/Public/Engine/Engine.h와 Private/Engine/Engine.cpp 및 GameInstance.h / GameInstance.cpp와 WorldContext.h / WorldContext.cpp, GameEngine.h / GameEngine.cpp, Public/Engine/EngineLoop.h와 Private/Launch/LaunchEngineLoop.h / cpp, Private/Renderer/D3D11/D3D11Viewport.h / cpp의 클래스 골격도 생성기로 등록했다. 공통 ETransformRule의 Engine/Public/Engine/EngineTypes.h도 생성기로 등록했다. 기존 Engine.lib에 함께 빌드하며 별도 프로젝트 / 라이브러리 / DLL은 추가하지 않는다(Architecture 1장 참조).
+
 저장소 루트에 솔루션을 두고, 엔진과 게임 프로젝트를 최상위 폴더로 나눈다. 빌드 결과는 루트에 모은다.
 
 ```text
@@ -62,6 +64,7 @@ SeonEngine/
 │  ├─ Source/
 │  │  ├─ Engine.vcxproj
 │  │  ├─ Core/            모듈 (Public/, Private/)
+│  │  ├─ CoreUObject/     객체 기반 모듈 (Public/, Private/)
 │  │  └─ Engine/          모듈
 │  └─ ThirdParty/
 │     └─ vcpkg.json       vcpkg로 받는 외부 라이브러리 목록 (manifest)

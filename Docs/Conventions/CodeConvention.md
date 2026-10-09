@@ -144,7 +144,7 @@
   | `I` | Interface | 순수 가상 함수로만 이루어진 class |
   | `E` | Enum | 열거형 |
   | `C` | Concept | C++20 concept (3.10 Template 참고) |
-  | `U` | — | 엔진 객체 루트 클래스에서 파생되는 클래스 — **예약** (객체 체계 도입 전까지 사용하지 않음) |
+  | `U` | UObject 계열 | 자체 객체 루트 `UObject`와 그 파생 클래스 (`UEngine`, `UGameInstance` 등). 최소 UObject·UEngine·UGameInstance 구현 완료 / 실제 실행 연결 전이며 GC·리플렉션 구현 여부를 뜻하지 않음 |
 
   Interface를 구현하는 클래스는 일반 타입이므로 `F`를 붙인다.
 
@@ -806,10 +806,10 @@
 
 ### 4.2 객체 생명주기 `매우 중요`
 
-- **생성 / 파괴 책임** — 객체는 소유자(`TUniquePtr`를 가진 쪽)가 만들고 파괴한다. 소유 관계는 나무 모양이 되며, 최상위 소유자는 `FEngine`이다.
+- **생성 / 파괴 책임** — 객체는 소유자(`TUniquePtr`를 가진 쪽)가 만들고 파괴한다. 소유 관계는 나무 모양이 되며, 실행 엔진 객체는 FEngineLoop가 소유하며, 엔진 내부 객체는 각 담당 소유자가 만들고 파괴한다.
 
   ```text
-  FEngine
+  UEngine
    └─ FRenderer              (Engine이 소유)
        ├─ FRenderDevice      (Renderer가 소유)
        └─ FShaderCache       (Renderer가 소유)
@@ -817,8 +817,11 @@
 
 - **초기화 방식** — 무거운 객체는 2단계로 초기화하고, 함수 이름과 검사 방식을 통일한다.
   - 서브시스템과 무거운 객체(GPU 리소스 등): 생성자에서는 실패하지 않는 가벼운 작업만 한다. 실제 초기화는 `Initialize()`, 정리는 `Shutdown()`에서 한다.
+  - D3D11 장치 준비의 좁은 예외: `void InitD3DDevice()`는 Unreal 대응 이름과 역할을 사용한다. 현재 본문과 FRenderer의 직접 호출 연결을 구현했다. 창 출력은 Viewport가 준비하며 기존 Device Init은 제거했다. 정상 반환은 장치 준비 완료, 최종 생성 실패는 부분 자원 정리 후 Fatal 계약이며 다른 초기화 API의 반환형을 일반화하지 않는다.
   - 작은 보조 타입(락 가드, 타이머 등): 생성자와 소멸자로 처리한다(RAII).
   - 이름은 `Initialize()` / `Shutdown()` 한 쌍만 쓴다(`Init`, `Startup`, `Deinitialize` 등을 섞지 않는다).
+  - 엔진 실행 기반 예외: UEngine의 virtual void Init(IEngineLoop*) / virtual void Start() / virtual void Tick(float, bool) / virtual void PreExit()는 Unreal 대응 역할의 이름을 사용한다. 현재 Init은 비소유 루프 연결, Start는 빈 실행 시작 통로, Tick은 순수 가상, PreExit는 빈 기반 구현이다. UObject 생성 / 파괴와 실행 종료를 구분하고 기반 소멸자는 PreExit를 자동 호출하지 않는다. 일반 서브시스템의 Initialize / Shutdown 규칙을 바꾸지 않으며 UEngine 기반 자체의 상태 / 호출 순서 검사는 아직 없다. UGameEngine은 기존 세션이 있는 Init을 Fatal로 거부하고 PreExit는 준비 전 / 반복 호출을 허용한다. FEngineLoop는 int32 Init / void Exit를 사용하며 정상 Init은 0, 기존 엔진 Init은 Fatal이다. Exit는 PreExit 후 소유 엔진을 파괴하고 준비 전 / 반복 호출을 허용한다. 소멸자는 Exit를 자동 호출하지 않는다.
+  - 게임 세션 훅 예외: `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다([Architecture](../Architecture.md) 2장). 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 서브시스템·GPU 자원의 이름 규칙을 바꾸는 예외는 아니다.
   - `Initialize()` 전에 다른 함수를 호출하거나, `Shutdown()` 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
 
   ```cpp
