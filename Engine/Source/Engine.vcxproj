@@ -102,6 +102,7 @@
     <ClInclude Include="Engine\Public\Engine\GameInstance.h" />
     <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
+    <ClInclude Include="Engine\Public\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />
     <ClInclude Include="Engine\Public\World.h" />
   </ItemGroup>
@@ -131,6 +132,7 @@
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Device.cpp" />
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Viewport.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
+    <ClCompile Include="Engine\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\TransformComponent.cpp" />
     <ClCompile Include="Engine\Private\World.cpp" />
   </ItemGroup>

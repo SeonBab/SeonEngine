@@ -237,6 +237,9 @@
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\StaticMeshComponent.h">
+      <Filter>Engine\Public</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\TransformComponent.h">
       <Filter>Engine\Public</Filter>
     </ClInclude>
@@ -319,6 +322,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp">
       <Filter>Engine\Private\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\StaticMeshComponent.cpp">
+      <Filter>Engine\Private</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\TransformComponent.cpp">
       <Filter>Engine\Private</Filter>
