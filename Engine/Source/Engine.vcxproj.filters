@@ -4,6 +4,21 @@
     <Filter Include="Core">
       <UniqueIdentifier>{1FD72A95-F979-35B5-8A6B-B0D89B8BD9EE}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CoreUObject">
+      <UniqueIdentifier>{B2F674BC-6B2B-3117-9AEF-153CD097292D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CoreUObject\Private">
+      <UniqueIdentifier>{36F9473F-648D-374F-BFDD-65C523237681}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CoreUObject\Private\UObject">
+      <UniqueIdentifier>{70E486C3-3955-3445-9294-704D72DCC174}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CoreUObject\Public">
+      <UniqueIdentifier>{93D5F918-07A6-3485-93E5-D7B42F19A94C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CoreUObject\Public\UObject">
+      <UniqueIdentifier>{4E8FC873-43A6-32EA-90D1-2D8B4AF0D00D}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Private">
       <UniqueIdentifier>{E66736EA-0F0E-363A-830C-2724EA435C63}</UniqueIdentifier>
     </Filter>
@@ -43,6 +58,9 @@
     <Filter Include="Engine\Private">
       <UniqueIdentifier>{687924DB-7C28-3421-9D6F-8609EA0ED5CE}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Private\Engine">
+      <UniqueIdentifier>{750BA958-0625-352F-82BF-F64E13FE0244}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Private\Launch">
       <UniqueIdentifier>{EAE10732-6B9F-3897-A287-8A32E2182F32}</UniqueIdentifier>
     </Filter>
@@ -63,6 +81,9 @@
     </Filter>
     <Filter Include="Engine\Public">
       <UniqueIdentifier>{C6A93A3B-6A67-39D9-9CD7-D279F328B158}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Public\Engine">
+      <UniqueIdentifier>{6ADB6142-2384-363B-8FF7-D3780AA5E2CC}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Public\Renderer">
       <UniqueIdentifier>{2B3349A1-15FB-3021-88F8-34C9F84A06C0}</UniqueIdentifier>
@@ -185,6 +206,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Public\ActorComponent.h">
       <Filter>Engine\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\EngineTypes.h">
+      <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
       <Filter>Engine\Public\Renderer</Filter>

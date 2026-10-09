@@ -11,3 +11,8 @@ FActor& FActorComponent::GetOwner() const
 {
 	return *owner;
 }
+
+bool FActorComponent::AllowsMultipleComponents() const
+{
+	return false;
+}

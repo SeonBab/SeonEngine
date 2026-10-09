@@ -92,6 +92,7 @@
     <ClInclude Include="Engine\Private\Renderer\Renderer.h" />
     <ClInclude Include="Engine\Public\Actor.h" />
     <ClInclude Include="Engine\Public\ActorComponent.h" />
+    <ClInclude Include="Engine\Public\Engine\EngineTypes.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />
     <ClInclude Include="Engine\Public\World.h" />
