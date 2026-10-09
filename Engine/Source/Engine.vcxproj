@@ -91,6 +91,7 @@
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsString.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="Engine\Private\Renderer\D3D11\D3D11Device.h" />
+    <ClInclude Include="Engine\Private\Renderer\D3D11\D3D11Viewport.h" />
     <ClInclude Include="Engine\Private\Renderer\Renderer.h" />
     <ClInclude Include="Engine\Public\Actor.h" />
     <ClInclude Include="Engine\Public\ActorComponent.h" />
@@ -128,6 +129,7 @@
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsString.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Device.cpp" />
+    <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Viewport.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
     <ClCompile Include="Engine\Private\TransformComponent.cpp" />
     <ClCompile Include="Engine\Private\World.cpp" />
