@@ -96,6 +96,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CoreUObject\Public\UObject\Object.h">
+      <Filter>CoreUObject\Public\UObject</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\Containers\Array.h">
       <Filter>Core\Public\Containers</Filter>
     </ClInclude>
@@ -183,6 +186,9 @@
     <ClInclude Include="Engine\Private\Launch\EngineMain.h">
       <Filter>Engine\Private\Launch</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Private\Launch\LaunchEngineLoop.h">
+      <Filter>Engine\Private\Launch</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Private\Platform\GenericPlatform\GenericWindow.h">
       <Filter>Engine\Private\Platform\GenericPlatform</Filter>
     </ClInclude>
@@ -207,7 +213,22 @@
     <ClInclude Include="Engine\Public\ActorComponent.h">
       <Filter>Engine\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\Engine.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\EngineLoop.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Engine\EngineTypes.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\GameEngine.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\GameInstance.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\WorldContext.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
@@ -221,6 +242,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CoreUObject\Private\UObject\Object.cpp">
+      <Filter>CoreUObject\Private\UObject</Filter>
+    </ClCompile>
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp">
       <Filter>Core\Private\Logging</Filter>
     </ClCompile>
@@ -251,7 +275,22 @@
     <ClCompile Include="Engine\Private\ActorComponent.cpp">
       <Filter>Engine\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Private\Engine\Engine.cpp">
+      <Filter>Engine\Private\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Engine\GameEngine.cpp">
+      <Filter>Engine\Private\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Engine\GameInstance.cpp">
+      <Filter>Engine\Private\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Engine\WorldContext.cpp">
+      <Filter>Engine\Private\Engine</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp">
+      <Filter>Engine\Private\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Launch\LaunchEngineLoop.cpp">
       <Filter>Engine\Private\Launch</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp">

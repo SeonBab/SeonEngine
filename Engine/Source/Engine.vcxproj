@@ -50,11 +50,12 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)Core\Public;$(ProjectDir)Core\Private;$(ProjectDir)Engine\Public;$(ProjectDir)Engine\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Core\Public;$(ProjectDir)Core\Private;$(ProjectDir)CoreUObject\Public;$(ProjectDir)CoreUObject\Private;$(ProjectDir)Engine\Public;$(ProjectDir)Engine\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="CoreUObject\Public\UObject\Object.h" />
     <ClInclude Include="Core\Public\Containers\Array.h" />
     <ClInclude Include="Core\Public\Containers\HashMap.h" />
     <ClInclude Include="Core\Public\Containers\SeonString.h" />
@@ -84,6 +85,7 @@
     <ClInclude Include="Core\Public\Windows\WindowsPlatformMisc.h" />
     <ClInclude Include="Core\Public\Windows\WindowsPlatformProcess.h" />
     <ClInclude Include="Engine\Private\Launch\EngineMain.h" />
+    <ClInclude Include="Engine\Private\Launch\LaunchEngineLoop.h" />
     <ClInclude Include="Engine\Private\Platform\GenericPlatform\GenericWindow.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsHWrapper.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsString.h" />
@@ -92,12 +94,18 @@
     <ClInclude Include="Engine\Private\Renderer\Renderer.h" />
     <ClInclude Include="Engine\Public\Actor.h" />
     <ClInclude Include="Engine\Public\ActorComponent.h" />
+    <ClInclude Include="Engine\Public\Engine\Engine.h" />
+    <ClInclude Include="Engine\Public\Engine\EngineLoop.h" />
     <ClInclude Include="Engine\Public\Engine\EngineTypes.h" />
+    <ClInclude Include="Engine\Public\Engine\GameEngine.h" />
+    <ClInclude Include="Engine\Public\Engine\GameInstance.h" />
+    <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />
     <ClInclude Include="Engine\Public\World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CoreUObject\Private\UObject\Object.cpp" />
     <ClCompile Include="Core\Private\Logging\LogMacros.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceDebug.cpp" />
     <ClCompile Include="Core\Private\Logging\OutputDeviceHelper.cpp" />
@@ -108,7 +116,12 @@
     <ClCompile Include="Core\Private\Math\Transform.cpp" />
     <ClCompile Include="Engine\Private\Actor.cpp" />
     <ClCompile Include="Engine\Private\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Private\Engine\Engine.cpp" />
+    <ClCompile Include="Engine\Private\Engine\GameEngine.cpp" />
+    <ClCompile Include="Engine\Private\Engine\GameInstance.cpp" />
+    <ClCompile Include="Engine\Private\Engine\WorldContext.cpp" />
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp" />
+    <ClCompile Include="Engine\Private\Launch\LaunchEngineLoop.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformMisc.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformProcess.cpp" />
