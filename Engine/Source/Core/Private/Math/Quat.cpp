@@ -6,6 +6,14 @@
 
 #include <cmath>
 
+bool FQuat::IsNormalized() const
+{
+	constexpr float tolerance = 0.01f;
+	const float lengthSquared = x * x + y * y + z * z + w * w;
+
+	return std::abs(1.0f - lengthSquared) <= tolerance;
+}
+
 FRotator FQuat::ToRotator() const
 {
 	// 고정 축 XYZ 각도 추출에 필요한 행 벡터 회전 행렬 성분이다.

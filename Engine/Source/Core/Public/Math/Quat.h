@@ -23,4 +23,7 @@ struct FQuat
 	 * Unreal의 FQuat::Rotator()에 대응하는 변환 함수다. 축과 회전 규칙은 SeonEngine을 따른다.
 	 */
 	[[nodiscard]] FRotator ToRotator() const;
+
+	/** 유한한 성분을 전제로 길이 제곱과 1의 차이가 0.01 이하인지 반환한다. 원본을 변경하지 않는다. */
+	[[nodiscard]] bool IsNormalized() const;
 };
