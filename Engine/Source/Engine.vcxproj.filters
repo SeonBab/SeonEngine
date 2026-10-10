@@ -28,6 +28,9 @@
     <Filter Include="Core\Private\Math">
       <UniqueIdentifier>{49270B34-44EF-3621-BAB6-AF69CE6AD62A}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Private\Modules">
+      <UniqueIdentifier>{0F73B389-72A8-3F9F-9C29-19F79C4D3AE6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Public">
       <UniqueIdentifier>{952E5BDE-3947-38D8-8C36-FD1AE59E332B}</UniqueIdentifier>
     </Filter>
@@ -45,6 +48,9 @@
     </Filter>
     <Filter Include="Core\Public\Math">
       <UniqueIdentifier>{13916B0C-FE31-3603-AAF4-35DF3E21DCAD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Public\Modules">
+      <UniqueIdentifier>{C274EF21-2E5D-3827-ABD5-A69B02245C6A}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\Public\Templates">
       <UniqueIdentifier>{57347ADC-B9B5-36DA-8E9F-F15B24651EE4}</UniqueIdentifier>
@@ -168,6 +174,12 @@
     <ClInclude Include="Core\Public\Math\Vector3.h">
       <Filter>Core\Public\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\Modules\ModuleInterface.h">
+      <Filter>Core\Public\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Modules\ModuleManager.h">
+      <Filter>Core\Public\Modules</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\Templates\SharedPointer.h">
       <Filter>Core\Public\Templates</Filter>
     </ClInclude>
@@ -231,10 +243,13 @@
     <ClInclude Include="Engine\Public\Engine\GameInstance.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\GameInstanceFactory.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Engine\WorldContext.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\GameProject.h">
+    <ClInclude Include="Engine\Public\GameModule.h">
       <Filter>Engine\Public</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h">
@@ -280,6 +295,9 @@
     </ClCompile>
     <ClCompile Include="Core\Private\Math\Transform.cpp">
       <Filter>Core\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Private\Modules\ModuleManager.cpp">
+      <Filter>Core\Private\Modules</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Actor.cpp">
       <Filter>Engine\Private</Filter>

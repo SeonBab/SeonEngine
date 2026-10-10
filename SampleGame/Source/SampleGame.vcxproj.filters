@@ -6,7 +6,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SampleGame\SampleGame.cpp">
+    <ClInclude Include="SampleGame\SampleGameInstance.h">
+      <Filter>SampleGame</Filter>
+    </ClInclude>
+    <ClInclude Include="SampleGame\SampleGameModule.h">
+      <Filter>SampleGame</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SampleGame\SampleGameInstance.cpp">
+      <Filter>SampleGame</Filter>
+    </ClCompile>
+    <ClCompile Include="SampleGame\SampleGameModule.cpp">
       <Filter>SampleGame</Filter>
     </ClCompile>
   </ItemGroup>

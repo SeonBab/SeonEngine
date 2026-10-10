@@ -79,6 +79,8 @@
     <ClInclude Include="Core\Public\Math\Rotator.h" />
     <ClInclude Include="Core\Public\Math\Transform.h" />
     <ClInclude Include="Core\Public\Math\Vector3.h" />
+    <ClInclude Include="Core\Public\Modules\ModuleInterface.h" />
+    <ClInclude Include="Core\Public\Modules\ModuleManager.h" />
     <ClInclude Include="Core\Public\Templates\SharedPointer.h" />
     <ClInclude Include="Core\Public\Templates\UniquePtr.h" />
     <ClInclude Include="Core\Public\Windows\WindowsPlatform.h" />
@@ -100,8 +102,9 @@
     <ClInclude Include="Engine\Public\Engine\EngineTypes.h" />
     <ClInclude Include="Engine\Public\Engine\GameEngine.h" />
     <ClInclude Include="Engine\Public\Engine\GameInstance.h" />
+    <ClInclude Include="Engine\Public\Engine\GameInstanceFactory.h" />
     <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
-    <ClInclude Include="Engine\Public\GameProject.h" />
+    <ClInclude Include="Engine\Public\GameModule.h" />
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\StaticMeshComponent.h" />
@@ -118,6 +121,7 @@
     <ClCompile Include="Core\Private\Math\Quat.cpp" />
     <ClCompile Include="Core\Private\Math\Rotator.cpp" />
     <ClCompile Include="Core\Private\Math\Transform.cpp" />
+    <ClCompile Include="Core\Private\Modules\ModuleManager.cpp" />
     <ClCompile Include="Engine\Private\Actor.cpp" />
     <ClCompile Include="Engine\Private\ActorComponent.cpp" />
     <ClCompile Include="Engine\Private\Engine\Engine.cpp" />

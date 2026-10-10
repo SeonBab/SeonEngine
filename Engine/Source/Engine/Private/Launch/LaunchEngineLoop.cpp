@@ -1,8 +1,9 @@
 #include "Launch/LaunchEngineLoop.h"
 
 #include "Engine/GameEngine.h"
-#include "GameProject.h"
+#include "GameModule.h"
 #include "Logging/LogMacros.h"
+#include "Modules/ModuleInterface.h"
 
 namespace
 {
@@ -14,29 +15,23 @@ FEngineLoop::~FEngineLoop() = default;
 
 int32 FEngineLoop::Init()
 {
-	if (engine || gameProject)
+	if (engine)
 	{
-		SE_LOG(LogEngineLoop, Fatal, "FEngineLoop::Init requires no existing engine or game project");
+		SE_LOG(LogEngineLoop, Fatal, "FEngineLoop::Init requires no existing engine");
 	}
 
-	gameProject = CreateGameProject();
-	if (!gameProject)
+	TUniquePtr<IModuleInterface> gameModule = CreateGameModule();
+	if (!moduleManager.RegisterModule(gameModule))
 	{
-		SE_LOG(LogEngineLoop, Fatal, "Creating a game project failed");
+		SE_LOG(LogEngineLoop, Fatal, "Game module registration failed");
+	}
+	if (!moduleManager.LoadModule())
+	{
+		SE_LOG(LogEngineLoop, Fatal, "Game module loading failed");
 	}
 
 	engine = MakeUnique<UGameEngine>();
 	engine->Init(this);
-
-	FWorld* world = engine->GetWorld();
-	if (!world)
-	{
-		SE_LOG(LogEngineLoop, Fatal, "Initializing a game project requires a world");
-	}
-	if (!gameProject->InitializeWorld(*world))
-	{
-		SE_LOG(LogEngineLoop, Fatal, "Initializing the game world failed");
-	}
 
 	engine->Start();
 	previousTime = std::chrono::steady_clock::now();
@@ -61,5 +56,7 @@ void FEngineLoop::Exit()
 		engine->PreExit();
 		engine.reset();
 	}
-	gameProject.reset();
+
+	// 준비 전 / 반복 종료에서는 미등록 false도 허용한다.
+	(void)moduleManager.UnloadModule();
 }

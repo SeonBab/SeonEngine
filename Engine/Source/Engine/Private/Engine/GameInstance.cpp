@@ -61,6 +61,10 @@ void UGameInstance::Init()
 {
 }
 
+void UGameInstance::StartGameInstance()
+{
+}
+
 void UGameInstance::Shutdown()
 {
 	DetachWorldContext();

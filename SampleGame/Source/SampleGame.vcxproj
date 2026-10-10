@@ -64,7 +64,12 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="SampleGame\SampleGame.cpp" />
+    <ClInclude Include="SampleGame\SampleGameInstance.h" />
+    <ClInclude Include="SampleGame\SampleGameModule.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SampleGame\SampleGameInstance.cpp" />
+    <ClCompile Include="SampleGame\SampleGameModule.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Engine\Source\Engine.vcxproj">
