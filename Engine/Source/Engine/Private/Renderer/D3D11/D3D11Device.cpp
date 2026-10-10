@@ -74,6 +74,91 @@ void FD3D11Device::ClearRenderTargetView(ID3D11RenderTargetView* InRenderTargetV
 	Direct3DDeviceIMContext->ClearRenderTargetView(InRenderTargetView, InClearColor);
 }
 
+bool FD3D11Device::CreateConstantBuffer(uint32 byteSize, Microsoft::WRL::ComPtr<ID3D11Buffer>& outConstantBuffer)
+{
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a constant buffer requires an initialized D3D11 device");
+
+		return false;
+	}
+	if (byteSize == 0 || byteSize % 16 != 0)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Constant buffer size must be a nonzero multiple of 16 bytes (requested {})", byteSize);
+
+		return false;
+	}
+
+	// 범위 지정 없는 기본 상수 버퍼 사용을 위해 64KiB 이내로 제한한다.
+	constexpr uint32 MaxConstantBufferByteSize = D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * 16;
+	if (byteSize > MaxConstantBufferByteSize)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Constant buffer size exceeds the supported 64 KiB range (requested {})", byteSize);
+
+		return false;
+	}
+
+	D3D11_BUFFER_DESC bufferDesc{};
+	bufferDesc.ByteWidth = byteSize;
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> newConstantBuffer;
+	const HRESULT bufferResult = Direct3DDevice->CreateBuffer(&bufferDesc, nullptr, newConstantBuffer.GetAddressOf());
+	if (FAILED(bufferResult))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a constant buffer failed (HRESULT 0x{:08X})", static_cast<uint32>(bufferResult));
+
+		return false;
+	}
+	outConstantBuffer = std::move(newConstantBuffer);
+
+	return true;
+}
+
+bool FD3D11Device::UpdateConstantBuffer(ID3D11Buffer* constantBuffer, const void* data, uint32 byteSize)
+{
+	if (!Direct3DDeviceIMContext)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Updating a constant buffer requires an initialized D3D11 context");
+
+		return false;
+	}
+	if (!constantBuffer || !data)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Updating a constant buffer requires a buffer and CPU data");
+
+		return false;
+	}
+
+	D3D11_BUFFER_DESC bufferDesc{};
+	constantBuffer->GetDesc(&bufferDesc);
+	if (bufferDesc.Usage != D3D11_USAGE_DEFAULT || bufferDesc.BindFlags != D3D11_BIND_CONSTANT_BUFFER)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Updating a constant buffer requires a DEFAULT constant buffer");
+
+		return false;
+	}
+	if (byteSize != bufferDesc.ByteWidth)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Constant buffer update size must match the entire buffer (requested {}, buffer {})", byteSize, bufferDesc.ByteWidth);
+
+		return false;
+	}
+
+	// 기본 상수 버퍼 갱신은 전체 복사이며 API는 HRESULT를 반환하지 않는다.
+	Direct3DDeviceIMContext->UpdateSubresource(constantBuffer, 0, nullptr, data, 0, 0);
+
+	return true;
+}
+
+void FD3D11Device::SetVertexShaderConstantBuffer(ID3D11Buffer* constantBuffer)
+{
+	ID3D11Buffer* buffers[] = {constantBuffer};
+
+	Direct3DDeviceIMContext->VSSetConstantBuffers(0, 1, buffers);
+}
+
 bool FD3D11Device::CreateVertexBuffer(const TArray<FVector3>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer)
 {
 	if (vertices.empty()) { return false; }

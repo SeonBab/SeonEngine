@@ -5,6 +5,7 @@
 #include "CoreTypes.h"
 #include "HAL/PlatformProcess.h"
 #include "Logging/LogMacros.h"
+#include "Math/Matrix4.h"
 #include "Platform/Windows/WindowsString.h"
 #include "Renderer/MeshRenderData.h"
 
@@ -133,6 +134,12 @@ bool FRenderer::Init(void* WindowHandle, uint32 SizeX, uint32 SizeY)
 		return false;
 	}
 
+	if (!Device.CreateConstantBuffer(sizeof(FMatrix4), transformConstantBuffer))
+	{
+		Shutdown();
+		return false;
+	}
+
 	return true;
 }
 
@@ -145,6 +152,7 @@ void FRenderer::Shutdown()
 		DeviceContext->ClearState();
 	}
 
+	transformConstantBuffer.Reset();
 	inputLayout.Reset();
 	pixelShader.Reset();
 	vertexShader.Reset();
@@ -187,6 +195,11 @@ void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData)
 		{
 			continue;
 		}
+		if (!Device.UpdateConstantBuffer(transformConstantBuffer.Get(), &mesh.localToWorld, sizeof(FMatrix4)))
+		{
+			continue;
+		}
+		Device.SetVertexShaderConstantBuffer(transformConstantBuffer.Get());
 		Device.SetVertexBuffer(vertexBuffer.Get());
 		Device.Draw(static_cast<uint32>(mesh.vertices.size()), 0);
 	}

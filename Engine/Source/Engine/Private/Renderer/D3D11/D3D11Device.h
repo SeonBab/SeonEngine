@@ -44,6 +44,31 @@ public:
 	void ClearRenderTargetView(ID3D11RenderTargetView* InRenderTargetView, const float InClearColor[4]);
 
 	/**
+	 * 지정한 바이트 크기의 상수 버퍼를 생성한다. 크기는 0이 아닌 16바이트 배수여야 한다.
+	 * 장치 부재 / 지원 크기 초과 / 생성 실패는 로그와 false로 알리고 기존 출력을 유지한다.
+	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
+	 * 생성만으로 내용이 초기화되지 않는다. 데이터 갱신 / 셰이더 바인딩 / 그리기는 별도다.
+	 */
+	[[nodiscard]] bool CreateConstantBuffer(uint32 byteSize, Microsoft::WRL::ComPtr<ID3D11Buffer>& outConstantBuffer);
+
+	/**
+	 * 같은 장치의 DEFAULT 상수 버퍼 전체를 CPU 데이터로 갱신한다. 데이터는 호출 동안만 빌린다.
+	 * data는 byteSize만큼 읽을 수 있어야 하며 크기는 버퍼 전체 바이트 크기와 같아야 한다.
+	 * 컨텍스트 부재 / 빈 버퍼·데이터 / 용도·크기 불일치는 로그와 false로 알리고 갱신하지 않는다.
+	 * true는 입력 검사를 통과하고 갱신 호출을 수행했음을 뜻하며 GPU 완료 / 모든 실행 오류 검출은 아니다.
+	 * 버퍼 소유권 이전 / 셰이더 바인딩 / 그리기는 하지 않는다.
+	 */
+	[[nodiscard]] bool UpdateConstantBuffer(ID3D11Buffer* constantBuffer, const void* data, uint32 byteSize);
+
+	/**
+	 * 준비된 컨텍스트의 vertex shader 상수 버퍼 슬롯 0에 버퍼 하나를 연결한다.
+	 * 같은 장치의 유효한 상수 버퍼가 필요하며 nullptr는 슬롯 0 연결 해제다.
+	 * Device 멤버에는 저장하지 않지만 컨텍스트는 바인딩 동안 COM 참조를 보유한다.
+	 * 데이터 갱신 / 다른 슬롯·셰이더 단계 설정 / 그리기는 하지 않는다.
+	 */
+	void SetVertexShaderConstantBuffer(ID3D11Buffer* constantBuffer);
+
+	/**
 	 * 로컬 정점 위치를 복사한 변경 불가 GPU 버퍼를 생성한다. CPU 배열은 호출 중에만 필요하다.
 	 * 빈 입력은 생성 없이 false다. 장치 부재 / 크기 초과 / 생성 실패도 false이며 원인을 로그로 남긴다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 버퍼 참조를 해제해야 한다.
