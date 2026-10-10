@@ -106,6 +106,7 @@
     <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
     <ClInclude Include="Engine\Public\GameModule.h" />
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h" />
+    <ClInclude Include="Engine\Public\Renderer\PositionColorVertex.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />

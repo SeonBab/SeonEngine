@@ -255,6 +255,9 @@
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Renderer\PositionColorVertex.h">
+      <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
