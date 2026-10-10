@@ -38,6 +38,11 @@ void UEngine::PreExit()
 {
 }
 
+FWorld* UEngine::GetWorld() const
+{
+	return nullptr;
+}
+
 FWorldContext& UEngine::CreateNewWorldContext()
 {
 	if (worldContext)

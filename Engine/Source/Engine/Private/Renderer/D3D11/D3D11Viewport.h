@@ -62,6 +62,12 @@ public:
 	 */
 	void Resize(uint32 InSizeX, uint32 InSizeY);
 
+	/** 출력 자원 준비에 성공한 가로 픽셀 수를 반환한다. 준비 전과 종료 후에는 0이다. */
+	uint32 GetSizeX() const { return SizeX; }
+
+	/** 출력 자원 준비에 성공한 세로 픽셀 수를 반환한다. 준비 전과 종료 후에는 0이다. */
+	uint32 GetSizeY() const { return SizeY; }
+
 	/**
 	 * 그리기를 마친 백버퍼를 창에 표시한다. 삼각형을 그리는 함수는 아니다.
 	 * 생성된 스왑체인이 필요하며 종료 후나 최소화 상태에서는 호출하지 않는다.

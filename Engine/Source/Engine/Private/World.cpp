@@ -1,13 +1,92 @@
 #include "World.h"
 
 #include "Actor.h"
+#include "Renderer/MeshRenderData.h"
+#include "StaticMeshComponent.h"
 
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <utility>
 
 FWorld::FWorld() = default;
 FWorld::~FWorld() = default;
+
+void FWorld::Tick(float deltaSeconds)
+{
+	if (!std::isfinite(deltaSeconds) || deltaSeconds < 0.0f)
+	{
+		assert(false && "World Tick requires a finite non-negative deltaSeconds");
+		std::abort();
+	}
+
+	DeltaTimeSeconds = deltaSeconds;
+	TimeSeconds += static_cast<double>(deltaSeconds);
+
+	TArray<FActor*> actorsToTick;
+	CollectActors(actorsToTick);
+	for (FActor* actor : actorsToTick)
+	{
+		if (actor->IsActorBeingDestroyed()) { continue; }
+
+		actor->Tick(deltaSeconds);
+	}
+}
+
+void FWorld::CollectActors(TArray<FActor*>& outActors) const
+{
+	outActors.clear();
+	for (const TUniquePtr<FActor>& actor : actors)
+	{
+		outActors.push_back(actor.get());
+	}
+
+	for (TArray<FActor*>::size_type index = 0; index < outActors.size(); ++index)
+	{
+		FActor* actor = outActors[index];
+		for (const TUniquePtr<FActor>& child : actor->children)
+		{
+			outActors.push_back(child.get());
+		}
+	}
+}
+
+void FWorld::CollectStaticMeshComponents(TArray<FStaticMeshComponent*>& outComponents) const
+{
+	outComponents.clear();
+	TArray<FActor*> worldActors;
+	CollectActors(worldActors);
+	TArray<FStaticMeshComponent*> actorComponents;
+	for (FActor* actor : worldActors)
+	{
+		if (actor->IsActorBeingDestroyed()) { continue; }
+
+		actor->GetComponents(actorComponents);
+		outComponents.insert(outComponents.end(), actorComponents.begin(), actorComponents.end());
+	}
+}
+
+void FWorld::CollectMeshRenderData(TArray<FMeshRenderData>& outRenderData) const
+{
+	outRenderData.clear();
+	TArray<FStaticMeshComponent*> meshComponents;
+	CollectStaticMeshComponents(meshComponents);
+	outRenderData.reserve(meshComponents.size());
+	for (const FStaticMeshComponent* meshComponent : meshComponents)
+	{
+		outRenderData.push_back(meshComponent->GetRenderData());
+	}
+}
+
+float FWorld::GetDeltaSeconds() const
+{
+	return DeltaTimeSeconds;
+}
+
+double FWorld::GetTimeSeconds() const
+{
+	return TimeSeconds;
+}
 
 FActor& FWorld::SpawnActor()
 {

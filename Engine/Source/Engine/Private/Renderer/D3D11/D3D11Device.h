@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Containers/Array.h"
 #include "CoreTypes.h"
+#include "Math/Vector3.h"
 #include "Platform/Windows/WindowsHWrapper.h"
 
 #include <d3d11.h>
@@ -40,6 +42,92 @@ public:
 	 * RTV와 색상은 호출 동안만 빌려 쓰며 소유하거나 해제하지 않는다.
 	 */
 	void ClearRenderTargetView(ID3D11RenderTargetView* InRenderTargetView, const float InClearColor[4]);
+
+	/**
+	 * 로컬 정점 위치를 복사한 변경 불가 GPU 버퍼를 생성한다. CPU 배열은 호출 중에만 필요하다.
+	 * 빈 입력은 생성 없이 false다. 장치 부재 / 크기 초과 / 생성 실패도 false이며 원인을 로그로 남긴다.
+	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 버퍼 참조를 해제해야 한다.
+	 * 정점 입력 바인딩 / 그리기 / 월드 행렬 전달은 하지 않는다.
+	 */
+	[[nodiscard]] bool CreateVertexBuffer(const TArray<FVector3>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer);
+
+	/**
+	 * 준비된 컨텍스트의 입력 슬롯 0에 FVector3 간격 / 시작 오프셋 0으로 정점 버퍼 하나를 연결한다.
+	 * 이 장치에서 만든 정점 버퍼가 필요하며 nullptr는 슬롯 0 연결 해제다. Draw는 하지 않는다.
+	 * Device 멤버에는 저장하지 않지만 컨텍스트는 바인딩 동안 COM 참조를 보유한다.
+	 */
+	void SetVertexBuffer(ID3D11Buffer* vertexBuffer);
+
+	/**
+	 * 컴파일된 vertex shader 입력에 맞춰 슬롯 0의 POSITION0 / float3 레이아웃을 생성한다.
+	 * 바이트코드는 호출 동안만 필요하다. 빈 입력 / 장치 부재 / API 실패는 로그와 false로 알린다.
+	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
+	 * 레이아웃 연결 / 셰이더 객체 생성 / 그리기는 하지 않는다.
+	 */
+	[[nodiscard]] bool CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outInputLayout);
+
+	/**
+	 * 준비된 컨텍스트의 입력 레이아웃을 선택한다. 같은 장치의 레이아웃이 필요하며 nullptr는 해제다.
+	 * Device 멤버에는 저장하지 않지만 컨텍스트가 바인딩 동안 COM 참조를 보유한다. Draw는 하지 않는다.
+	 */
+	void SetInputLayout(ID3D11InputLayout* inputLayout);
+
+	/**
+	 * 컴파일된 바이트코드로 vertex shader 객체를 생성한다. 바이트코드는 호출 동안만 필요하다.
+	 * 빈 입력 / 장치 부재 / API 실패는 로그와 false로 알리고 기존 출력을 유지한다.
+	 * 성공 시 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
+	 * 동적 셰이더 연결 / 파일 읽기 / 셰이더 바인딩 / 그리기는 하지 않는다.
+	 */
+	[[nodiscard]] bool CreateVertexShader(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11VertexShader>& outVertexShader);
+
+	/**
+	 * 준비된 컨텍스트에 같은 장치의 vertex shader를 선택한다. nullptr는 해당 단계의 셰이더 해제다.
+	 * 클래스 인스턴스 없는 셰이더만 사용한다. 컨텍스트는 바인딩 동안 COM 참조를 보유한다.
+	 * Device 멤버에 저장하거나 Draw를 호출하지 않는다.
+	 */
+	void SetVertexShader(ID3D11VertexShader* vertexShader);
+
+	/**
+	 * 컴파일된 바이트코드로 pixel shader 객체를 생성한다. 바이트코드는 호출 동안만 필요하다.
+	 * 빈 입력 / 장치 부재 / API 실패는 로그와 false로 알리고 기존 출력을 유지한다.
+	 * 성공 시 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
+	 * 동적 셰이더 연결 / 파일 읽기 / 셰이더 바인딩 / 그리기는 하지 않는다.
+	 */
+	[[nodiscard]] bool CreatePixelShader(const TArray<uint8>& pixelShaderBytecode, Microsoft::WRL::ComPtr<ID3D11PixelShader>& outPixelShader);
+
+	/**
+	 * 준비된 컨텍스트에 같은 장치의 pixel shader를 선택한다. nullptr는 해당 단계의 셰이더 해제다.
+	 * 클래스 인스턴스 없는 셰이더만 사용한다. 컨텍스트는 바인딩 동안 COM 참조를 보유한다.
+	 * Device 멤버에 저장하거나 Draw를 호출하지 않는다.
+	 */
+	void SetPixelShader(ID3D11PixelShader* pixelShader);
+
+	/**
+	 * 준비된 컨텍스트에 정점 조립 규칙을 설정한다. 사용할 파이프라인에 맞는 유효한 값이 필요하다.
+	 * 버퍼 / 셰이더를 연결하거나 Draw를 호출하지 않는다. 자원을 생성하거나 소유하지 않는다.
+	 */
+	void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
+
+	/**
+	 * 비인덱스 / 비인스턴스 그리기 명령을 전달한다. 시작 정점 번호와 사용할 정점 수를 받는다.
+	 * 준비된 컨텍스트와 유효한 정점 범위 / 파이프라인 상태가 필요하며 호출자가 설정한다.
+	 * 상태 설정 / 화면 제출 / GPU 완료 대기는 하지 않는다.
+	 */
+	void Draw(uint32 vertexCount, uint32 startVertexLocation);
+
+	/**
+	 * 준비된 컨텍스트에 같은 장치의 색상 RTV 하나를 선택한다. nullptr는 출력 연결 해제다.
+	 * 다른 색상 슬롯과 깊이 타깃도 해제한다. 컨텍스트는 연결한 RTV의 COM 참조를 유지한다.
+	 * 자원 생성 / Clear / 화면 영역 설정 / Draw는 하지 않는다.
+	 */
+	void SetRenderTargetView(ID3D11RenderTargetView* renderTargetView);
+
+	/**
+	 * 준비된 컨텍스트에 화면 영역 하나와 깊이 범위를 설정한다. 다른 viewport는 비활성화한다.
+	 * 유효한 값은 호출자가 준비한다. 입력은 호출 중에만 필요하며 보관하거나 수정하지 않는다.
+	 * 출력 타깃 / scissor / Draw는 설정하지 않는다.
+	 */
+	void SetViewport(const D3D11_VIEWPORT& viewport);
 
 	/** 준비된 장치의 비소유 포인터를 반환한다. 생성 전과 정리 후에는 nullptr이다. */
 	ID3D11Device* GetDevice() const { return Direct3DDevice.Get(); }

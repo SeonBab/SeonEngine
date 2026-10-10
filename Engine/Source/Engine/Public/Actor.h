@@ -29,6 +29,9 @@ public:
 	FActor(FActor&&) = delete;
 	FActor& operator=(FActor&&) = delete;
 
+	/** 파생 액터의 갱신 통로다. 기본 동작은 비어 있으며 월드가 시작 시 수집한 살아 있는 액터를 호출한다. */
+	virtual void Tick(float DeltaSeconds);
+
 	/** 생성 시 지정한 소속 월드를 반환한다. 월드의 수명을 연장하지 않는다. */
 	FWorld& GetWorld() const;
 

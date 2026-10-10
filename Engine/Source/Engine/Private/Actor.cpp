@@ -14,6 +14,10 @@ FActor::FActor(FWorld& inWorld)
 
 FActor::~FActor() = default;
 
+void FActor::Tick([[maybe_unused]] float DeltaSeconds)
+{
+}
+
 FWorld& FActor::GetWorld() const
 {
 	return *world;

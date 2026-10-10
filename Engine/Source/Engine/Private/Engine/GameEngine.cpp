@@ -2,6 +2,7 @@
 
 #include "Engine/GameInstance.h"
 #include "Logging/LogMacros.h"
+#include "World.h"
 
 namespace
 {
@@ -23,8 +24,19 @@ void UGameEngine::Init(IEngineLoop* inEngineLoop)
 	gameInstance->InitializeStandalone();
 }
 
-void UGameEngine::Tick(float, bool)
+void UGameEngine::Tick(float deltaSeconds)
 {
+	if (!gameInstance)
+	{
+		return;
+	}
+
+	FWorld* world = gameInstance->GetWorld();
+	if (world)
+	{
+		world->Tick(deltaSeconds);
+		world->PurgeDestroyedActors();
+	}
 }
 
 void UGameEngine::PreExit()
@@ -38,4 +50,9 @@ void UGameEngine::PreExit()
 	}
 
 	UEngine::PreExit();
+}
+
+FWorld* UGameEngine::GetWorld() const
+{
+	return gameInstance ? gameInstance->GetWorld() : nullptr;
 }

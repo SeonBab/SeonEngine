@@ -1,8 +1,12 @@
 #include "Launch/EngineMain.h"
 
+#include "Engine/Engine.h"
+#include "Launch/LaunchEngineLoop.h"
 #include "Logging/LogMacros.h"
 #include "Platform/GenericPlatform/GenericWindow.h"
+#include "Renderer/MeshRenderData.h"
 #include "Renderer/RendererInterface.h"
+#include "World.h"
 
 namespace
 {
@@ -11,11 +15,16 @@ namespace
 
 int EngineMain(FGenericWindow& window, IRenderer& renderer)
 {
-	// TODO(seon): FEngine을 구현하면 창 초기화, 메인 루프, 정리를 FEngine으로 옮긴다
+	// TODO(seon): 실제 프레임 진행과 창 / 출력 책임을 목표 실행 구조에 맞춰 단계적으로 옮긴다.
 	if (!window.Initialize())
 	{
 		return 1;
 	}
+
+	FEngineLoop engineLoop;
+	engineLoop.Init();
+
+	TArray<FMeshRenderData> renderData;
 
 	// 객체가 존재해도 시작 최소화 상태에서는 그래픽스 초기화를 아직 하지 않았을 수 있다.
 	bool bRendererInitialized = false;
@@ -27,6 +36,8 @@ int EngineMain(FGenericWindow& window, IRenderer& renderer)
 		{
 			break;
 		}
+
+		engineLoop.Tick();
 
 		// 유휴 대기 정책과 별개로 크기 0인 출력 자원을 만들거나 최소화 상태에 제출하지 않는다.
 		const uint32 width = window.GetClientWidth();
@@ -44,10 +55,19 @@ int EngineMain(FGenericWindow& window, IRenderer& renderer)
 		}
 
 		renderer.Resize(width, height);
-		renderer.RenderFrame();
+		renderData.clear();
+		const UEngine* engine = engineLoop.GetEngine();
+		const FWorld* world = engine ? engine->GetWorld() : nullptr;
+		if (world)
+		{
+			world->CollectMeshRenderData(renderData);
+		}
+		renderer.RenderFrame(renderData);
 	}
 
-	// 출력 자원을 정리하는 동안 OS 창을 유지한다. 초기화 전에 닫혔다면 창만 정리한다.
+	engineLoop.Exit();
+
+	// 출력 자원을 정리하는 동안 OS 창을 유지한다. 출력 초기화 전에 닫혔다면 창만 정리한다.
 	if (bRendererInitialized)
 	{
 		renderer.Shutdown();

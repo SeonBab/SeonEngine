@@ -234,6 +234,9 @@
     <ClInclude Include="Engine\Public\Engine\WorldContext.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h">
+      <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
@@ -320,6 +323,9 @@
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Viewport.cpp">
       <Filter>Engine\Private\Renderer\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Private\Renderer\MeshRenderData.cpp">
+      <Filter>Engine\Private\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp">
       <Filter>Engine\Private\Renderer</Filter>
     </ClCompile>
@@ -334,10 +340,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Shaders\Private\TrianglePixelShader.hlsl">
+    <FxCompile Include="..\Shaders\Private\PositionOnlyVertexShader.hlsl">
       <Filter>Shaders\Private</Filter>
     </FxCompile>
-    <FxCompile Include="..\Shaders\Private\TriangleVertexShader.hlsl">
+    <FxCompile Include="..\Shaders\Private\SolidColorPixelShader.hlsl">
       <Filter>Shaders\Private</Filter>
     </FxCompile>
   </ItemGroup>

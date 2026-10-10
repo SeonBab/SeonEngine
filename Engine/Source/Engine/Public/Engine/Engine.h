@@ -34,9 +34,11 @@ public:
 	/**
 	 * 한 프레임의 실행 동작을 파생 엔진이 제공한다.
 	 * @param deltaSeconds 루프가 측정한 경과 시간(초). 시간 측정은 엔진 밖의 책임이다.
-	 * @param bIdleMode 유휴 실행 여부. 최소화 여부와 같은 뜻으로 고정하지 않는다.
 	 */
-	virtual void Tick(float deltaSeconds, bool bIdleMode) = 0;
+	virtual void Tick(float deltaSeconds) = 0;
+
+	/** 파생 엔진이 선택한 현재 월드를 비소유 반환한다. 기반은 nullptr이며 대상의 수명을 연장하지 않는다. */
+	virtual FWorld* GetWorld() const;
 
 	/**
 	 * 객체 파괴 전 실행 상태를 정리하는 통로다. 현재 기반 구현은 비어 있다.

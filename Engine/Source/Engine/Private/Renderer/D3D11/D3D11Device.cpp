@@ -2,6 +2,9 @@
 
 #include "Logging/LogMacros.h"
 
+#include <limits>
+#include <utility>
+
 namespace
 {
 	SE_DECLARE_LOG_CATEGORY(LogD3D11RHI);
@@ -69,4 +72,177 @@ ID3D11DeviceContext* FD3D11Device::GetDeviceContext() const
 void FD3D11Device::ClearRenderTargetView(ID3D11RenderTargetView* InRenderTargetView, const float InClearColor[4])
 {
 	Direct3DDeviceIMContext->ClearRenderTargetView(InRenderTargetView, InClearColor);
+}
+
+bool FD3D11Device::CreateVertexBuffer(const TArray<FVector3>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer)
+{
+	if (vertices.empty()) { return false; }
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a vertex buffer requires an initialized D3D11 device");
+
+		return false;
+	}
+	if (vertices.size() > std::numeric_limits<uint32>::max() / sizeof(FVector3))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Vertex buffer size exceeds the D3D11 ByteWidth range");
+
+		return false;
+	}
+
+	D3D11_BUFFER_DESC bufferDesc{};
+	bufferDesc.ByteWidth = static_cast<uint32>(vertices.size() * sizeof(FVector3));
+	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA initialData{};
+	initialData.pSysMem = vertices.data();
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> newVertexBuffer;
+	const HRESULT bufferResult = Direct3DDevice->CreateBuffer(&bufferDesc, &initialData, newVertexBuffer.GetAddressOf());
+	if (FAILED(bufferResult))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a vertex buffer failed (HRESULT 0x{:08X})", static_cast<uint32>(bufferResult));
+
+		return false;
+	}
+	outVertexBuffer = std::move(newVertexBuffer);
+
+	return true;
+}
+
+void FD3D11Device::SetVertexBuffer(ID3D11Buffer* vertexBuffer)
+{
+	ID3D11Buffer* buffers[] = {vertexBuffer};
+	constexpr uint32 stride = sizeof(FVector3);
+	constexpr uint32 offset = 0;
+
+	Direct3DDeviceIMContext->IASetVertexBuffers(0, 1, buffers, &stride, &offset);
+}
+
+bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outInputLayout)
+{
+	if (vertexShaderBytecode.empty())
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating an input layout requires vertex shader bytecode");
+
+		return false;
+	}
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating an input layout requires an initialized D3D11 device");
+
+		return false;
+	}
+
+	D3D11_INPUT_ELEMENT_DESC inputElement{};
+	inputElement.SemanticName = "POSITION";
+	inputElement.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElement.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> newInputLayout;
+	const HRESULT result = Direct3DDevice->CreateInputLayout(
+		&inputElement, 1, vertexShaderBytecode.data(), vertexShaderBytecode.size(), newInputLayout.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating an input layout failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+	outInputLayout = std::move(newInputLayout);
+
+	return true;
+}
+
+void FD3D11Device::SetInputLayout(ID3D11InputLayout* inputLayout)
+{
+	Direct3DDeviceIMContext->IASetInputLayout(inputLayout);
+}
+
+bool FD3D11Device::CreateVertexShader(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11VertexShader>& outVertexShader)
+{
+	if (vertexShaderBytecode.empty())
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a vertex shader requires vertex shader bytecode");
+
+		return false;
+	}
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a vertex shader requires an initialized D3D11 device");
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> newVertexShader;
+	const HRESULT result = Direct3DDevice->CreateVertexShader(
+		vertexShaderBytecode.data(), vertexShaderBytecode.size(), nullptr, newVertexShader.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a vertex shader failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+	outVertexShader = std::move(newVertexShader);
+
+	return true;
+}
+
+void FD3D11Device::SetVertexShader(ID3D11VertexShader* vertexShader)
+{
+	Direct3DDeviceIMContext->VSSetShader(vertexShader, nullptr, 0);
+}
+
+bool FD3D11Device::CreatePixelShader(const TArray<uint8>& pixelShaderBytecode, Microsoft::WRL::ComPtr<ID3D11PixelShader>& outPixelShader)
+{
+	if (pixelShaderBytecode.empty())
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a pixel shader requires pixel shader bytecode");
+
+		return false;
+	}
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a pixel shader requires an initialized D3D11 device");
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> newPixelShader;
+	const HRESULT result = Direct3DDevice->CreatePixelShader(
+		pixelShaderBytecode.data(), pixelShaderBytecode.size(), nullptr, newPixelShader.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a pixel shader failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+	outPixelShader = std::move(newPixelShader);
+
+	return true;
+}
+
+void FD3D11Device::SetPixelShader(ID3D11PixelShader* pixelShader)
+{
+	Direct3DDeviceIMContext->PSSetShader(pixelShader, nullptr, 0);
+}
+
+void FD3D11Device::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology)
+{
+	Direct3DDeviceIMContext->IASetPrimitiveTopology(topology);
+}
+
+void FD3D11Device::Draw(uint32 vertexCount, uint32 startVertexLocation)
+{
+	Direct3DDeviceIMContext->Draw(vertexCount, startVertexLocation);
+}
+
+void FD3D11Device::SetRenderTargetView(ID3D11RenderTargetView* renderTargetView)
+{
+	ID3D11RenderTargetView* targets[] = {renderTargetView};
+	Direct3DDeviceIMContext->OMSetRenderTargets(1, targets, nullptr);
+}
+
+void FD3D11Device::SetViewport(const D3D11_VIEWPORT& viewport)
+{
+	Direct3DDeviceIMContext->RSSetViewports(1, &viewport);
 }

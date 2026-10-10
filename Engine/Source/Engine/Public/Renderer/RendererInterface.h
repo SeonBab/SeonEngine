@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Containers/Array.h"
 #include "CoreTypes.h"
+
+struct FMeshRenderData;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 엔진과 렌더러 구현 사이의 공통 계약이다.
@@ -43,6 +46,8 @@ public:
 	 * 초기화 성공 후 필요한 크기 변경을 적용하고 호출한다.
 	 * 최소화 상태이거나 출력 크기가 0이면 호출하지 않는다.
 	 * 화면 제출 실패는 구현이 치명 종료로 처리한다.
+	 * renderData는 호출 중에만 빌려 읽으며 저장하지 않는다. 호출이 끝날 때까지 유효하고 변경되지 않아야 한다.
+	 * 현재 메시 데이터는 사용하지 않으며 빈 목록도 배경색 출력과 화면 제출을 수행한다.
 	 */
-	virtual void RenderFrame() = 0;
+	virtual void RenderFrame(const TArray<FMeshRenderData>& renderData) = 0;
 };

@@ -101,6 +101,7 @@
     <ClInclude Include="Engine\Public\Engine\GameEngine.h" />
     <ClInclude Include="Engine\Public\Engine\GameInstance.h" />
     <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
+    <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />
@@ -131,24 +132,25 @@
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Device.cpp" />
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Viewport.cpp" />
+    <ClCompile Include="Engine\Private\Renderer\MeshRenderData.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
     <ClCompile Include="Engine\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\TransformComponent.cpp" />
     <ClCompile Include="Engine\Private\World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Shaders\Private\TriangleVertexShader.hlsl">
+    <FxCompile Include="..\Shaders\Private\PositionOnlyVertexShader.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\TriangleVertexShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\PositionOnlyVertexShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
-    <FxCompile Include="..\Shaders\Private\TrianglePixelShader.hlsl">
+    <FxCompile Include="..\Shaders\Private\SolidColorPixelShader.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\TrianglePixelShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\SolidColorPixelShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemGroup>

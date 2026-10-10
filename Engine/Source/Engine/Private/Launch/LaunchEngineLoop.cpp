@@ -21,8 +21,19 @@ int32 FEngineLoop::Init()
 	engine = MakeUnique<UGameEngine>();
 	engine->Init(this);
 	engine->Start();
+	previousTime = std::chrono::steady_clock::now();
 
 	return 0;
+}
+
+void FEngineLoop::Tick()
+{
+	if (!engine) { return; }
+
+	const auto currentTime = std::chrono::steady_clock::now();
+	const float deltaSeconds = std::chrono::duration<float>(currentTime - previousTime).count();
+	previousTime = currentTime;
+	engine->Tick(deltaSeconds);
 }
 
 void FEngineLoop::Exit()

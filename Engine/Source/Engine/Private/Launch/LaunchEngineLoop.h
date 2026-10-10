@@ -3,11 +3,13 @@
 #include "Engine/EngineLoop.h"
 #include "Templates/UniquePtr.h"
 
+#include <chrono>
+
 class UEngine;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 게임 엔진을 소유하고 준비 / 시작 / 명시적 종료를 연결한다.
-// 실제 진입점·프레임·창 / GPU 연결은 아직 없다.
+// EngineMain이 준비 / 시간 Tick / 종료를 호출한다. 창 / GPU 구성 이전은 후속이다.
 ////////////////////////////////////////////////////////////////////////////////
 class FEngineLoop : public IEngineLoop
 {
@@ -25,6 +27,9 @@ public:
 	/** 게임 엔진의 Init / Start를 호출한다. 기존 엔진이 있으면 Fatal이고 정상 반환은 0이다. */
 	int32 Init() override;
 
+	/** 이전 측정부터의 경과 시간을 게임 엔진에 전달한다. 준비 전 / 종료 후는 생략한다. */
+	void Tick();
+
 	/** 엔진 PreExit 후 객체를 파괴한다. 준비 전 / 반복 종료를 허용한다. */
 	void Exit();
 
@@ -33,4 +38,6 @@ public:
 
 private:
 	TUniquePtr<UEngine> engine;
+	/** Init 완료와 각 Tick에서 저장하는 다음 간격 측정의 기준 시각이다. */
+	std::chrono::steady_clock::time_point previousTime{};
 };
