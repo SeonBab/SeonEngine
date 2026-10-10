@@ -1,6 +1,7 @@
 #include "Launch/LaunchEngineLoop.h"
 
 #include "Engine/GameEngine.h"
+#include "GameProject.h"
 #include "Logging/LogMacros.h"
 
 namespace
@@ -13,13 +14,30 @@ FEngineLoop::~FEngineLoop() = default;
 
 int32 FEngineLoop::Init()
 {
-	if (engine)
+	if (engine || gameProject)
 	{
-		SE_LOG(LogEngineLoop, Fatal, "FEngineLoop::Init requires no existing engine");
+		SE_LOG(LogEngineLoop, Fatal, "FEngineLoop::Init requires no existing engine or game project");
+	}
+
+	gameProject = CreateGameProject();
+	if (!gameProject)
+	{
+		SE_LOG(LogEngineLoop, Fatal, "Creating a game project failed");
 	}
 
 	engine = MakeUnique<UGameEngine>();
 	engine->Init(this);
+
+	FWorld* world = engine->GetWorld();
+	if (!world)
+	{
+		SE_LOG(LogEngineLoop, Fatal, "Initializing a game project requires a world");
+	}
+	if (!gameProject->InitializeWorld(*world))
+	{
+		SE_LOG(LogEngineLoop, Fatal, "Initializing the game world failed");
+	}
+
 	engine->Start();
 	previousTime = std::chrono::steady_clock::now();
 
@@ -38,8 +56,10 @@ void FEngineLoop::Tick()
 
 void FEngineLoop::Exit()
 {
-	if (!engine) { return; }
-
-	engine->PreExit();
-	engine.reset();
+	if (engine)
+	{
+		engine->PreExit();
+		engine.reset();
+	}
+	gameProject.reset();
 }

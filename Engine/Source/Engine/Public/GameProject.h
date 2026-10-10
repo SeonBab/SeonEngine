@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Templates/UniquePtr.h"
+
 class FWorld;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,3 +21,6 @@ public:
 	 */
 	[[nodiscard]] virtual bool InitializeWorld(FWorld& world) = 0;
 };
+
+/** 게임 프로젝트가 정의하는 공통 생성 함수다. 반환한 게임 구현 객체의 단독 소유권을 호출자에게 넘긴다. */
+[[nodiscard]] TUniquePtr<IGameProject> CreateGameProject();
