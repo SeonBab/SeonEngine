@@ -101,6 +101,7 @@
     <ClInclude Include="Engine\Public\Engine\GameEngine.h" />
     <ClInclude Include="Engine\Public\Engine\GameInstance.h" />
     <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
+    <ClInclude Include="Engine\Public\GameProject.h" />
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\StaticMeshComponent.h" />

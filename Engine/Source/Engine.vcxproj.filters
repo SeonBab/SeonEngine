@@ -234,6 +234,9 @@
     <ClInclude Include="Engine\Public\Engine\WorldContext.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\GameProject.h">
+      <Filter>Engine\Public</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
