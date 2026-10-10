@@ -79,7 +79,7 @@ SeonEngine/
 ```
 
 - 엔진과 게임 프로젝트는 같은 구조를 갖는다. 셰이더(`Shaders/`), 에셋(`Content/`), 설정(`Config/`) 폴더는 처음 필요할 때 각 폴더 아래에 추가한다.
-- 현재 엔진 내부 셰이더 소스는 `Engine/Shaders/Private/`에 `.hlsl` 파일로 둔다. `TriangleVertexShader.hlsl`은 Engine.vcxproj의 FxCompile로 Vertex / 5.0 / Main / TreatWarningAsError=true를 지정하고 `$(OutDir)Shaders\TriangleVertexShader.cso`에 자동 컴파일한다. `TrianglePixelShader.hlsl`도 같은 설정에서 종류를 Pixel로 지정하고 `$(OutDir)Shaders\TrianglePixelShader.cso`에 자동 컴파일한다. 런타임은 실행 파일 폴더의 Shaders 아래 두 .cso를 Init에서 읽는다. 어느 파일이든 없거나 비어 있으면 초기화 실패다. vertex / pixel GPU 객체 생성까지 연결했으며 유효하지 않은 코드도 초기화 실패다. vertex / pixel 셰이더와 정점 버퍼 / input layout을 바인딩하고 triangle list Draw로 고정 흰 삼각형을 출력한다.
+- 현재 엔진 내부 셰이더 소스는 `Engine/Shaders/Private/`에 `.hlsl` 파일로 둔다. `PositionOnlyVertexShader.hlsl`은 Engine.vcxproj의 FxCompile로 Vertex / 5.0 / Main / TreatWarningAsError=true를 지정하고 `$(OutDir)Shaders\PositionOnlyVertexShader.cso`에 자동 컴파일한다. `SolidColorPixelShader.hlsl`도 같은 설정에서 종류를 Pixel로 지정하고 `$(OutDir)Shaders\SolidColorPixelShader.cso`에 자동 컴파일한다. 런타임은 실행 파일 폴더의 Shaders 아래 두 .cso를 Init에서 읽는다. 어느 파일이든 없거나 비어 있으면 초기화 실패다. vertex / pixel GPU 객체 생성까지 연결했으며 유효하지 않은 코드도 초기화 실패다. 현재 FRenderer.Init에서 vertex / pixel 셰이더와 input layout을 생성한다. 프레임 바인딩 / 정점 버퍼 소비 / Draw는 후속이며 현재는 배경 Clear / Present다.
 - 게임 프로젝트 이름은 `<이름>Game`으로 짓고, 게임 모듈 이름은 프로젝트 이름과 같게 한다.
 - `Engine/`과 게임 폴더에는 빌드 결과를 두지 않는다.
 

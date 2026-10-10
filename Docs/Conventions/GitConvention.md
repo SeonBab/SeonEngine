@@ -56,7 +56,7 @@ build: 경고 레벨을 /W4로 변경
 
 ### 2.3 범위
 
-- 바뀐 모듈이나 폴더 이름을 소문자로 쓴다(`core`, `engine`, `game`, `platform`, `renderer` 등). 모듈 구성은 [Architecture](../Architecture.md) 1장을 따른다.
+- 바뀐 모듈이나 폴더 이름을 소문자로 쓴다(`core`, `engine`, `game`, `platform`, `renderer` 등). 모듈 구성은 [Architecture](../../../Docs/Architecture.md) 1장을 따른다.
 - 여러 모듈에 걸친 변경이나 `docs`, `build`, `chore`처럼 모듈과 관계없는 변경은 범위를 생략한다.
 
 ### 2.4 커밋 단위
