@@ -49,7 +49,7 @@
 
 ## 폴더 구조
 
-CoreUObject의 최소 UObject를 구현하고 Engine/Source/CoreUObject/Public/UObject/Object.h와 Private/UObject/Object.cpp를 생성기로 등록했다. Engine 프로젝트는 CoreUObject/Public·Private를 include 경로에 추가하고 SampleGame은 CoreUObject/Public과 Engine/Public을 추가했다. 최소 UEngine의 Engine/Public/Engine/Engine.h와 Private/Engine/Engine.cpp 및 GameInstance.h / GameInstance.cpp와 WorldContext.h / WorldContext.cpp, GameEngine.h / GameEngine.cpp, Public/Engine/EngineLoop.h와 Private/Launch/LaunchEngineLoop.h / cpp, Private/Renderer/D3D11/D3D11Viewport.h / cpp의 클래스 골격도 생성기로 등록했다. 공통 ETransformRule의 Engine/Public/Engine/EngineTypes.h도 생성기로 등록했다. 기존 Engine.lib에 함께 빌드하며 별도 프로젝트 / 라이브러리 / DLL은 추가하지 않는다(Architecture 1장 참조).
+CoreUObject의 최소 UObject를 구현하고 Engine/Source/CoreUObject/Public/UObject/Object.h와 Private/UObject/Object.cpp를 생성기로 등록했다. Engine 프로젝트는 CoreUObject/Public·Private를 include 경로에 추가하고 SampleGame은 CoreUObject/Public과 Engine/Public을 추가했다. 최소 UEngine의 Engine/Public/Engine/Engine.h와 Private/Engine/Engine.cpp 및 GameInstance.h / GameInstance.cpp와 WorldContext.h / WorldContext.cpp, GameEngine.h / GameEngine.cpp, Public/Engine/EngineLoop.h와 Private/Launch/LaunchEngineLoop.h / cpp, Private/Renderer/D3D11/D3D11Viewport.h / cpp의 클래스 골격도 생성기로 등록했다. 공통 ETransformRule의 Engine/Public/Engine/EngineTypes.h도 생성기로 등록했다. 기존 Engine.lib에 함께 빌드하며 별도 프로젝트 / 라이브러리 / DLL은 추가하지 않는다.
 
 저장소 루트에 솔루션을 두고, 엔진과 게임 프로젝트를 최상위 폴더로 나눈다. 빌드 결과는 루트에 모은다.
 
@@ -93,7 +93,7 @@ SeonEngine/
 - `SampleGame`은 `Engine`을 프로젝트 참조로 연결한다. 빌드 순서와 `Engine.lib` 링크가 자동으로 처리된다.
 - 엔진을 사용하는 프로젝트는 `Microsoft.Cpp.props`를 읽고 프로젝트 종류를 정한 뒤 `Engine/Build/SeonEngine.props`를 명시적으로 import한다. 이 파일은 엔진의 Public include 경로와 현재 D3D11 구현에 필요한 `d3d11.lib` 링크를 제공한다. 프로젝트 자체 include 경로는 기존 값을 이어 붙인다. Engine 프로젝트 참조는 각 소비 프로젝트에 유지하며 props가 자동으로 생성하지 않는다.
 - `SeonEngine.props`는 import한 프로젝트에만 적용한다. 실행 파일 / DLL 프로젝트에는 링크 의존성을 제공하고 정적 라이브러리 프로젝트에서는 최종 링크를 수행하지 않는다. 별도 import가 없는 도구에는 D3D11 의존성을 전파하지 않는다. 루트의 공통 빌드 설정과 엔진 소비 설정은 구분한다.
-- 진입점(`WinMain`)은 `Engine.lib`에 있다(Architecture 3. 플랫폼 추상화). 게임 프로젝트는 엔진과 게임 코드를 실행 파일로 링크하는 단위다.
+- 진입점(`WinMain`)은 `Engine.lib`에 있다. 게임 프로젝트는 엔진과 게임 코드를 실행 파일로 링크하는 단위다.
 - 게임 프로젝트에는 `.cpp`가 하나 이상 있어야 한다. 컴파일된 `.obj`가 없으면 CRT가 링크되지 않아 시작 코드(`WinMainCRTStartup`)를 찾지 못한다.
 - 게임 프로젝트의 include 경로에는 엔진 모듈의 `Public`만 넣는다. 엔진 내부 헤더를 include하면 빌드가 실패한다(Code Convention 2.1 파일 구성 참고).
 - 프로젝트에서 다른 폴더를 가리킬 때는 `$(SERootDir)`(저장소 루트)을 쓴다. `$(SolutionDir)`은 솔루션 없이 프로젝트만 빌드하면 값이 달라진다.
@@ -149,7 +149,7 @@ SeonEngine/
 
 | 패키지 | 버전 | 이유 | 설치되는 것 |
 |---|---|---|---|
-| `directxmath` | 3.21 (2026-06-12) | 엔진 수학 타입의 내부 계산(Architecture 6장) | 헤더 |
+| `directxmath` | 3.21 (2026-06-12) | 엔진 수학 타입의 내부 계산 | 헤더 |
 
 - **DirectXMath 출처**: vcpkg판을 쓴다. vcpkg include 경로가 Windows SDK 경로보다 먼저 검색되어 `#include <DirectXMath.h>`는 SDK판(3.19)이 아니라 vcpkg판을 가리킨다. 목록에 적어 버전을 baseline으로 고정한다.
 - **새 PC 준비**: Visual Studio Installer에서 "vcpkg 패키지 관리자" 구성 요소를 설치한다. 다른 vcpkg를 쓰려면 `VCPKG_ROOT` 환경 변수를 지정한다.
@@ -175,4 +175,4 @@ SeonEngine/
 | 외부 헤더 | `<>` include를 외부 헤더로 취급, 경고 끔 | 외부 포함 → 괄호로 묶인 포함을 외부로 처리 / 외부 헤더 경고 수준 |
 | C++ 예외 | 끔 (`_HAS_EXCEPTIONS=0` 정의) | 코드 생성 → C++ 예외 처리 가능 |
 | RTTI | 켬 (`/GR`) | 언어 → 런타임 형식 정보 사용 |
-| 전처리기 정의 | `SE_PLATFORM_WINDOWS`, `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` (구성별 0 / 1), `SE_PLATFORM_HEADER_NAME=Windows`(플랫폼 헤더 경로를 만드는 이름, Architecture 3장 "플랫폼 헤더 고르기") | 전처리기 → 전처리기 정의 |
+| 전처리기 정의 | `SE_PLATFORM_WINDOWS`, `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` (구성별 0 / 1), `SE_PLATFORM_HEADER_NAME=Windows`(플랫폼 헤더 경로를 만드는 이름) | 전처리기 → 전처리기 정의 |

@@ -2,9 +2,7 @@
 
 ## 관련 문서
 
-- [Architecture](../../../Docs/Architecture.md) — 모듈, 서브시스템, 플랫폼, 렌더링 등 엔진 구조
 - [Project Settings](../ProjectSettings.md) — 프로젝트에 적용한 설정
-- Deferred Tasks — 필요해지면 진행할 작업
 - [Git Convention](GitConvention.md) — 브랜치, 커밋, 병합
 - Asset / Resource Naming Convention — 별도 문서 (예정)
 
@@ -230,7 +228,7 @@
 
 - **언어** — 주석은 한국어로 쓴다.
 - **원칙** — 이유, 제약, 주의사항(Why)을 우선으로 쓴다. 흐름 구분이나 복잡한 로직의 요약처럼 읽는 데 도움이 되는 설명(What)은 자유롭게 쓸 수 있다. 단, 코드 한 줄을 그대로 풀어 쓰는 주석은 쓰지 않는다.
-- **문서 참조 금지** — 주석에 규칙 문서의 이름이나 절 번호(예: `(Architecture 3. 플랫폼 추상화)`)를 쓰지 않는다. 문서 구성이 바뀌면 주석이 틀어진다. 주석만으로 이해되도록 필요한 내용을 직접 쓴다.
+- **문서 참조 금지** — 주석에 규칙 문서의 이름이나 절 번호(예: `(Code Convention 2.2 Header 규칙)`)를 쓰지 않는다. 문서 구성이 바뀌면 주석이 틀어진다. 주석만으로 이해되도록 필요한 내용을 직접 쓴다.
 
   ```cpp
   // 금지: 코드를 그대로 풀어 씀
@@ -354,7 +352,7 @@
      └─ PlayerCharacter.cpp
   ```
 
-- **디렉터리 구조** — 모듈마다 폴더를 두고, 엔진 모듈은 그 안에 `Public` / `Private`를 둔다. 모듈 구성은 [Architecture](../../../Docs/Architecture.md) 1장을 따른다.
+- **디렉터리 구조** — 모듈마다 폴더를 두고, 엔진 모듈은 그 안에 `Public` / `Private`를 둔다. 모듈 구성과 경로는 [Project Settings의 폴더 구조](../ProjectSettings.md#폴더-구조)를 따른다.
 
 ### 2.2 Header 규칙 `필수`
 
@@ -424,7 +422,7 @@
   ```
 
 - **멤버 변수 접근** — class의 멤버 변수는 `private`을 원칙으로 한다. 자식 클래스에 필요하면 `protected` 함수로 제공한다. 단, 다음은 `public`으로 둘 수 있다.
-  - 외부에서 구독하는 이벤트(델리게이트). 소유 클래스만 발생시킬 수 있는 이벤트 타입을 쓴다. (Deferred Tasks 참고)
+  - 외부에서 구독하는 이벤트(델리게이트). 소유 클래스만 발생시킬 수 있는 이벤트 타입을 쓴다.
   - `static constexpr` 상수
 - **struct vs class** — 모든 멤버가 public이고 어떤 값 조합이든 유효한 데이터 묶음(불변 조건 없음)은 struct로 쓴다. 간단한 생성자나 계산 함수는 둘 수 있지만 가상 함수는 두지 않는다. 그 외에는 class로 쓴다.
 
@@ -749,7 +747,7 @@
 - **문자열 인코딩** — 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다. 변환은 `Platform/Windows/WindowsString.h`의 `FWindowsString`으로 한다.
   - `FWindowsString::UTF8ToWide`는 깨진 UTF-8 바이트를 U+FFFD로 바꾸고 계속한다. 변환 자체가 실패하면 `std::nullopt`를 돌려주므로 값이 있는지 확인하고 쓴다.
   - `FWindowsString::WideToUTF8`은 Windows API가 돌려준 UTF-16을 엔진 문자열로 받을 때 쓴다. 깨진 UTF-16(짝이 없는 서로게이트)을 만났을 때 할 일은 부르는 쪽이 `EInvalidCharacter`로 고른다. 사람이 읽을 글자는 `Replace`(기본, U+FFFD로 바꾸고 계속), 경로처럼 OS에 다시 넘길 값은 `Fail`(`std::nullopt`)이다. Windows는 파일 이름에 깨진 UTF-16을 허용하므로, 바꿔서 쓰면 다른 파일을 가리킨다.
-  - 엔진의 UTF-8 경로를 UTF-16으로 바꿀 때 깨진 바이트를 어떻게 다룰지는 정하지 않았다(Deferred Tasks "문자열 변환").
+  - 엔진의 UTF-8 경로를 UTF-16으로 바꿀 때 깨진 바이트를 어떻게 다룰지는 정하지 않았다.
 
   ```cpp
   FString message = "창 생성 완료";
@@ -825,7 +823,7 @@
   - 작은 보조 타입(락 가드, 타이머 등): 생성자와 소멸자로 처리한다(RAII).
   - 이름은 `Initialize()` / `Shutdown()` 한 쌍만 쓴다(`Init`, `Startup`, `Deinitialize` 등을 섞지 않는다).
   - 엔진 실행 기반 예외: UEngine의 virtual void Init(IEngineLoop*) / virtual void Start() / virtual void Tick(float, bool) / virtual void PreExit()는 Unreal 대응 역할의 이름을 사용한다. 현재 Init은 비소유 루프 연결, Start는 빈 실행 시작 통로, Tick은 순수 가상, PreExit는 빈 기반 구현이다. UObject 생성 / 파괴와 실행 종료를 구분하고 기반 소멸자는 PreExit를 자동 호출하지 않는다. 일반 서브시스템의 Initialize / Shutdown 규칙을 바꾸지 않으며 UEngine 기반 자체의 상태 / 호출 순서 검사는 아직 없다. UGameEngine은 기존 세션이 있는 Init을 Fatal로 거부하고 PreExit는 준비 전 / 반복 호출을 허용한다. FEngineLoop는 int32 Init / void Exit를 사용하며 정상 Init은 0, 기존 엔진 Init은 Fatal이다. Exit는 PreExit 후 소유 엔진을 파괴하고 준비 전 / 반복 호출을 허용한다. 소멸자는 Exit를 자동 호출하지 않는다.
-  - 게임 세션 훅 예외: `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다([Architecture](../../../Docs/Architecture.md) 2장). 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 서브시스템·GPU 자원의 이름 규칙을 바꾸는 예외는 아니다.
+  - 게임 세션 훅 예외: `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다. 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 서브시스템·GPU 자원의 이름 규칙을 바꾸는 예외는 아니다.
   - `Initialize()` 전에 다른 함수를 호출하거나, `Shutdown()` 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
 
   ```cpp
@@ -845,7 +843,7 @@
   };
   ```
 
-- **서브시스템 초기화 순서** — [Architecture](../../../Docs/Architecture.md) 2장을 따른다.
+- **서브시스템 초기화 순서** — 의존 대상부터 준비하고, 종료할 때는 의존하는 쪽부터 정리한다. 초기화 도중 실패하면 성공한 단계에서 확보한 자원만 정리한다. 전역 / static 객체의 생성자에서 파일 열기 등 외부 자원을 초기화하지 않는다.
 - **비소유 참조** — 비소유 포인터는 대상이 자신보다 오래 산다는 것이 보장될 때만 쓴다(부모, 소유자, 먼저 초기화된 서브시스템 등). 보장되지 않으면 핸들이나 `TWeakPtr`를 쓴다.
 
 ---
