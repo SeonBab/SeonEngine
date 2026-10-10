@@ -145,18 +145,18 @@
     <ClCompile Include="Engine\Private\World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Shaders\Private\PositionOnlyVertexShader.hlsl">
+    <FxCompile Include="..\Shaders\Private\PositionColorVertexShader.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\PositionOnlyVertexShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\PositionColorVertexShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
-    <FxCompile Include="..\Shaders\Private\SolidColorPixelShader.hlsl">
+    <FxCompile Include="..\Shaders\Private\VertexColorPixelShader.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\SolidColorPixelShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\VertexColorPixelShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemGroup>

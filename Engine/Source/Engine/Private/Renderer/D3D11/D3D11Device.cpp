@@ -2,6 +2,7 @@
 
 #include "Logging/LogMacros.h"
 
+#include <cstddef>
 #include <limits>
 #include <utility>
 
@@ -159,7 +160,7 @@ void FD3D11Device::SetVertexShaderConstantBuffer(ID3D11Buffer* constantBuffer)
 	Direct3DDeviceIMContext->VSSetConstantBuffers(0, 1, buffers);
 }
 
-bool FD3D11Device::CreateVertexBuffer(const TArray<FVector3>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer)
+bool FD3D11Device::CreateVertexBuffer(const TArray<FPositionColorVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer)
 {
 	if (vertices.empty()) { return false; }
 	if (!Direct3DDevice)
@@ -168,7 +169,7 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FVector3>& vertices, Microsof
 
 		return false;
 	}
-	if (vertices.size() > std::numeric_limits<uint32>::max() / sizeof(FVector3))
+	if (vertices.size() > std::numeric_limits<uint32>::max() / sizeof(FPositionColorVertex))
 	{
 		SE_LOG(LogD3D11RHI, Error, "Vertex buffer size exceeds the D3D11 ByteWidth range");
 
@@ -176,7 +177,7 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FVector3>& vertices, Microsof
 	}
 
 	D3D11_BUFFER_DESC bufferDesc{};
-	bufferDesc.ByteWidth = static_cast<uint32>(vertices.size() * sizeof(FVector3));
+	bufferDesc.ByteWidth = static_cast<uint32>(vertices.size() * sizeof(FPositionColorVertex));
 	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	D3D11_SUBRESOURCE_DATA initialData{};
@@ -198,7 +199,7 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FVector3>& vertices, Microsof
 void FD3D11Device::SetVertexBuffer(ID3D11Buffer* vertexBuffer)
 {
 	ID3D11Buffer* buffers[] = {vertexBuffer};
-	constexpr uint32 stride = sizeof(FVector3);
+	constexpr uint32 stride = sizeof(FPositionColorVertex);
 	constexpr uint32 offset = 0;
 
 	Direct3DDeviceIMContext->IASetVertexBuffers(0, 1, buffers, &stride, &offset);
@@ -219,14 +220,19 @@ bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, 
 		return false;
 	}
 
-	D3D11_INPUT_ELEMENT_DESC inputElement{};
-	inputElement.SemanticName = "POSITION";
-	inputElement.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputElement.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	D3D11_INPUT_ELEMENT_DESC inputElements[2]{};
+	inputElements[0].SemanticName = "POSITION";
+	inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElements[0].AlignedByteOffset = static_cast<uint32>(offsetof(FPositionColorVertex, position));
+	inputElements[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputElements[1].SemanticName = "COLOR";
+	inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	inputElements[1].AlignedByteOffset = static_cast<uint32>(offsetof(FPositionColorVertex, color));
+	inputElements[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> newInputLayout;
 	const HRESULT result = Direct3DDevice->CreateInputLayout(
-		&inputElement, 1, vertexShaderBytecode.data(), vertexShaderBytecode.size(), newInputLayout.GetAddressOf());
+		inputElements, 2, vertexShaderBytecode.data(), vertexShaderBytecode.size(), newInputLayout.GetAddressOf());
 	if (FAILED(result))
 	{
 		SE_LOG(LogD3D11RHI, Error, "Creating an input layout failed (HRESULT 0x{:08X})", static_cast<uint32>(result));

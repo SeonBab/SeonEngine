@@ -2,7 +2,7 @@
 
 #include "Actor.h"
 #include "Logging/LogMacros.h"
-#include "Math/Vector3.h"
+#include "Renderer/PositionColorVertex.h"
 #include "StaticMeshComponent.h"
 #include "World.h"
 
@@ -29,9 +29,9 @@ void USampleGameInstance::StartGameInstance()
 	FActor& actor = world->SpawnActor();
 	TUniquePtr<FStaticMeshComponent> mesh = MakeUnique<FStaticMeshComponent>(actor);
 	mesh->SetVertices({
-		FVector3{-0.5f, -0.5f, 0.0f},
-		FVector3{0.0f, 0.5f, 0.0f},
-		FVector3{0.5f, -0.5f, 0.0f},
+		FPositionColorVertex{FVector3{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+		FPositionColorVertex{FVector3{0.0f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+		FPositionColorVertex{FVector3{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
 	});
 
 	if (!actor.AddComponent(mesh))

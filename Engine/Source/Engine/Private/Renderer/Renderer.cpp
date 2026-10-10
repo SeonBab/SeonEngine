@@ -88,7 +88,7 @@ bool FRenderer::Init(void* WindowHandle, uint32 SizeX, uint32 SizeY)
 		return false;
 	}
 
-	const auto vertexShaderPath = GetShaderBytecodePath("PositionOnlyVertexShader.cso");
+	const auto vertexShaderPath = GetShaderBytecodePath("PositionColorVertexShader.cso");
 	if (!vertexShaderPath)
 	{
 		Shutdown();
@@ -114,7 +114,7 @@ bool FRenderer::Init(void* WindowHandle, uint32 SizeX, uint32 SizeY)
 		return false;
 	}
 
-	const auto pixelShaderPath = GetShaderBytecodePath("SolidColorPixelShader.cso");
+	const auto pixelShaderPath = GetShaderBytecodePath("VertexColorPixelShader.cso");
 	if (!pixelShaderPath)
 	{
 		Shutdown();

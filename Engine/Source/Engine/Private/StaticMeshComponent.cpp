@@ -9,12 +9,12 @@ FStaticMeshComponent::FStaticMeshComponent(FActor& ownerActor)
 {
 }
 
-void FStaticMeshComponent::SetVertices(const TArray<FVector3>& inVertices)
+void FStaticMeshComponent::SetVertices(const TArray<FPositionColorVertex>& inVertices)
 {
 	vertices = inVertices;
 }
 
-const TArray<FVector3>& FStaticMeshComponent::GetVertices() const
+const TArray<FPositionColorVertex>& FStaticMeshComponent::GetVertices() const
 {
 	return vertices;
 }

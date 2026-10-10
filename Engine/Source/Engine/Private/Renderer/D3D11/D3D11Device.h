@@ -2,8 +2,8 @@
 
 #include "Containers/Array.h"
 #include "CoreTypes.h"
-#include "Math/Vector3.h"
 #include "Platform/Windows/WindowsHWrapper.h"
+#include "Renderer/PositionColorVertex.h"
 
 #include <d3d11.h>
 #include <wrl/client.h>
@@ -69,22 +69,22 @@ public:
 	void SetVertexShaderConstantBuffer(ID3D11Buffer* constantBuffer);
 
 	/**
-	 * 로컬 정점 위치를 복사한 변경 불가 GPU 버퍼를 생성한다. CPU 배열은 호출 중에만 필요하다.
+	 * 로컬 위치와 색상 정점을 복사한 변경 불가 GPU 버퍼를 생성한다. CPU 배열은 호출 중에만 필요하다.
 	 * 빈 입력은 생성 없이 false다. 장치 부재 / 크기 초과 / 생성 실패도 false이며 원인을 로그로 남긴다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 버퍼 참조를 해제해야 한다.
 	 * 정점 입력 바인딩 / 그리기 / 월드 행렬 전달은 하지 않는다.
 	 */
-	[[nodiscard]] bool CreateVertexBuffer(const TArray<FVector3>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer);
+	[[nodiscard]] bool CreateVertexBuffer(const TArray<FPositionColorVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer);
 
 	/**
-	 * 준비된 컨텍스트의 입력 슬롯 0에 FVector3 간격 / 시작 오프셋 0으로 정점 버퍼 하나를 연결한다.
+	 * 준비된 컨텍스트의 입력 슬롯 0에 FPositionColorVertex 간격 / 시작 오프셋 0으로 정점 버퍼 하나를 연결한다.
 	 * 이 장치에서 만든 정점 버퍼가 필요하며 nullptr는 슬롯 0 연결 해제다. Draw는 하지 않는다.
 	 * Device 멤버에는 저장하지 않지만 컨텍스트는 바인딩 동안 COM 참조를 보유한다.
 	 */
 	void SetVertexBuffer(ID3D11Buffer* vertexBuffer);
 
 	/**
-	 * 컴파일된 vertex shader 입력에 맞춰 슬롯 0의 POSITION0 / float3 레이아웃을 생성한다.
+	 * 컴파일된 vertex shader 입력에 맞춰 슬롯 0의 POSITION0 / float3와 COLOR0 / float4 레이아웃을 생성한다.
 	 * 바이트코드는 호출 동안만 필요하다. 빈 입력 / 장치 부재 / API 실패는 로그와 false로 알린다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
 	 * 레이아웃 연결 / 셰이더 객체 생성 / 그리기는 하지 않는다.

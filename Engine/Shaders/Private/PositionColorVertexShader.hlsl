@@ -4,8 +4,17 @@ cbuffer TransformConstantBuffer : register(b0)
 	row_major float4x4 LocalToWorld;
 };
 
-float4 Main(float3 Position : POSITION) : SV_POSITION
+struct VSOutput
 {
+	float4 Position : SV_POSITION;
+	float4 Color : COLOR0;
+};
+
+VSOutput Main(float3 Position : POSITION, float4 Color : COLOR0)
+{
+	VSOutput output;
 	// 현재는 월드 위치를 클립 공간 출력으로 직접 사용한다.
-	return mul(float4(Position, 1.0f), LocalToWorld);
+	output.Position = mul(float4(Position, 1.0f), LocalToWorld);
+	output.Color = Color;
+	return output;
 }
