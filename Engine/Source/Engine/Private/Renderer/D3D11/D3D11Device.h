@@ -44,6 +44,21 @@ public:
 	void ClearRenderTargetView(ID3D11RenderTargetView* InRenderTargetView, const float InClearColor[4]);
 
 	/**
+	 * 준비된 컨텍스트로 지정한 DSV 전체의 깊이를 0~1 범위의 값으로 초기화한다. 스텐실은 지우지 않는다.
+	 * 같은 장치의 유효하고 깊이 쓰기가 가능한 DSV가 필요하다. 뷰는 호출 동안만 빌리며 보관하지 않는다.
+	 * 깊이 비교 상태 설정 / Draw / 화면 제출은 하지 않는다. D3D11 호출은 반환값이 없다.
+	 */
+	void ClearDepthStencilView(ID3D11DepthStencilView* depthStencilView, float depth);
+
+	/**
+	 * 지정한 설정으로 깊이 / 스텐실 상태 객체를 생성한다. 설정은 호출 동안만 빌린다.
+	 * 장치 부재 / API 실패는 Error 로그와 false로 알리고 기존 출력을 유지한다.
+	 * 성공 시 출력에 새 소유 참조를 넘긴다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
+	 * 상태 보관 / 컨텍스트 적용 / 깊이 Clear / Draw는 하지 않는다.
+	 */
+	[[nodiscard]] bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& description, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& outState);
+
+	/**
 	 * 지정한 바이트 크기의 상수 버퍼를 생성한다. 크기는 0이 아닌 16바이트 배수여야 한다.
 	 * 장치 부재 / 지원 크기 초과 / 생성 실패는 로그와 false로 알리고 기존 출력을 유지한다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
@@ -141,11 +156,19 @@ public:
 	void Draw(uint32 vertexCount, uint32 startVertexLocation);
 
 	/**
-	 * 준비된 컨텍스트에 같은 장치의 색상 RTV 하나를 선택한다. nullptr는 출력 연결 해제다.
-	 * 다른 색상 슬롯과 깊이 타깃도 해제한다. 컨텍스트는 연결한 RTV의 COM 참조를 유지한다.
+	 * 준비된 컨텍스트에 같은 장치의 색상 RTV 하나와 깊이 DSV를 선택한다. 각 nullptr는 해당 타깃의 연결 해제다.
+	 * RTV와 DSV의 크기 / 샘플 설정은 맞아야 한다. 다른 색상 슬롯은 해제한다.
+	 * 컨텍스트는 연결한 뷰의 COM 참조를 유지하며 Device 멤버에는 보관하지 않는다.
 	 * 자원 생성 / Clear / 화면 영역 설정 / Draw는 하지 않는다.
 	 */
-	void SetRenderTargetView(ID3D11RenderTargetView* renderTargetView);
+	void SetRenderTargetView(ID3D11RenderTargetView* renderTargetView, ID3D11DepthStencilView* depthStencilView);
+
+	/**
+	 * 준비된 컨텍스트에 같은 장치의 깊이 / 스텐실 상태와 0~255 범위의 스텐실 기준값을 적용한다.
+	 * nullptr는 D3D11 기본 상태를 선택한다. Device는 저장하지 않지만 컨텍스트는 COM 참조를 유지한다.
+	 * 상태 캐시 없이 매 호출마다 전달한다. 상태 생성 / 깊이 Clear / Draw는 하지 않는다.
+	 */
+	void SetDepthStencilState(ID3D11DepthStencilState* depthStencilState, uint32 stencilReference);
 
 	/**
 	 * 준비된 컨텍스트에 화면 영역 하나와 깊이 범위를 설정한다. 다른 viewport는 비활성화한다.

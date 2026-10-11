@@ -141,6 +141,24 @@ bool FRenderer::Init(void* WindowHandle, uint32 SizeX, uint32 SizeY)
 		return false;
 	}
 
+	D3D11_DEPTH_STENCIL_DESC description{};
+	description.DepthEnable = TRUE;
+	description.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	description.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
+	description.StencilEnable = FALSE;
+	description.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	description.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	description.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	description.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	description.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	description.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	description.BackFace = description.FrontFace;
+	if (!Device.CreateDepthStencilState(description, depthStencilState))
+	{
+		Shutdown();
+		return false;
+	}
+
 	return true;
 }
 
@@ -153,6 +171,7 @@ void FRenderer::Shutdown()
 		DeviceContext->ClearState();
 	}
 
+	depthStencilState.Reset();
 	transformConstantBuffer.Reset();
 	inputLayout.Reset();
 	pixelShader.Reset();
@@ -172,7 +191,8 @@ void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData, const FSc
 	Device.SetInputLayout(inputLayout.Get());
 	Device.SetVertexShader(vertexShader.Get());
 	Device.SetPixelShader(pixelShader.Get());
-	Device.SetRenderTargetView(Viewport.GetBackBufferRenderTargetView());
+	Device.SetRenderTargetView(Viewport.GetBackBufferRenderTargetView(), Viewport.GetDepthStencilView());
+	Device.SetDepthStencilState(depthStencilState.Get(), 0);
 
 	D3D11_VIEWPORT viewport{};
 	viewport.Width = static_cast<float>(Viewport.GetSizeX());
@@ -182,6 +202,7 @@ void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData, const FSc
 
 	constexpr float ClearColor[4] = {1.0f, 0.0f, 1.0f, 1.0f};
 	Device.ClearRenderTargetView(Viewport.GetBackBufferRenderTargetView(), ClearColor);
+	Device.ClearDepthStencilView(Viewport.GetDepthStencilView(), 0.0f);
 
 	if (sceneView)
 	{

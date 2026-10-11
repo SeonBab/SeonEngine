@@ -19,10 +19,10 @@ public:
 	FRenderer(FRenderer&&) = delete;
 	FRenderer& operator=(FRenderer&&) = delete;
 
-	/** 장치 / 창 출력 / vertex·pixel 셰이더 / 입력 레이아웃 / 변환 상수 버퍼를 준비한다. 출력 / 셰이더 / 레이아웃 / 버퍼 준비 실패 시 부분 자원을 정리하고 false를 반환한다. */
+	/** 장치 / 창 출력 / 셰이더 / 입력 레이아웃 / 변환 상수 버퍼 / 깊이 비교 상태를 준비한다. 자원 준비 실패 시 부분 자원을 정리하고 false를 반환한다. */
 	[[nodiscard]] bool Init(void* WindowHandle, uint32 SizeX, uint32 SizeY) override;
 
-	/** OS 창이 살아 있는 동안 바인딩 / 상수 버퍼·셰이더 자원 / 창 출력 / 장치 순서로 정리한다. 기본 소멸자는 명시적 종료를 대신하지 않는다. */
+	/** OS 창이 살아 있는 동안 바인딩 / 깊이 상태·상수 버퍼·셰이더 자원 / 창 출력 / 장치 순서로 정리한다. 기본 소멸자는 명시적 종료를 대신하지 않는다. */
 	void Shutdown() override;
 
 	/** 초기화 성공 후 최소화가 아닌 상태의 양수 클라이언트 크기를 전달한다. */
@@ -43,4 +43,7 @@ private:
 
 	// 메시의 월드 변환 행렬을 전달할 상수 버퍼다.
 	Microsoft::WRL::ComPtr<ID3D11Buffer> transformConstantBuffer;
+
+	// Reversed-Z의 깊이 비교와 쓰기 규칙이다. 창 크기와 무관하며 Init에서 생성한다.
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 };

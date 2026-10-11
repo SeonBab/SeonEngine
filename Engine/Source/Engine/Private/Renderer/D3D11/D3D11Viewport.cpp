@@ -3,6 +3,8 @@
 #include "Logging/LogMacros.h"
 #include "Renderer/D3D11/D3D11Device.h"
 
+#include <utility>
+
 namespace
 {
 	SE_DECLARE_LOG_CATEGORY(LogD3D11RHI);
@@ -84,6 +86,13 @@ bool FD3D11Viewport::Init(void* InWindowHandle, uint32 InSizeX, uint32 InSizeY)
 		return false;
 	}
 
+	if (!CreateDepthStencilView(InSizeX, InSizeY))
+	{
+		Shutdown();
+
+		return false;
+	}
+
 	SizeX = InSizeX;
 	SizeY = InSizeY;
 
@@ -92,6 +101,7 @@ bool FD3D11Viewport::Init(void* InWindowHandle, uint32 InSizeX, uint32 InSizeY)
 
 void FD3D11Viewport::Shutdown()
 {
+	DepthStencilView.Reset();
 	BackBufferRenderTargetView.Reset();
 	SwapChain.Reset();
 
@@ -109,6 +119,11 @@ ID3D11RenderTargetView* FD3D11Viewport::GetBackBufferRenderTargetView() const
 	return BackBufferRenderTargetView.Get();
 }
 
+ID3D11DepthStencilView* FD3D11Viewport::GetDepthStencilView() const
+{
+	return DepthStencilView.Get();
+}
+
 void FD3D11Viewport::Resize(uint32 InSizeX, uint32 InSizeY)
 {
 	if (SizeX == InSizeX && SizeY == InSizeY)
@@ -118,6 +133,7 @@ void FD3D11Viewport::Resize(uint32 InSizeX, uint32 InSizeY)
 
 	ID3D11DeviceContext* DeviceContext = device->GetDeviceContext();
 	DeviceContext->ClearState();
+	DepthStencilView.Reset();
 	BackBufferRenderTargetView.Reset();
 
 	// 버퍼 수와 형식은 유지한다. Flags는 현재 생성 설정과 같은 0이다.
@@ -130,6 +146,11 @@ void FD3D11Viewport::Resize(uint32 InSizeX, uint32 InSizeY)
 	if (!CreateBackBufferRenderTargetView())
 	{
 		SE_LOG(LogD3D11RHI, Fatal, "Recreating the back buffer render target view after ResizeBuffers failed");
+	}
+
+	if (!CreateDepthStencilView(InSizeX, InSizeY))
+	{
+		SE_LOG(LogD3D11RHI, Fatal, "Recreating the depth stencil view after ResizeBuffers failed");
 	}
 
 	SizeX = InSizeX;
@@ -178,6 +199,50 @@ bool FD3D11Viewport::CreateBackBufferRenderTargetView()
 
 		return false;
 	}
+
+	return true;
+}
+
+bool FD3D11Viewport::CreateDepthStencilView(uint32 InSizeX, uint32 InSizeY)
+{
+	ID3D11Device* NativeDevice = device->GetDevice();
+	if (!NativeDevice || InSizeX == 0 || InSizeY == 0)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a depth stencil view requires a prepared device and nonzero dimensions");
+
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC TextureDesc{};
+	TextureDesc.Width = InSizeX;
+	TextureDesc.Height = InSizeY;
+	TextureDesc.MipLevels = 1;
+	TextureDesc.ArraySize = 1;
+	TextureDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	TextureDesc.SampleDesc.Count = 1;
+	TextureDesc.SampleDesc.Quality = 0;
+	TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	TextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> DepthTexture;
+	const HRESULT TextureResult = NativeDevice->CreateTexture2D(&TextureDesc, nullptr, DepthTexture.GetAddressOf());
+	if (FAILED(TextureResult))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating the depth texture failed (HRESULT 0x{:08X})", static_cast<uint32>(TextureResult));
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> NewDepthStencilView;
+	const HRESULT ViewResult = NativeDevice->CreateDepthStencilView(DepthTexture.Get(), nullptr, NewDepthStencilView.GetAddressOf());
+	if (FAILED(ViewResult))
+	{
+		SE_LOG(LogD3D11RHI, Error, "CreateDepthStencilView failed (HRESULT 0x{:08X})", static_cast<uint32>(ViewResult));
+
+		return false;
+	}
+
+	DepthStencilView = std::move(NewDepthStencilView);
 
 	return true;
 }

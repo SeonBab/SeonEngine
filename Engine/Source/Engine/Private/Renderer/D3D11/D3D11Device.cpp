@@ -75,6 +75,34 @@ void FD3D11Device::ClearRenderTargetView(ID3D11RenderTargetView* InRenderTargetV
 	Direct3DDeviceIMContext->ClearRenderTargetView(InRenderTargetView, InClearColor);
 }
 
+void FD3D11Device::ClearDepthStencilView(ID3D11DepthStencilView* depthStencilView, float depth)
+{
+	Direct3DDeviceIMContext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, depth, 0);
+}
+
+bool FD3D11Device::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& description, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& outState)
+{
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a depth stencil state requires an initialized D3D11 device");
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> newState;
+	const HRESULT result = Direct3DDevice->CreateDepthStencilState(&description, newState.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a depth stencil state failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+
+	outState = std::move(newState);
+
+	return true;
+}
+
 bool FD3D11Device::CreateConstantBuffer(uint32 byteSize, Microsoft::WRL::ComPtr<ID3D11Buffer>& outConstantBuffer)
 {
 	if (!Direct3DDevice)
@@ -327,10 +355,15 @@ void FD3D11Device::Draw(uint32 vertexCount, uint32 startVertexLocation)
 	Direct3DDeviceIMContext->Draw(vertexCount, startVertexLocation);
 }
 
-void FD3D11Device::SetRenderTargetView(ID3D11RenderTargetView* renderTargetView)
+void FD3D11Device::SetRenderTargetView(ID3D11RenderTargetView* renderTargetView, ID3D11DepthStencilView* depthStencilView)
 {
 	ID3D11RenderTargetView* targets[] = {renderTargetView};
-	Direct3DDeviceIMContext->OMSetRenderTargets(1, targets, nullptr);
+	Direct3DDeviceIMContext->OMSetRenderTargets(1, targets, depthStencilView);
+}
+
+void FD3D11Device::SetDepthStencilState(ID3D11DepthStencilState* depthStencilState, uint32 stencilReference)
+{
+	Direct3DDeviceIMContext->OMSetDepthStencilState(depthStencilState, stencilReference);
 }
 
 void FD3D11Device::SetViewport(const D3D11_VIEWPORT& viewport)
