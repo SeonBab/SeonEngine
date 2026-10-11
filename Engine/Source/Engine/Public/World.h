@@ -7,6 +7,7 @@ class FActor;
 class FStaticMeshComponent;
 class UGameInstance;
 struct FMeshRenderData;
+struct FMinimalViewInfo;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 게임 객체와 시스템 씬을 관리할 월드의 기반이다.
@@ -58,6 +59,22 @@ public:
 	// HACK(seon): GC 또는 별도 수명 관리 시스템이 안전한 회수를 맡으면 이 함수와 호출부를 해당 시스템으로 대체하고 제거한다.
 	void PurgeDestroyedActors();
 
+	/**
+	 * 이 월드에 등록된, 제거 중이 아닌 카메라 액터를 시점 대상으로 비소유 지정한다.
+	 * nullptr는 해제 / true다. 다른 월드 / 미등록 / 제거 중 / 카메라 부재는 false와 기존 대상 유지다.
+	 * null이 아닌 인수는 살아 있는 주소여야 한다. 대상 제거 시 자손 포함 즉시 연결을 해제한다.
+	 */
+	[[nodiscard]] bool SetViewTarget(FActor* newViewTarget);
+
+	/** 현재 시점 대상의 비소유 주소다. 미지정 / 해제 / 대상 제거 후에는 nullptr다. 제거 후 기존 주소는 보관하지 않는다. */
+	FActor* GetViewTarget() const;
+
+	/**
+	 * 선택한 대상의 카메라 정보를 채우면 true다. 대상 / 카메라 부재는 false와 출력 유지다.
+	 * 월드의 선택 상태는 바꾸지 않는다. 렌더 호출 연결은 후속이다.
+	 */
+	[[nodiscard]] bool GetCameraView(FMinimalViewInfo& outView) const;
+
 	/** 엔진 실행 코드가 세션을 비소유 연결한다. nullptr는 연결 해제다. */
 	void SetGameInstance(UGameInstance* inGameInstance);
 
@@ -88,4 +105,6 @@ private:
 	// HACK(seon): GC 또는 별도 수명 관리 시스템으로 소유권과 회수 책임을 이전한 뒤 이 보관 목록을 제거한다.
 	TArray<TUniquePtr<FActor>> destroyedActors;
 	UGameInstance* gameInstance = nullptr;
+	// 시점 액터의 소유권은 기존 액터 계층에 있고, 이 주소는 선택만 보관한다.
+	FActor* viewTarget = nullptr;
 };

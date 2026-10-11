@@ -88,6 +88,9 @@
     <Filter Include="Engine\Public">
       <UniqueIdentifier>{C6A93A3B-6A67-39D9-9CD7-D279F328B158}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Public\Camera">
+      <UniqueIdentifier>{4FD8F7CF-2159-32B8-B360-9A906D938AD7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Public\Engine">
       <UniqueIdentifier>{6ADB6142-2384-363B-8FF7-D3780AA5E2CC}</UniqueIdentifier>
     </Filter>
@@ -228,6 +231,12 @@
     <ClInclude Include="Engine\Public\ActorComponent.h">
       <Filter>Engine\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\CameraComponent.h">
+      <Filter>Engine\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Camera\CameraTypes.h">
+      <Filter>Engine\Public\Camera</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Engine\Engine.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
@@ -258,8 +267,14 @@
     <ClInclude Include="Engine\Public\Renderer\PositionColorVertex.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Renderer\PrimitiveType.h">
+      <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
       <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\SceneView.h">
+      <Filter>Engine\Public</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\StaticMeshComponent.h">
       <Filter>Engine\Public</Filter>
@@ -308,6 +323,9 @@
     <ClCompile Include="Engine\Private\ActorComponent.cpp">
       <Filter>Engine\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Private\CameraComponent.cpp">
+      <Filter>Engine\Private</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Private\Engine\Engine.cpp">
       <Filter>Engine\Private\Engine</Filter>
     </ClCompile>
@@ -352,6 +370,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp">
       <Filter>Engine\Private\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\SceneView.cpp">
+      <Filter>Engine\Private</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\StaticMeshComponent.cpp">
       <Filter>Engine\Private</Filter>

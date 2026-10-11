@@ -28,8 +28,8 @@ public:
 	/** 초기화 성공 후 최소화가 아닌 상태의 양수 클라이언트 크기를 전달한다. */
 	void Resize(uint32 SizeX, uint32 SizeY) override;
 
-	/** 목록은 호출 중에만 빌려 쓴다. 메시별 임시 정점 버퍼를 생성하고 월드 행렬을 상수 버퍼에 갱신·VS 슬롯 0에 연결한 뒤 그린다. 생성 / 갱신 실패는 해당 메시를 건너뛴다. 셰이더의 행렬 적용은 아직 없다. */
-	void RenderFrame(const TArray<FMeshRenderData>& renderData) override;
+	/** 목록과 시점은 호출 중에만 빌려 쓴다. nullptr는 시점 없음이다. 메시별 임시 정점 버퍼와 월드 행렬 상수 버퍼로 그리며 생성 / 갱신 실패는 해당 메시를 건너뛴다. 시점 행렬 적용은 후속 단계다. */
+	void RenderFrame(const TArray<FMeshRenderData>& renderData, const FSceneView* sceneView) override;
 
 private:
 	// 현재는 D3D11 고정 구성이다. RHI 도입 시 API 독립 자원 / 명령 계약으로 교체한다.

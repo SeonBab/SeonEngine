@@ -1,6 +1,7 @@
 #include "World.h"
 
 #include "Actor.h"
+#include "CameraComponent.h"
 #include "Renderer/MeshRenderData.h"
 #include "StaticMeshComponent.h"
 
@@ -94,6 +95,34 @@ FActor& FWorld::SpawnActor()
 	return *actors.back();
 }
 
+bool FWorld::SetViewTarget(FActor* newViewTarget)
+{
+	if (newViewTarget)
+	{
+		if (&newViewTarget->GetWorld() != this || newViewTarget->IsActorBeingDestroyed() || !newViewTarget->IsOwnedByWorld() || !newViewTarget->GetComponent<FCameraComponent>()) { return false; }
+	}
+	viewTarget = newViewTarget;
+
+	return true;
+}
+
+FActor* FWorld::GetViewTarget() const
+{
+	return viewTarget;
+}
+
+bool FWorld::GetCameraView(FMinimalViewInfo& outView) const
+{
+	if (!viewTarget) { return false; }
+
+	const FCameraComponent* cameraComponent = viewTarget->GetComponent<FCameraComponent>();
+	if (!cameraComponent) { return false; }
+
+	cameraComponent->GetCameraView(outView);
+
+	return true;
+}
+
 void FWorld::SetGameInstance(UGameInstance* inGameInstance)
 {
 	gameInstance = inGameInstance;
@@ -139,6 +168,10 @@ bool FWorld::DestroyActor(FActor* actor)
 void FWorld::MarkActorIsBeingDestroyed(FActor& actor)
 {
 	actor.bActorIsBeingDestroyed = true;
+	if (viewTarget == &actor)
+	{
+		viewTarget = nullptr;
+	}
 	for (const TUniquePtr<FActor>& child : actor.children)
 	{
 		MarkActorIsBeingDestroyed(*child);

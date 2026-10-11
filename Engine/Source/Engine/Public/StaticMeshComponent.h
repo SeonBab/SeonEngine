@@ -3,6 +3,7 @@
 #include "ActorComponent.h"
 #include "Containers/Array.h"
 #include "Renderer/PositionColorVertex.h"
+#include "Renderer/PrimitiveType.h"
 
 class FActor;
 struct FMeshRenderData;
@@ -23,8 +24,14 @@ public:
 	/** 로컬 정점 배열을 읽기 전용 참조로 반환한다. 컴포넌트 파괴 후 무효이며 설정 뒤 원소 참조는 다시 얻는다. */
 	const TArray<FPositionColorVertex>& GetVertices() const;
 
+	/** 정점 연결 규칙을 저장한다. 정점 배열을 변환하거나 GPU 상태를 갱신하지 않는다. */
+	void SetPrimitiveType(EPrimitiveType inPrimitiveType);
+
+	/** 저장한 정점 연결 규칙을 값으로 반환한다. 기본값은 Triangle List다. */
+	EPrimitiveType GetPrimitiveType() const;
+
 	/**
-	 * 로컬 위치 / 색상 정점 복사본과 소속 액터의 월드 변환 행렬을 값으로 반환한다. 빈 정점도 그대로 반환한다.
+	 * 로컬 위치 / 색상 정점 복사본, 정점 연결 규칙과 소속 액터의 월드 변환 행렬을 값으로 반환한다. 빈 정점도 그대로 반환한다.
 	 * 액터의 필수 트랜스폼과 유효한 변환 / 계층이 전제다. 씬 등록이나 GPU 갱신은 하지 않는다.
 	 */
 	FMeshRenderData GetRenderData() const;
@@ -33,4 +40,7 @@ private:
 	// TODO(seon): 공유 메시 데이터 타입을 도입하면 정점 저장을 그 타입으로 이전하고 컴포넌트에는 메시 참조를 남긴다.
 	// 컴포넌트 로컬 공간의 위치와 선형 RGBA 색상이다. 생성 시 빈 배열이다.
 	TArray<FPositionColorVertex> vertices;
+
+	// 공유 메시 데이터 도입 시 형상 데이터와 함께 관리할지 검토한다.
+	EPrimitiveType primitiveType = EPrimitiveType::PT_TriangleList;
 };

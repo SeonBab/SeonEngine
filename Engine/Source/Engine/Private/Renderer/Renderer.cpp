@@ -8,6 +8,7 @@
 #include "Math/Matrix4.h"
 #include "Platform/Windows/WindowsString.h"
 #include "Renderer/MeshRenderData.h"
+#include "SceneView.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -166,12 +167,11 @@ void FRenderer::Resize(uint32 SizeX, uint32 SizeY)
 	Viewport.Resize(SizeX, SizeY);
 }
 
-void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData)
+void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData, const FSceneView* sceneView)
 {
 	Device.SetInputLayout(inputLayout.Get());
 	Device.SetVertexShader(vertexShader.Get());
 	Device.SetPixelShader(pixelShader.Get());
-	Device.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Device.SetRenderTargetView(Viewport.GetBackBufferRenderTargetView());
 
 	D3D11_VIEWPORT viewport{};
@@ -183,25 +183,45 @@ void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData)
 	constexpr float ClearColor[4] = {1.0f, 0.0f, 1.0f, 1.0f};
 	Device.ClearRenderTargetView(Viewport.GetBackBufferRenderTargetView(), ClearColor);
 
-	for (const FMeshRenderData& mesh : renderData)
+	if (sceneView)
 	{
-		if (mesh.vertices.empty())
-		{
-			continue;
-		}
+		const FMatrix4 worldToClip = sceneView->viewMatrices.GetWorldToView() * sceneView->viewMatrices.GetViewToClip();
 
-		Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-		if (!Device.CreateVertexBuffer(mesh.vertices, vertexBuffer))
+		for (const FMeshRenderData& mesh : renderData)
 		{
-			continue;
+			if (mesh.vertices.empty())
+			{
+				continue;
+			}
+
+			Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
+			if (!Device.CreateVertexBuffer(mesh.vertices, vertexBuffer))
+			{
+				continue;
+			}
+			const FMatrix4 localToClip = mesh.localToWorld * worldToClip;
+			if (!Device.UpdateConstantBuffer(transformConstantBuffer.Get(), &localToClip, sizeof(FMatrix4)))
+			{
+				continue;
+			}
+			Device.SetVertexShaderConstantBuffer(transformConstantBuffer.Get());
+			Device.SetVertexBuffer(vertexBuffer.Get());
+			D3D11_PRIMITIVE_TOPOLOGY topology;
+			switch (mesh.primitiveType)
+			{
+				case EPrimitiveType::PT_TriangleList:
+					topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+					break;
+				case EPrimitiveType::PT_TriangleStrip:
+					topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+					break;
+				default:
+					SE_LOG(LogRenderer, Error, "Unsupported primitive type");
+					continue;
+			}
+			Device.SetPrimitiveTopology(topology);
+			Device.Draw(static_cast<uint32>(mesh.vertices.size()), 0);
 		}
-		if (!Device.UpdateConstantBuffer(transformConstantBuffer.Get(), &mesh.localToWorld, sizeof(FMatrix4)))
-		{
-			continue;
-		}
-		Device.SetVertexShaderConstantBuffer(transformConstantBuffer.Get());
-		Device.SetVertexBuffer(vertexBuffer.Get());
-		Device.Draw(static_cast<uint32>(mesh.vertices.size()), 0);
 	}
 
 	if (!Viewport.Present())

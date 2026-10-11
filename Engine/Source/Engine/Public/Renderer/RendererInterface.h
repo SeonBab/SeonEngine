@@ -4,6 +4,7 @@
 #include "CoreTypes.h"
 
 struct FMeshRenderData;
+class FSceneView;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 엔진과 렌더러 구현 사이의 공통 계약이다.
@@ -47,7 +48,9 @@ public:
 	 * 최소화 상태이거나 출력 크기가 0이면 호출하지 않는다.
 	 * 화면 제출 실패는 구현이 치명 종료로 처리한다.
 	 * renderData는 호출 중에만 빌려 읽으며 저장하지 않는다. 호출이 끝날 때까지 유효하고 변경되지 않아야 한다.
-	 * 현재 메시 데이터는 사용하지 않으며 빈 목록도 배경색 출력과 화면 제출을 수행한다.
+	 * sceneView는 호출 중에만 빌려 읽으며 저장하지 않는다. nullptr는 시점 없음이고, 값이 있으면 호출이 끝날 때까지 유효해야 한다.
+	 * 시점이 있으면 메시의 월드·뷰·투영을 결합해 정점에 적용한다.
+	 * sceneView가 nullptr이면 메시를 그리지 않는다. 빈 목록 또는 시점 부재도 배경색 출력과 화면 제출은 수행한다.
 	 */
-	virtual void RenderFrame(const TArray<FMeshRenderData>& renderData) = 0;
+	virtual void RenderFrame(const TArray<FMeshRenderData>& renderData, const FSceneView* sceneView) = 0;
 };

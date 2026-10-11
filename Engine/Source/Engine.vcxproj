@@ -97,6 +97,8 @@
     <ClInclude Include="Engine\Private\Renderer\Renderer.h" />
     <ClInclude Include="Engine\Public\Actor.h" />
     <ClInclude Include="Engine\Public\ActorComponent.h" />
+    <ClInclude Include="Engine\Public\CameraComponent.h" />
+    <ClInclude Include="Engine\Public\Camera\CameraTypes.h" />
     <ClInclude Include="Engine\Public\Engine\Engine.h" />
     <ClInclude Include="Engine\Public\Engine\EngineLoop.h" />
     <ClInclude Include="Engine\Public\Engine\EngineTypes.h" />
@@ -107,7 +109,9 @@
     <ClInclude Include="Engine\Public\GameModule.h" />
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h" />
     <ClInclude Include="Engine\Public\Renderer\PositionColorVertex.h" />
+    <ClInclude Include="Engine\Public\Renderer\PrimitiveType.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
+    <ClInclude Include="Engine\Public\SceneView.h" />
     <ClInclude Include="Engine\Public\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />
     <ClInclude Include="Engine\Public\World.h" />
@@ -125,6 +129,7 @@
     <ClCompile Include="Core\Private\Modules\ModuleManager.cpp" />
     <ClCompile Include="Engine\Private\Actor.cpp" />
     <ClCompile Include="Engine\Private\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Private\CameraComponent.cpp" />
     <ClCompile Include="Engine\Private\Engine\Engine.cpp" />
     <ClCompile Include="Engine\Private\Engine\GameEngine.cpp" />
     <ClCompile Include="Engine\Private\Engine\GameInstance.cpp" />
@@ -140,6 +145,7 @@
     <ClCompile Include="Engine\Private\Renderer\D3D11\D3D11Viewport.cpp" />
     <ClCompile Include="Engine\Private\Renderer\MeshRenderData.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
+    <ClCompile Include="Engine\Private\SceneView.cpp" />
     <ClCompile Include="Engine\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\TransformComponent.cpp" />
     <ClCompile Include="Engine\Private\World.cpp" />

@@ -1,7 +1,7 @@
-// CPU 행 우선 행렬을 그대로 읽어 로컬 정점에 적용한다. 카메라 변환은 아직 없다.
+// CPU에서 결합한 행 우선 로컬→클립 행렬을 정점에 적용한다.
 cbuffer TransformConstantBuffer : register(b0)
 {
-	row_major float4x4 LocalToWorld;
+	row_major float4x4 LocalToClip;
 };
 
 struct VSOutput
@@ -13,8 +13,8 @@ struct VSOutput
 VSOutput Main(float3 Position : POSITION, float4 Color : COLOR0)
 {
 	VSOutput output;
-	// 현재는 월드 위치를 클립 공간 출력으로 직접 사용한다.
-	output.Position = mul(float4(Position, 1.0f), LocalToWorld);
+	// 클립 좌표를 출력한다. 클리핑과 원근 나누기는 이후 GPU 단계에서 수행한다.
+	output.Position = mul(float4(Position, 1.0f), LocalToClip);
 	output.Color = Color;
 	return output;
 }
