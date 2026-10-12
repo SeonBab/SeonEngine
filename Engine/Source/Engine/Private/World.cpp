@@ -89,12 +89,6 @@ double FWorld::GetTimeSeconds() const
 	return TimeSeconds;
 }
 
-FActor& FWorld::SpawnActor()
-{
-	actors.push_back(MakeUnique<FActor>(*this));
-	return *actors.back();
-}
-
 bool FWorld::SetViewTarget(FActor* newViewTarget)
 {
 	if (newViewTarget)

@@ -26,7 +26,7 @@ void USampleGameInstance::StartGameInstance()
 		SE_LOG(LogSampleGameInstance, Fatal, "Starting SampleGame requires an initialized world");
 	}
 
-	FActor& actor = world->SpawnActor();
+	FActor& actor = world->SpawnActor<FActor>();
 	TUniquePtr<FStaticMeshComponent> mesh = MakeUnique<FStaticMeshComponent>(actor);
 	mesh->SetVertices({
 		FPositionColorVertex{FVector3{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},

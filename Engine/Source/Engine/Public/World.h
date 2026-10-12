@@ -1,9 +1,12 @@
 #pragma once
 
+#include "Actor.h"
 #include "Containers/Array.h"
 #include "Templates/UniquePtr.h"
 
-class FActor;
+#include <concepts>
+#include <utility>
+
 class FStaticMeshComponent;
 class UGameInstance;
 struct FMeshRenderData;
@@ -30,8 +33,21 @@ public:
 	 */
 	void Tick(float deltaSeconds);
 
-	/** 기본 액터를 생성하여 소유한다. 반환 참조는 액터가 파괴되면 무효다. */
-	FActor& SpawnActor();
+	/**
+	 * FWorld& 생성자가 있는 기본 / public 파생 액터를 생성한 뒤 월드가 소유한다.
+	 * 생성자는 등록 전에 실행되므로 자신을 파괴하거나 부모를 연결하지 않는다.
+	 * 반환 참조는 비소유이며 액터가 파괴되면 무효다. Tick 중 생성한 액터는 다음 Tick부터 갱신한다.
+	 */
+	template<typename T>
+		requires std::derived_from<T, FActor> && std::constructible_from<T, FWorld&>
+	T& SpawnActor()
+	{
+		TUniquePtr<T> actor = MakeUnique<T>(*this);
+		T* spawnedActor = actor.get();
+		actors.push_back(std::move(actor));
+
+		return *spawnedActor;
+	}
 
 	/** 루트와 자손의 스태틱 메시 컴포넌트 주소를 수집한다. 출력은 비우며 비소유다. 렌더 등록 / 그리기는 하지 않는다. */
 	void CollectStaticMeshComponents(TArray<FStaticMeshComponent*>& outComponents) const;
