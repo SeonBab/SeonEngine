@@ -88,9 +88,11 @@
     <ClInclude Include="Core\Public\Windows\WindowsPlatformProcess.h" />
     <ClInclude Include="Engine\Private\Launch\EngineMain.h" />
     <ClInclude Include="Engine\Private\Launch\LaunchEngineLoop.h" />
+    <ClInclude Include="Engine\Private\Platform\GenericPlatform\GenericApplication.h" />
     <ClInclude Include="Engine\Private\Platform\GenericPlatform\GenericWindow.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsHWrapper.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsString.h" />
+    <ClInclude Include="Engine\Private\Platform\Windows\WindowsApplication.h" />
     <ClInclude Include="Engine\Private\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="Engine\Private\Renderer\D3D11\D3D11Device.h" />
     <ClInclude Include="Engine\Private\Renderer\D3D11\D3D11Viewport.h" />
