@@ -19,10 +19,10 @@ public:
 	FRenderer(FRenderer&&) = delete;
 	FRenderer& operator=(FRenderer&&) = delete;
 
-	/** 장치 / 창 출력 / 셰이더 / 입력 레이아웃 / 변환 상수 버퍼 / 깊이 비교 상태를 준비한다. 자원 준비 실패 시 부분 자원을 정리하고 false를 반환한다. */
+	/** 장치 / 창 출력 / 셰이더 / 입력 레이아웃 / 변환 상수 버퍼 / 깊이 비교·래스터라이저 상태를 준비한다. 자원 준비 실패 시 부분 자원을 정리하고 false를 반환한다. */
 	[[nodiscard]] bool Init(void* WindowHandle, uint32 SizeX, uint32 SizeY) override;
 
-	/** OS 창이 살아 있는 동안 바인딩 / 깊이 상태·상수 버퍼·셰이더 자원 / 창 출력 / 장치 순서로 정리한다. 기본 소멸자는 명시적 종료를 대신하지 않는다. */
+	/** OS 창이 살아 있는 동안 바인딩 / 래스터라이저·깊이 상태·상수 버퍼·셰이더 자원 / 창 출력 / 장치 순서로 정리한다. 기본 소멸자는 명시적 종료를 대신하지 않는다. */
 	void Shutdown() override;
 
 	/** 초기화 성공 후 최소화가 아닌 상태의 양수 클라이언트 크기를 전달한다. */
@@ -46,4 +46,7 @@ private:
 
 	// Reversed-Z의 깊이 비교와 쓰기 규칙이다. 창 크기와 무관하며 Init에서 생성한다.
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
+
+	// CCW 앞면 / 뒷면 제거 규칙이다. Init에서 생성하고 매 프레임 연결한다. 창 크기와 무관하다.
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 };

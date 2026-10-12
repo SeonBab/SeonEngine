@@ -159,6 +159,17 @@ bool FRenderer::Init(void* WindowHandle, uint32 SizeX, uint32 SizeY)
 		return false;
 	}
 
+	D3D11_RASTERIZER_DESC rasterizerDescription{};
+	rasterizerDescription.FillMode = D3D11_FILL_SOLID;
+	rasterizerDescription.CullMode = D3D11_CULL_BACK;
+	rasterizerDescription.FrontCounterClockwise = TRUE;
+	rasterizerDescription.DepthClipEnable = TRUE;
+	if (!Device.CreateRasterizerState(rasterizerDescription, rasterizerState))
+	{
+		Shutdown();
+		return false;
+	}
+
 	return true;
 }
 
@@ -171,6 +182,7 @@ void FRenderer::Shutdown()
 		DeviceContext->ClearState();
 	}
 
+	rasterizerState.Reset();
 	depthStencilState.Reset();
 	transformConstantBuffer.Reset();
 	inputLayout.Reset();
@@ -193,6 +205,7 @@ void FRenderer::RenderFrame(const TArray<FMeshRenderData>& renderData, const FSc
 	Device.SetPixelShader(pixelShader.Get());
 	Device.SetRenderTargetView(Viewport.GetBackBufferRenderTargetView(), Viewport.GetDepthStencilView());
 	Device.SetDepthStencilState(depthStencilState.Get(), 0);
+	Device.SetRasterizerState(rasterizerState.Get());
 
 	D3D11_VIEWPORT viewport{};
 	viewport.Width = static_cast<float>(Viewport.GetSizeX());

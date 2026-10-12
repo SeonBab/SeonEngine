@@ -59,6 +59,14 @@ public:
 	[[nodiscard]] bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& description, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& outState);
 
 	/**
+	 * 지정한 설정으로 래스터라이저 상태 객체를 생성한다. 설정은 호출 동안만 빌린다.
+	 * 장치 부재 / API 실패는 Error 로그와 false로 알리고 기존 출력을 유지한다.
+	 * 성공 시 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
+	 * CCW / CW 선택은 전달된 설정을 따른다. 바인딩 / Draw는 하지 않는다.
+	 */
+	[[nodiscard]] bool CreateRasterizerState(const D3D11_RASTERIZER_DESC& description, Microsoft::WRL::ComPtr<ID3D11RasterizerState>& outState);
+
+	/**
 	 * 지정한 바이트 크기의 상수 버퍼를 생성한다. 크기는 0이 아닌 16바이트 배수여야 한다.
 	 * 장치 부재 / 지원 크기 초과 / 생성 실패는 로그와 false로 알리고 기존 출력을 유지한다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
@@ -169,6 +177,13 @@ public:
 	 * 상태 캐시 없이 매 호출마다 전달한다. 상태 생성 / 깊이 Clear / Draw는 하지 않는다.
 	 */
 	void SetDepthStencilState(ID3D11DepthStencilState* depthStencilState, uint32 stencilReference);
+
+	/**
+	 * 준비된 컨텍스트에 같은 장치의 래스터라이저 상태를 연결한다. nullptr는 기본 상태로 되돌린다.
+	 * Device 멤버에는 저장하지 않지만 컨텍스트가 연결 중 COM 참조를 보유한다.
+	 * D3D11 호출은 반환값이 없다. 상태 캐시 / Draw는 처리하지 않는다.
+	 */
+	void SetRasterizerState(ID3D11RasterizerState* rasterizerState);
 
 	/**
 	 * 준비된 컨텍스트에 화면 영역 하나와 깊이 범위를 설정한다. 다른 viewport는 비활성화한다.

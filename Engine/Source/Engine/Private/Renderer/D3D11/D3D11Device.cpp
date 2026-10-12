@@ -103,6 +103,29 @@ bool FD3D11Device::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& descr
 	return true;
 }
 
+bool FD3D11Device::CreateRasterizerState(const D3D11_RASTERIZER_DESC& description, Microsoft::WRL::ComPtr<ID3D11RasterizerState>& outState)
+{
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a rasterizer state requires an initialized D3D11 device");
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> newState;
+	const HRESULT result = Direct3DDevice->CreateRasterizerState(&description, newState.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a rasterizer state failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+
+	outState = std::move(newState);
+
+	return true;
+}
+
 bool FD3D11Device::CreateConstantBuffer(uint32 byteSize, Microsoft::WRL::ComPtr<ID3D11Buffer>& outConstantBuffer)
 {
 	if (!Direct3DDevice)
@@ -364,6 +387,11 @@ void FD3D11Device::SetRenderTargetView(ID3D11RenderTargetView* renderTargetView,
 void FD3D11Device::SetDepthStencilState(ID3D11DepthStencilState* depthStencilState, uint32 stencilReference)
 {
 	Direct3DDeviceIMContext->OMSetDepthStencilState(depthStencilState, stencilReference);
+}
+
+void FD3D11Device::SetRasterizerState(ID3D11RasterizerState* rasterizerState)
+{
+	Direct3DDeviceIMContext->RSSetState(rasterizerState);
 }
 
 void FD3D11Device::SetViewport(const D3D11_VIEWPORT& viewport)
