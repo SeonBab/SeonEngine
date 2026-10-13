@@ -1,40 +1,43 @@
 #include "StaticMeshComponent.h"
 
 #include "Actor.h"
+#include "Engine/StaticMesh.h"
 #include "Renderer/MeshRenderData.h"
 #include "TransformComponent.h"
+
+#include <utility>
 
 FStaticMeshComponent::FStaticMeshComponent(FActor& ownerActor)
 	: FActorComponent(ownerActor)
 {
 }
 
-void FStaticMeshComponent::SetVertices(const TArray<FPositionColorVertex>& inVertices)
+bool FStaticMeshComponent::SetStaticMesh(TSharedPtr<UStaticMesh> inStaticMesh)
 {
-	vertices = inVertices;
+	if (staticMesh == inStaticMesh)
+	{
+		return false;
+	}
+
+	staticMesh = std::move(inStaticMesh);
+	return true;
 }
 
-const TArray<FPositionColorVertex>& FStaticMeshComponent::GetVertices() const
+UStaticMesh* FStaticMeshComponent::GetStaticMesh() const
 {
-	return vertices;
-}
-
-void FStaticMeshComponent::SetPrimitiveType(EPrimitiveType inPrimitiveType)
-{
-	primitiveType = inPrimitiveType;
-}
-
-EPrimitiveType FStaticMeshComponent::GetPrimitiveType() const
-{
-	return primitiveType;
+	return staticMesh.get();
 }
 
 FMeshRenderData FStaticMeshComponent::GetRenderData() const
 {
-	const FTransformComponent* transformComponent = GetOwner().GetComponent<FTransformComponent>();
 	FMeshRenderData renderData;
-	renderData.vertices = GetVertices();
-	renderData.primitiveType = GetPrimitiveType();
+	if (const UStaticMesh* mesh = GetStaticMesh())
+	{
+		renderData.vertices = mesh->GetVertices();
+		renderData.primitiveType = mesh->GetPrimitiveType();
+	}
+
+	const FTransformComponent* transformComponent = GetOwner().GetComponent<FTransformComponent>();
 	renderData.localToWorld = transformComponent->GetComponentTransform().ToMatrixWithScale();
 
 	return renderData;

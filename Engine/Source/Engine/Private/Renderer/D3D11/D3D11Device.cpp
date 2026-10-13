@@ -126,6 +126,28 @@ bool FD3D11Device::CreateRasterizerState(const D3D11_RASTERIZER_DESC& descriptio
 	return true;
 }
 
+bool FD3D11Device::CreateSamplerState(const D3D11_SAMPLER_DESC& description, Microsoft::WRL::ComPtr<ID3D11SamplerState>& outState)
+{
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a sampler state requires an initialized D3D11 device");
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> newState;
+	const HRESULT result = Direct3DDevice->CreateSamplerState(&description, newState.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a sampler state failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+	outState = std::move(newState);
+
+	return true;
+}
+
 bool FD3D11Device::CreateConstantBuffer(uint32 byteSize, Microsoft::WRL::ComPtr<ID3D11Buffer>& outConstantBuffer)
 {
 	if (!Direct3DDevice)
@@ -211,7 +233,7 @@ void FD3D11Device::SetVertexShaderConstantBuffer(ID3D11Buffer* constantBuffer)
 	Direct3DDeviceIMContext->VSSetConstantBuffers(0, 1, buffers);
 }
 
-bool FD3D11Device::CreateVertexBuffer(const TArray<FPositionColorVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer)
+bool FD3D11Device::CreateVertexBuffer(const TArray<FStaticMeshVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer)
 {
 	if (vertices.empty()) { return false; }
 	if (!Direct3DDevice)
@@ -220,7 +242,7 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FPositionColorVertex>& vertic
 
 		return false;
 	}
-	if (vertices.size() > std::numeric_limits<uint32>::max() / sizeof(FPositionColorVertex))
+	if (vertices.size() > std::numeric_limits<uint32>::max() / sizeof(FStaticMeshVertex))
 	{
 		SE_LOG(LogD3D11RHI, Error, "Vertex buffer size exceeds the D3D11 ByteWidth range");
 
@@ -228,7 +250,7 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FPositionColorVertex>& vertic
 	}
 
 	D3D11_BUFFER_DESC bufferDesc{};
-	bufferDesc.ByteWidth = static_cast<uint32>(vertices.size() * sizeof(FPositionColorVertex));
+	bufferDesc.ByteWidth = static_cast<uint32>(vertices.size() * sizeof(FStaticMeshVertex));
 	bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	D3D11_SUBRESOURCE_DATA initialData{};
@@ -250,10 +272,99 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FPositionColorVertex>& vertic
 void FD3D11Device::SetVertexBuffer(ID3D11Buffer* vertexBuffer)
 {
 	ID3D11Buffer* buffers[] = {vertexBuffer};
-	constexpr uint32 stride = sizeof(FPositionColorVertex);
+	constexpr uint32 stride = sizeof(FStaticMeshVertex);
 	constexpr uint32 offset = 0;
 
 	Direct3DDeviceIMContext->IASetVertexBuffers(0, 1, buffers, &stride, &offset);
+}
+
+bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture)
+{
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a texture requires an initialized D3D11 device");
+
+		return false;
+	}
+	if (width == 0 || height == 0 || width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Texture dimensions are outside the D3D11 2D range");
+
+		return false;
+	}
+
+	// 크기 상한 검사 후 계산하므로 행 바이트 수와 전체 RGBA8 크기가 넘치지 않는다.
+	const uint32 rowPitch = width * 4;
+	const size_t byteSize = static_cast<size_t>(rowPitch) * height;
+	if (rgbaPixels.size() != byteSize)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Texture RGBA8 data size does not match its dimensions");
+
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC description{};
+	description.Width = width;
+	description.Height = height;
+	description.MipLevels = 1;
+	description.ArraySize = 1;
+	description.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	description.SampleDesc.Count = 1;
+	description.Usage = D3D11_USAGE_IMMUTABLE;
+	description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	D3D11_SUBRESOURCE_DATA initialData{};
+	initialData.pSysMem = rgbaPixels.data();
+	initialData.SysMemPitch = rowPitch;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> newTexture;
+	const HRESULT result = Direct3DDevice->CreateTexture2D(&description, &initialData, newTexture.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a texture failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+	outTexture = std::move(newTexture);
+
+	return true;
+}
+
+bool FD3D11Device::CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outView)
+{
+	if (!Direct3DDevice)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a shader resource view requires an initialized D3D11 device");
+
+		return false;
+	}
+	if (!texture)
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a shader resource view requires a texture");
+
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
+	texture->GetDevice(textureDevice.GetAddressOf());
+	if (textureDevice.Get() != Direct3DDevice.Get())
+	{
+		SE_LOG(LogD3D11RHI, Error, "The shader resource texture belongs to another D3D11 device");
+
+		return false;
+	}
+
+	// nullptr 설명은 텍스처 형식과 전체 범위에 맞는 기본 뷰를 요청한다.
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> newView;
+	const HRESULT result = Direct3DDevice->CreateShaderResourceView(texture, nullptr, newView.GetAddressOf());
+	if (FAILED(result))
+	{
+		SE_LOG(LogD3D11RHI, Error, "Creating a shader resource view failed (HRESULT 0x{:08X})", static_cast<uint32>(result));
+
+		return false;
+	}
+	outView = std::move(newView);
+
+	return true;
 }
 
 bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outInputLayout)
@@ -271,19 +382,25 @@ bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, 
 		return false;
 	}
 
-	D3D11_INPUT_ELEMENT_DESC inputElements[2]{};
+	D3D11_INPUT_ELEMENT_DESC inputElements[3]{};
 	inputElements[0].SemanticName = "POSITION";
 	inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputElements[0].AlignedByteOffset = static_cast<uint32>(offsetof(FPositionColorVertex, position));
+	inputElements[0].AlignedByteOffset = static_cast<uint32>(offsetof(FStaticMeshVertex, position));
 	inputElements[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	inputElements[1].SemanticName = "COLOR";
 	inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElements[1].AlignedByteOffset = static_cast<uint32>(offsetof(FPositionColorVertex, color));
+	inputElements[1].AlignedByteOffset = static_cast<uint32>(offsetof(FStaticMeshVertex, color));
 	inputElements[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	// UV 두 성분을 정점 셰이더의 TEXCOORD0 입력에 연결한다.
+	inputElements[2].SemanticName = "TEXCOORD";
+	inputElements[2].SemanticIndex = 0;
+	inputElements[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	inputElements[2].AlignedByteOffset = static_cast<uint32>(offsetof(FStaticMeshVertex, uv));
+	inputElements[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> newInputLayout;
 	const HRESULT result = Direct3DDevice->CreateInputLayout(
-		inputElements, 2, vertexShaderBytecode.data(), vertexShaderBytecode.size(), newInputLayout.GetAddressOf());
+		inputElements, 3, vertexShaderBytecode.data(), vertexShaderBytecode.size(), newInputLayout.GetAddressOf());
 	if (FAILED(result))
 	{
 		SE_LOG(LogD3D11RHI, Error, "Creating an input layout failed (HRESULT 0x{:08X})", static_cast<uint32>(result));

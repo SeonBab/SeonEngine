@@ -249,7 +249,13 @@
     <ClInclude Include="Core\Public\Math\Transform.h">
       <Filter>Core\Public\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\Math\Vector2.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Public\Math\Vector3.h">
+      <Filter>Core\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Public\Math\Vector4.h">
       <Filter>Core\Public\Math</Filter>
     </ClInclude>
     <ClInclude Include="Core\Public\Modules\ModuleInterface.h">
@@ -345,6 +351,9 @@
     <ClInclude Include="Engine\Public\Engine\GameViewportClient.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Public\Engine\StaticMesh.h">
+      <Filter>Engine\Public\Engine</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Public\Engine\WorldContext.h">
       <Filter>Engine\Public\Engine</Filter>
     </ClInclude>
@@ -366,13 +375,13 @@
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Public\Renderer\PositionColorVertex.h">
-      <Filter>Engine\Public\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\PrimitiveType.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h">
+      <Filter>Engine\Public\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Public\Renderer\StaticMeshVertex.h">
       <Filter>Engine\Public\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Public\SceneView.h">
@@ -471,6 +480,9 @@
       <Filter>Engine\Private\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Engine\GameViewportClient.cpp">
+      <Filter>Engine\Private\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Private\Engine\StaticMesh.cpp">
       <Filter>Engine\Private\Engine</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Private\Engine\WorldContext.cpp">

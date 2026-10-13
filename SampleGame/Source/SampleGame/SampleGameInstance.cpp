@@ -1,8 +1,9 @@
 #include "SampleGameInstance.h"
 
 #include "Actor.h"
+#include "Engine/StaticMesh.h"
 #include "Logging/LogMacros.h"
-#include "Renderer/PositionColorVertex.h"
+#include "Renderer/StaticMeshVertex.h"
 #include "StaticMeshComponent.h"
 #include "World.h"
 
@@ -28,11 +29,19 @@ void USampleGameInstance::StartGameInstance()
 
 	FActor& actor = world->SpawnActor<FActor>();
 	TUniquePtr<FStaticMeshComponent> mesh = MakeUnique<FStaticMeshComponent>(actor);
-	mesh->SetVertices({
-		FPositionColorVertex{FVector3{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-		FPositionColorVertex{FVector3{0.0f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-		FPositionColorVertex{FVector3{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-	});
+	TSharedPtr<UStaticMesh> meshAsset = MakeShared<UStaticMesh>();
+	if (!meshAsset->SetMeshData(
+			{
+				FStaticMeshVertex{FVector3{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+				FStaticMeshVertex{FVector3{0.0f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+				FStaticMeshVertex{FVector3{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+			},
+			EPrimitiveType::PT_TriangleList))
+	{
+		SE_LOG(LogSampleGameInstance, Fatal, "Setting the sample mesh asset data failed");
+	}
+	// 처음 지정하며 반환은 변경 여부다. 컴포넌트가 지역 자산의 공유 수명을 유지한다.
+	mesh->SetStaticMesh(meshAsset);
 
 	if (!actor.AddComponent(mesh))
 	{

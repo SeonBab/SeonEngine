@@ -3,7 +3,7 @@
 #include "Containers/Array.h"
 #include "CoreTypes.h"
 #include "Platform/Windows/WindowsHWrapper.h"
-#include "Renderer/PositionColorVertex.h"
+#include "Renderer/StaticMeshVertex.h"
 
 #include <d3d11.h>
 #include <wrl/client.h>
@@ -67,6 +67,15 @@ public:
 	[[nodiscard]] bool CreateRasterizerState(const D3D11_RASTERIZER_DESC& description, Microsoft::WRL::ComPtr<ID3D11RasterizerState>& outState);
 
 	/**
+	 * 전달한 필터 / 주소 처리 / LOD 설정으로 샘플러 상태 객체를 생성한다. 설정은 호출 동안만 빌린다.
+	 * 장치 부재 / API 실패는 Error 로그와 false이며 기존 출력을 유지한다.
+	 * 성공 시에만 새 소유 참조로 교체한다. 같은 설정의 생성은 기존 객체를 반환할 수도 있다.
+	 * 호출자는 장치 종료 전에 참조를 해제한다. Device 멤버에 상태나 설정을 보관하지 않는다.
+	 * 설정을 보정하거나 특정 필터 / 주소 처리를 고정하지 않는다. 셰이더 바인딩 / Draw는 별도다.
+	 */
+	[[nodiscard]] bool CreateSamplerState(const D3D11_SAMPLER_DESC& description, Microsoft::WRL::ComPtr<ID3D11SamplerState>& outState);
+
+	/**
 	 * 지정한 바이트 크기의 상수 버퍼를 생성한다. 크기는 0이 아닌 16바이트 배수여야 한다.
 	 * 장치 부재 / 지원 크기 초과 / 생성 실패는 로그와 false로 알리고 기존 출력을 유지한다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
@@ -92,22 +101,42 @@ public:
 	void SetVertexShaderConstantBuffer(ID3D11Buffer* constantBuffer);
 
 	/**
-	 * 로컬 위치와 색상 정점을 복사한 변경 불가 GPU 버퍼를 생성한다. CPU 배열은 호출 중에만 필요하다.
+	 * 로컬 위치 / 색상 / UV 정점을 복사한 변경 불가 GPU 버퍼를 생성한다. CPU 배열은 호출 중에만 필요하다.
 	 * 빈 입력은 생성 없이 false다. 장치 부재 / 크기 초과 / 생성 실패도 false이며 원인을 로그로 남긴다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 버퍼 참조를 해제해야 한다.
 	 * 정점 입력 바인딩 / 그리기 / 월드 행렬 전달은 하지 않는다.
 	 */
-	[[nodiscard]] bool CreateVertexBuffer(const TArray<FPositionColorVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer);
+	[[nodiscard]] bool CreateVertexBuffer(const TArray<FStaticMeshVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outVertexBuffer);
 
 	/**
-	 * 준비된 컨텍스트의 입력 슬롯 0에 FPositionColorVertex 간격 / 시작 오프셋 0으로 정점 버퍼 하나를 연결한다.
+	 * 준비된 컨텍스트의 입력 슬롯 0에 FStaticMeshVertex 간격 / 시작 오프셋 0으로 정점 버퍼 하나를 연결한다.
 	 * 이 장치에서 만든 정점 버퍼가 필요하며 nullptr는 슬롯 0 연결 해제다. Draw는 하지 않는다.
 	 * Device 멤버에는 저장하지 않지만 컨텍스트는 바인딩 동안 COM 참조를 보유한다.
 	 */
 	void SetVertexBuffer(ID3D11Buffer* vertexBuffer);
 
 	/**
-	 * 컴파일된 vertex shader 입력에 맞춰 슬롯 0의 POSITION0 / float3와 COLOR0 / float4 레이아웃을 생성한다.
+	 * 행 우선으로 밀집한 RGBA8 픽셀을 복사하여 변경 불가 2D 텍스처를 생성한다.
+	 * 크기는 1~D3D11 최대 2D 크기이며 입력은 정확히 width * height * 4바이트여야 한다.
+	 * 형식은 R8G8B8A8_UNORM, 밉/배열/샘플은 각 1개다. sRGB 변환이나 밉 생성은 하지 않는다.
+	 * 장치 부재 / 잘못된 입력 / API 실패는 로그와 false이며 기존 출력을 유지한다.
+	 * 성공 시에만 새 소유 참조로 교체한다. 픽셀 배열은 호출 동안만 필요하다.
+	 * 호출자는 장치 종료 전에 참조를 해제한다. SRV / 샘플러 / 바인딩 / 파일 읽기는 별도다.
+	 */
+	[[nodiscard]] bool CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture);
+
+	/**
+	 * 같은 장치의 2D 텍스처에 형식 / 전체 범위를 따르는 기본 SRV를 생성한다.
+	 * 입력은 기본 뷰를 만들 수 있는 형식과 SHADER_RESOURCE 용도를 가져야 한다.
+	 * 장치 부재 / nullptr / 다른 장치 / API 실패는 로그와 false이며 기존 출력을 유지한다.
+	 * 성공 시에만 새 소유 참조로 교체한다. SRV는 대상 텍스처의 COM 참조도 유지한다.
+	 * 호출자는 장치 종료 전에 참조를 해제한다. 입력은 호출 동안 살아 있어야 한다.
+	 * Device 멤버에 저장하지 않으며 샘플러 / 셰이더 바인딩 / Draw는 하지 않는다.
+	 */
+	[[nodiscard]] bool CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outView);
+
+	/**
+	 * 컴파일된 vertex shader 입력에 맞춰 슬롯 0의 POSITION0 / float3, COLOR0 / float4, TEXCOORD0 / float2 레이아웃을 생성한다.
 	 * 바이트코드는 호출 동안만 필요하다. 빈 입력 / 장치 부재 / API 실패는 로그와 false로 알린다.
 	 * 성공 시에만 출력을 새 소유 참조로 교체한다. 호출자는 장치 종료 전에 참조를 해제해야 한다.
 	 * 레이아웃 연결 / 셰이더 객체 생성 / 그리기는 하지 않는다.
