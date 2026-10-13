@@ -2,8 +2,10 @@
 
 #include "Engine/Engine.h"
 #include "Engine/GameInstanceFactory.h"
+#include "Templates/SharedPointer.h"
 #include "Templates/UniquePtr.h"
 
+class FSceneViewport;
 class UGameInstance;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,6 +48,9 @@ public:
 
 	/** 소유한 세션을 비소유 반환한다. 준비 전 / 종료 후에는 nullptr다. */
 	UGameInstance* GetGameInstance() const { return gameInstance.get(); }
+
+	/** 대표 게임 화면을 공유 소유한다. 외부에서도 포인터를 교체하거나 해제할 수 있다. */
+	TSharedPtr<FSceneViewport> sceneViewport;
 
 private:
 	// 엔진 생성 전 등록하는 공통 함수 주소다. Init에서 세션 생성에 사용한다.

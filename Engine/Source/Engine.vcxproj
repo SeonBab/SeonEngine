@@ -50,7 +50,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)Core\Public;$(ProjectDir)Core\Private;$(ProjectDir)CoreUObject\Public;$(ProjectDir)CoreUObject\Private;$(ProjectDir)Engine\Public;$(ProjectDir)Engine\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Core\Public;$(ProjectDir)Core\Private;$(ProjectDir)CoreUObject\Public;$(ProjectDir)CoreUObject\Private;$(ProjectDir)InputCore\Public;$(ProjectDir)InputCore\Private;$(ProjectDir)SlateCore\Public;$(ProjectDir)Slate\Public;$(ProjectDir)Engine\Public;$(ProjectDir)Engine\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -103,21 +103,38 @@
     <ClInclude Include="Engine\Public\CameraComponent.h" />
     <ClInclude Include="Engine\Public\Camera\CameraTypes.h" />
     <ClInclude Include="Engine\Public\Engine\Engine.h" />
+    <ClInclude Include="Engine\Public\Engine\EngineBaseTypes.h" />
     <ClInclude Include="Engine\Public\Engine\EngineLoop.h" />
     <ClInclude Include="Engine\Public\Engine\EngineTypes.h" />
     <ClInclude Include="Engine\Public\Engine\GameEngine.h" />
     <ClInclude Include="Engine\Public\Engine\GameInstance.h" />
     <ClInclude Include="Engine\Public\Engine\GameInstanceFactory.h" />
+    <ClInclude Include="Engine\Public\Engine\GameViewportClient.h" />
     <ClInclude Include="Engine\Public\Engine\WorldContext.h" />
+    <ClInclude Include="Engine\Public\Framework\Application\SlateApplication.h" />
     <ClInclude Include="Engine\Public\GameModule.h" />
+    <ClInclude Include="Engine\Public\InputComponent.h" />
+    <ClInclude Include="Engine\Public\InputKeyEventArgs.h" />
+    <ClInclude Include="Engine\Public\Platform\GenericPlatform\GenericApplicationMessageHandler.h" />
     <ClInclude Include="Engine\Public\Renderer\MeshRenderData.h" />
     <ClInclude Include="Engine\Public\Renderer\PositionColorVertex.h" />
     <ClInclude Include="Engine\Public\Renderer\PrimitiveType.h" />
     <ClInclude Include="Engine\Public\Renderer\RendererInterface.h" />
     <ClInclude Include="Engine\Public\SceneView.h" />
+    <ClInclude Include="Engine\Public\Slate\SceneViewport.h" />
     <ClInclude Include="Engine\Public\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Public\TransformComponent.h" />
+    <ClInclude Include="Engine\Public\ViewportClient.h" />
     <ClInclude Include="Engine\Public\World.h" />
+    <ClInclude Include="InputCore\Public\GenericPlatform\GenericPlatformInput.h" />
+    <ClInclude Include="InputCore\Public\HAL\PlatformInput.h" />
+    <ClInclude Include="InputCore\Public\InputCoreTypes.h" />
+    <ClInclude Include="InputCore\Public\Windows\WindowsPlatformInput.h" />
+    <ClInclude Include="SlateCore\Public\Input\Events.h" />
+    <ClInclude Include="SlateCore\Public\Input\Reply.h" />
+    <ClInclude Include="SlateCore\Public\Rendering\RenderingCommon.h" />
+    <ClInclude Include="SlateCore\Public\Widgets\SWidget.h" />
+    <ClInclude Include="Slate\Public\Widgets\SViewport.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CoreUObject\Private\UObject\Object.cpp" />
@@ -136,9 +153,15 @@
     <ClCompile Include="Engine\Private\Engine\Engine.cpp" />
     <ClCompile Include="Engine\Private\Engine\GameEngine.cpp" />
     <ClCompile Include="Engine\Private\Engine\GameInstance.cpp" />
+    <ClCompile Include="Engine\Private\Engine\GameViewportClient.cpp" />
     <ClCompile Include="Engine\Private\Engine\WorldContext.cpp" />
+    <ClCompile Include="Engine\Private\Framework\Application\SlateApplication.cpp" />
+    <ClCompile Include="Engine\Private\InputComponent.cpp" />
     <ClCompile Include="Engine\Private\Launch\EngineMain.cpp" />
     <ClCompile Include="Engine\Private\Launch\LaunchEngineLoop.cpp" />
+    <ClCompile Include="Engine\Private\Platform\GenericPlatform\GenericApplication.cpp" />
+    <ClCompile Include="Engine\Private\Platform\GenericPlatform\GenericApplicationMessageHandler.cpp" />
+    <ClCompile Include="Engine\Private\Platform\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsLaunch.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformMisc.cpp" />
     <ClCompile Include="Engine\Private\Platform\Windows\WindowsPlatformProcess.cpp" />
@@ -149,9 +172,13 @@
     <ClCompile Include="Engine\Private\Renderer\MeshRenderData.cpp" />
     <ClCompile Include="Engine\Private\Renderer\Renderer.cpp" />
     <ClCompile Include="Engine\Private\SceneView.cpp" />
+    <ClCompile Include="Engine\Private\Slate\SceneViewport.cpp" />
     <ClCompile Include="Engine\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Private\TransformComponent.cpp" />
     <ClCompile Include="Engine\Private\World.cpp" />
+    <ClCompile Include="InputCore\Private\InputCoreTypes.cpp" />
+    <ClCompile Include="InputCore\Private\Windows\WindowsPlatformInput.cpp" />
+    <ClCompile Include="SlateCore\Private\Input\Events.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Shaders\Private\PositionColorVertexShader.hlsl">

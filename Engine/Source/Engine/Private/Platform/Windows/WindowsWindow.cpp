@@ -1,6 +1,7 @@
 #include "Platform/Windows/WindowsWindow.h"
 
 #include "CoreTypes.h"
+#include "Platform/Windows/WindowsApplication.h"
 #include "Platform/Windows/WindowsHWrapper.h"
 
 // 공통 기반 클래스를 사용하는 쪽에 Win32 타입과 호출을 노출하지 않는다.
@@ -38,7 +39,7 @@ namespace SE::Private
 				FWindowsWindow* window = static_cast<FWindowsWindow*>(createStruct->lpCreateParams);
 				SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 				window->nativeHandle = hwnd;
-				// 여기서 끝내지 않고 아래 HandleMessage를 거쳐 기본 처리로 넘긴다. 제목 설정 등 창 생성에 필요한 일을 기본 처리가 한다
+				// 여기서 끝내지 않고 Application을 거쳐 기본 처리로 넘긴다. 제목 설정 등 창 생성에 필요한 일을 기본 처리가 한다
 			}
 
 			// 창의 마지막 메시지. 이 뒤로 hwnd는 무효이므로, 객체가 사라진 창을 가리키지 않도록 연결을 끊는다
@@ -61,32 +62,14 @@ namespace SE::Private
 			{
 				return DefWindowProcW(hwnd, message, wParam, lParam);
 			}
-			return HandleMessage(*window, hwnd, message, wParam, lParam);
-		}
-
-		// 창과 연결된 객체의 메시지를 처리한다. 직접 처리하지 않는 메시지는 기본 처리로 넘긴다.
-		static LRESULT HandleMessage(FWindowsWindow& window, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-		{
-			if (message == WM_SIZE)
-			{
-				// 생성 중에도 올 수 있으므로 렌더러를 호출하지 않고 최신 상태만 저장한다.
-				window.clientWidth = static_cast<uint32>(LOWORD(lParam));
-				window.clientHeight = static_cast<uint32>(HIWORD(lParam));
-				window.bMinimized = (wParam == SIZE_MINIMIZED);
-				return 0;
-			}
-
-			// 창을 바로 없애지 않고 요청만 기록한다. 기본 처리에 넘기면 그 자리에서 창이 파괴되므로,
-			// 실제 파괴는 엔진 종료 순서에서 Shutdown이 한다
-			if (message == WM_CLOSE)
-			{
-				window.bCloseRequested = true;
-				return 0;
-			}
-
-			return DefWindowProcW(hwnd, message, wParam, lParam);
+			return window->owningApplication.ProcessMessage(hwnd, message, wParam, lParam);
 		}
 	};
+}
+
+FWindowsWindow::FWindowsWindow(FWindowsApplication& inApplication)
+	: owningApplication(inApplication)
+{
 }
 
 bool FWindowsWindow::Initialize()
@@ -158,17 +141,14 @@ void FWindowsWindow::Shutdown()
 	}
 }
 
-// TODO(seon): 메시지 큐는 창이 아니라 스레드에 하나 있다. 창이 둘 이상 필요해지면 창 밖으로 옮긴다
-//             옮기기 쉽도록 멤버 변수를 쓰지 않는다
-void FWindowsWindow::PumpMessages()
+void FWindowsWindow::UpdateClientSize(uint32 width, uint32 height, bool bInMinimized)
 {
-	MSG message = {};
-	// 창 필터를 nullptr로 둬야 창에 속하지 않은 스레드 메시지까지 꺼낸다
-	while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
-	{
-		// 키 입력 메시지에서 문자 메시지(WM_CHAR)를 만들어 큐에 넣는다
-		TranslateMessage(&message);
-		// 메시지가 가리키는 창의 창 프로시저를 부른다
-		DispatchMessageW(&message);
-	}
+	clientWidth = width;
+	clientHeight = height;
+	bMinimized = bInMinimized;
+}
+
+void FWindowsWindow::RequestClose()
+{
+	bCloseRequested = true;
 }

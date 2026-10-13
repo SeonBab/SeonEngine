@@ -5,6 +5,7 @@
 #include "Launch/LaunchEngineLoop.h"
 #include "Logging/LogMacros.h"
 #include "Math/Transform.h"
+#include "Platform/GenericPlatform/GenericApplication.h"
 #include "Platform/GenericPlatform/GenericWindow.h"
 #include "Renderer/MeshRenderData.h"
 #include "Renderer/RendererInterface.h"
@@ -82,10 +83,15 @@ namespace
 	}
 }
 
-int EngineMain(FGenericWindow& window, IRenderer& renderer)
+int EngineMain(FGenericApplication& application, const TSharedPtr<FGenericWindow>& inWindow, IRenderer& renderer)
 {
 	// TODO(seon): 실제 프레임 진행과 창 / 출력 책임을 목표 실행 구조에 맞춰 단계적으로 옮긴다.
-	if (!window.Initialize())
+	if (!inWindow) { return 1; }
+
+	application.InitializeWindow(inWindow);
+
+	FGenericWindow& window = *inWindow;
+	if (window.GetOSWindowHandle() == nullptr)
 	{
 		return 1;
 	}
@@ -99,7 +105,7 @@ int EngineMain(FGenericWindow& window, IRenderer& renderer)
 	bool bRendererInitialized = false;
 	while (true)
 	{
-		window.PumpMessages();
+		application.PumpMessages(0.0f);
 		// 닫기 요청은 펌프 안에서 창 프로시저가 기록하므로 펌프 직후에 확인한다
 		if (window.IsCloseRequested())
 		{

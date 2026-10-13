@@ -22,9 +22,6 @@ public:
 	/** 창을 없애고 창에 쓴 자원을 정리한다. 창을 빌리는 그래픽스 자원은 먼저 종료해야 한다. */
 	virtual void Shutdown() = 0;
 
-	/** 이 스레드의 메시지 큐를 처리한다. 여러 창을 지원할 때 애플리케이션으로 옮긴다. */
-	virtual void PumpMessages() = 0;
-
 	/** OS 창 핸들을 반환한다. 소유권을 넘기지 않으며, 창 파괴 후에는 nullptr이다. */
 	virtual void* GetOSWindowHandle() const = 0;
 

@@ -2,6 +2,7 @@
 
 #include "Engine/GameInstance.h"
 #include "Logging/LogMacros.h"
+#include "Slate/SceneViewport.h"
 #include "World.h"
 
 namespace
@@ -40,6 +41,12 @@ bool UGameEngine::UnregisterGameInstanceFactory(FGameInstanceFactory inFactory)
 
 void UGameEngine::Init(IEngineLoop* inEngineLoop)
 {
+	// 기존 화면을 덮어쓰지 않는다. TODO: check 계열 도입 시 중복 준비 검사를 재검토한다.
+	if (sceneViewport)
+	{
+		SE_LOG(LogGameEngine, Fatal, "Game engine initialization requires no existing scene viewport");
+	}
+
 	if (gameInstance)
 	{
 		SE_LOG(LogGameEngine, Fatal, "UGameEngine::Init requires no existing game instance");
@@ -61,6 +68,10 @@ void UGameEngine::Init(IEngineLoop* inEngineLoop)
 	}
 
 	gameInstance->InitializeStandalone();
+
+	// 세션 준비 뒤 빈 키 상태의 화면을 생성한다. 입력 전달 연결은 별도로 준비한다.
+	// TODO: 클라이언트·위젯 연결 도입 시 CreateGameViewport 분리와 생성 위임을 검토한다.
+	sceneViewport = MakeShared<FSceneViewport>();
 }
 
 void UGameEngine::Start()
@@ -97,6 +108,9 @@ void UGameEngine::PreExit()
 		DestroyWorldContext(world);
 		gameInstance.reset();
 	}
+
+	// 세션 종료가 끝난 뒤 엔진의 화면 참조를 놓는다. 외부 공유 참조가 있으면 화면은 유지된다.
+	sceneViewport.reset();
 
 	UEngine::PreExit();
 }
