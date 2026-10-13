@@ -65,6 +65,9 @@ SeonEngine/
 │  │  ├─ Engine.vcxproj
 │  │  ├─ Core/            모듈 (Public/, Private/)
 │  │  ├─ CoreUObject/     객체 기반 모듈 (Public/, Private/)
+│  │  ├─ InputCore/       공통 입력 타입 (Public/, Private/)
+│  │  ├─ SlateCore/       위젯 입력 기반 (Public/, Private/)
+│  │  ├─ Slate/           게임 화면 위젯 (현재 Public/Widgets/SViewport.h)
 │  │  └─ Engine/          모듈
 │  └─ ThirdParty/
 │     └─ vcpkg.json       vcpkg로 받는 외부 라이브러리 목록 (manifest)
@@ -87,7 +90,7 @@ SeonEngine/
 
 | 프로젝트 | 종류 | 담는 모듈 | include 경로 |
 |---|---|---|---|
-| `Engine` | 정적 라이브러리 (`.lib`) | `Core`, `Engine` | 두 모듈의 `Public`, `Private` |
+| `Engine` | 정적 라이브러리 (`.lib`) | `Core`, `CoreUObject`, `InputCore`, `SlateCore`, `Slate`, `Engine` | Core·CoreUObject·InputCore·Engine의 Public / Private, SlateCore·Slate의 Public |
 | `SampleGame` | 실행 파일 (`.exe`, Windows 서브시스템) | `SampleGame` | 엔진 모듈의 `Public`, 자기 모듈 폴더 |
 
 - `SampleGame`은 `Engine`을 프로젝트 참조로 연결한다. 빌드 순서와 `Engine.lib` 링크가 자동으로 처리된다.
@@ -176,3 +179,26 @@ SeonEngine/
 | C++ 예외 | 끔 (`_HAS_EXCEPTIONS=0` 정의) | 코드 생성 → C++ 예외 처리 가능 |
 | RTTI | 켬 (`/GR`) | 언어 → 런타임 형식 정보 사용 |
 | 전처리기 정의 | `SE_PLATFORM_WINDOWS`, `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` (구성별 0 / 1), `SE_PLATFORM_HEADER_NAME=Windows`(플랫폼 헤더 경로를 만드는 이름) | 전처리기 → 전처리기 정의 |
+
+
+InputCore 최소 키 타입(2026-10-12): Engine/Source/InputCore/Public/InputCoreTypes.h와 Private/InputCoreTypes.cpp를 기존 Engine.lib에 함께 빌드한다. Engine.vcxproj는 InputCore/Public·Private를 include 경로에 포함하고, 공통 Engine/Build/SeonEngine.props는 소비 프로젝트에 InputCore/Public만 제공한다. 별도 라이브러리 / DLL은 추가하지 않는다.
+
+SlateCore 최소 입력 응답(2026-10-13): Engine/Source/SlateCore/Public/Input/Reply.h를 기존 Engine 프로젝트·Engine.lib에 등록한다. Engine.vcxproj 및 Engine/Build/SeonEngine.props는 SlateCore/Public 검색 경로를 제공한다. 사용처는 Input/Reply.h를 포함한다. 별도 SlateCore 프로젝트·라이브러리·DLL은 없다.
+
+SlateCore 최소 위젯 입력(2026-10-13): Public/Widgets/SWidget.h는 기존 Engine 프로젝트의 헤더 목록·filters에 등록한다. 기존 SlateCore/Public 검색 경로를 사용한다. 추가 cpp·별도 라이브러리는 없다.
+
+키 이벤트 SlateCore 배치(2026-10-13): Events.h와 Events.cpp를 SlateCore/Public/Input 및 SlateCore/Private/Input에 등록한다. 기존 Engine 쪽 파일은 제거하며 별도 호환 헤더를 두지 않는다. Public 검색 경로는 기존 설정을 재사용하고 새 Private 검색 경로는 추가하지 않는다. 구현은 기존 Engine.lib에서 함께 컴파일한다.
+
+SlateCore 화면 입력 인터페이스(2026-10-13): Public/Rendering/RenderingCommon.h를 기존 Engine 프로젝트·filters에 등록한다. 기존 SlateCore/Public 검색 경로를 사용하며 추가 cpp·별도 빌드 단위는 없다.
+
+Slate 최소 게임 화면 위젯(2026-10-13): Engine/Source/Slate/Public/Widgets/SViewport.h를 기존 Engine 프로젝트·filters에 등록한다. Engine.vcxproj와 Engine/Build/SeonEngine.props에 Slate/Public 검색 경로를 추가하며 사용처는 Widgets/SViewport.h를 포함한다. 별도 Slate 프로젝트·라이브러리·DLL·Private 검색 경로는 없다.
+
+게임 입력 종류 헤더(2026-10-13): Engine/Public/Engine/EngineBaseTypes.h를 생성기로 기존 Engine 프로젝트·filters에 등록한다. 기존 Engine/Public 검색 경로를 사용하며 별도 cpp·라이브러리·리플렉션 설정은 없다.
+
+게임 입력 인수 헤더(2026-10-13): Engine/Public/InputKeyEventArgs.h를 기존 Engine 프로젝트·filters에 등록한다. 기존 Engine/Public·InputCore/Public 검색 경로를 사용하고 생성자는 헤더 안에 정의한다. 추가 cpp·검색 경로·별도 빌드 단위는 없다.
+
+화면 클라이언트 키 계약(2026-10-13): Engine/Public/ViewportClient.h를 기존 Engine 프로젝트·filters에 등록한다. 기존 Engine/Public 검색 경로를 재사용하고 헤더 내 짧은 기본 정의만 제공한다. 추가 cpp·설정 경로·라이브러리는 없다.
+
+게임용 화면 클라이언트 기반(2026-10-13): Engine/Public/Engine/GameViewportClient.h·Private/Engine/GameViewportClient.cpp를 기존 Engine 프로젝트·filters에 등록한다. 기존 Engine·CoreUObject 공개 검색 경로를 사용한다. 별도 프로젝트·라이브러리·검색 경로는 추가하지 않는다.
+
+입력 컴포넌트 소스 등록(2026-10-13): Engine/Source/Engine/Public/InputComponent.h·Private/InputComponent.cpp를 기존 프로젝트 생성기로 Engine.vcxproj와 filters에 등록했다. Public 검색 경로와 단일 Engine.lib 구성을 재사용하며 새 모듈·include 설정·SampleGame 프로젝트/filters 변경은 없다. 입력 기능 사용·런타임 등록은 이 프로젝트 등록과 별개다.

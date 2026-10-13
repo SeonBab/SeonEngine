@@ -626,7 +626,7 @@
   ETextureUsageFlags usage = ETextureUsageFlags::ShaderRead | ETextureUsageFlags::RenderTarget;
   ```
 
-- **특수 값** — 값의 개수가 필요하면 마지막에 `Count`를 둔다. "없음"이 필요하면 맨 앞에 `None`을 둔다.
+- **특수 값** — 값의 개수가 필요하면 마지막에 `Count`를 둔다. "없음"이 필요하면 맨 앞에 `None`을 둔다. 맨 앞 값이 "없음"이 아니라 그 자체로 뜻이 있는 값이면 그 뜻의 이름을 쓴다(예: "로그 끔"인 `ELogVerbosity::NoLogging`).
 
 ### 3.8 상수 / Literal `중요`
 
@@ -727,15 +727,19 @@
 
 ### 3.12 STL 사용 정책 `중요`
 
-- **컨테이너 / 문자열** — STL을 쓰되, 엔진 별칭으로 감싸서 쓴다. 코드에서는 `std::` 타입 대신 별칭을 쓴다.
-  - 멤버 함수는 STL 이름(`push_back`, `size` 등)을 그대로 쓴다. 이 부분은 1.2 Naming의 예외다.
+- **컨테이너 / 문자열** — STL을 내부 구현으로 쓰고, 코드에서는 엔진 타입을 사용한다.
+  - `TArray` / `FString`은 STL 별칭이며 멤버 함수는 STL 이름(`push_back`, `size` 등)을 그대로 쓴다. 이 부분은 1.2 Naming의 예외다.
+  - `THashMap`은 래퍼 클래스다. `Add`는 추가 / 기존 값 교체 후 값 참조, `Find`는 값 포인터 / 미등록 nullptr, `Reset`은 항목 제거 / 버킷 공간 유지 계약을 제공한다. 외부에 STL 반복자와 멤버 함수를 노출하지 않는다. 현재 const 참조 입력만 제공하며 전체 Unreal TMap API는 지원하지 않는다.
 
   ```cpp
   template<typename T>
   using TArray = std::vector<T>;
 
-  template<typename KeyType, typename ValueType>
-  using THashMap = std::unordered_map<KeyType, ValueType>;
+  // Containers/HashMap.h의 래퍼를 사용한다.
+  THashMap<uint32, FString> names;
+  names.Add(1, "One");
+  const FString* name = names.Find(1);
+  names.Reset();
 
   using FString = std::string;
 
@@ -777,7 +781,7 @@
   // MakeUnique / MakeShared는 std::make_unique / std::make_shared를 호출하는 함수로 정의한다.
   ```
 
-- **소유 / 비소유** — 객체를 소유하는 쪽만 `TUniquePtr`로 가진다. 나머지는 일반 포인터나 레퍼런스로 빌려 쓴다. 일반 포인터와 레퍼런스는 항상 비소유이며, 가리키는 객체를 지우지 않는다.
+- **소유 / 비소유** — 단독 소유는 기본적으로 `TUniquePtr`로 표현한다. 나머지는 일반 포인터나 레퍼런스로 빌려 쓴다. 외부에 전달하는 일반 포인터와 레퍼런스는 비소유이며, 가리키는 객체를 지우지 않는다. 직접 할당을 관리하는 경우는 아래 규칙을 따른다.
 
   ```cpp
   class FRenderer
@@ -793,9 +797,12 @@
   };
   ```
 
-- **`new` / `delete` 금지** — 객체는 `MakeUnique`(공유가 필요하면 `MakeShared`)로 만든다. 컨테이너나 할당자 같은 기반 코드의 placement new만 예외로 허용한다. D3D11 같은 COM 객체는 `ComPtr`로 관리한다.
+- **일반 C++ 객체의 할당** — 엔진 / 게임 위치가 아니라 객체의 수명 관리 방식으로 구분한다. 일반 C++ 객체는 양쪽 모두 `new` / `delete`를 사용할 수 있다. 기본은 `MakeUnique`(공유가 필요하면 `MakeShared`)이며, private 생성자 팩토리에서는 `new` 결과를 즉시 스마트 포인터에 넘길 수 있다. 직접 수명을 관리할 때는 생성 / 해제 담당과 모든 종료 / 실패 경로를 명확히 한다. `delete`는 해당 할당의 소유자만 수행하며 스마트 포인터 소유 객체나 빌린 포인터를 직접 삭제하지 않는다. 컨테이너 / 할당자 내부의 placement new는 해당 저장 공간의 수명 계약을 따른다. D3D11 같은 COM 객체는 계속 `ComPtr`로 관리한다.
+- **엔진 관리 객체** — 등록과 수명을 관리하는 시스템의 생성 / 제거 계약을 우회하지 않는다. 현재 월드 액터는 `SpawnActor` / `DestroyActor`를 사용하며, 반환받은 비소유 주소를 직접 삭제하지 않는다. 컴포넌트 등 소유권을 이전한 객체도 해당 소유자가 정리한다.
+- **Unreal UObject 규칙과 현재 한계** — Unreal의 GC 관리 UObject는 엔진 / 게임 모두 직접 `new` / `delete`하지 않고 전용 생성 API와 GC로 관리한다. 자체 엔진에는 아직 GC / NewObject가 없으므로 U 접두사만으로 이 규칙을 일괄 적용하지 않는다. 현재는 각 타입의 스마트 포인터 / 생성 / 제거 계약을 따르고, GC 도입 시 관리 대상 타입의 규칙을 갱신한다.
 - **`TSharedPtr`** — 여러 시스템이 함께 소유하고 누가 마지막인지 정할 수 없는 경우에만 쓴다. 편의를 위해 쓰지 않는다. 공유 객체를 관찰만 할 때는 `TWeakPtr`를 쓴다.
 - **핸들** — 텍스처, 메시, 게임 오브젝트처럼 여러 곳에서 참조하고 수명이 따로 관리되는 객체는 포인터 대신 핸들(인덱스 + 세대 번호)로 가리키는 것을 원칙으로 한다.
+  - **초기 메시 연결 예외 (2026-10-13)** — 자원 관리자·핸들은 후속으로 미루고 현재 FStaticMeshComponent는 UStaticMesh를 TSharedPtr로 공유 소유한다. SetStaticMesh는 변경이면 true, 같은 객체 재지정이면 false이며 nullptr로 해당 참조를 해제한다. 마지막 공유 소유자 해제 시 자산을 파괴하고 Outer의 수명은 유지하지 않는다. GetStaticMesh는 const 컴포넌트에서도 수정 가능한 비소유 UStaticMesh*를 반환하며 빈 상태는 nullptr다. 조회는 자산 수명을 연장하지 않으며 직접 삭제하지 않고 교체·해제 뒤 이전 주소의 유효성을 가정하지 않는다. GetRenderData는 지정 자산의 정점·규칙을 값으로 복사하며 자산 없음은 빈 형상으로 처리한다. 컴포넌트에는 형상 배열·규칙 API를 두지 않고 UStaticMesh에서 형상을 구성·조회한다. 자원 관리자·핸들 도입 시 메시 참조·해제 계약을 이전하며 이 예외를 재검토한다.
 
   ```cpp
   FTextureHandle texture = resourceManager.LoadTexture(path);
@@ -808,7 +815,7 @@
 
 ### 4.2 객체 생명주기 `매우 중요`
 
-- **생성 / 파괴 책임** — 객체는 소유자(`TUniquePtr`를 가진 쪽)가 만들고 파괴한다. 소유 관계는 나무 모양이 되며, 실행 엔진 객체는 FEngineLoop가 소유하며, 엔진 내부 객체는 각 담당 소유자가 만들고 파괴한다.
+- **생성 / 파괴 책임** — 객체는 소유자가 만들고 파괴하며 단독 소유의 기본 표현은 `TUniquePtr`다. 직접 수명 관리는 4.1의 할당 정책을 따른다. 소유 관계는 나무 모양이 되며, 실행 엔진 객체는 FEngineLoop가 소유하며, 엔진 내부 객체는 각 담당 소유자가 만들고 파괴한다.
 
   ```text
   UEngine
@@ -818,23 +825,23 @@
   ```
 
 - **초기화 방식** — 무거운 객체는 2단계로 초기화하고, 함수 이름과 검사 방식을 통일한다.
-  - 서브시스템과 무거운 객체(GPU 리소스 등): 생성자에서는 실패하지 않는 가벼운 작업만 한다. 실제 초기화는 `Initialize()`, 정리는 `Shutdown()`에서 한다.
-  - D3D11 장치 준비의 좁은 예외: `void InitD3DDevice()`는 Unreal 대응 이름과 역할을 사용한다. 현재 본문과 FRenderer의 직접 호출 연결을 구현했다. 창 출력은 Viewport가 준비하며 기존 Device Init은 제거했다. 정상 반환은 장치 준비 완료, 최종 생성 실패는 부분 자원 정리 후 Fatal 계약이며 다른 초기화 API의 반환형을 일반화하지 않는다.
+  - 서브시스템과 무거운 객체(GPU 리소스 등): 생성자에서는 실패하지 않는 가벼운 작업만 한다. 실제 초기화와 정리는 별도 함수에서 한다(이름은 아래 규칙).
+  - D3D11 장치 준비(Unreal 이름): `void InitD3DDevice()`는 Unreal 대응 이름과 역할을 사용한다. 현재 본문과 FRenderer의 직접 호출 연결을 구현했다. 창 출력은 Viewport가 준비하며 기존 Device Init은 제거했다. 정상 반환은 장치 준비 완료, 최종 생성 실패는 부분 자원 정리 후 Fatal 계약이며 다른 초기화 API의 반환형을 일반화하지 않는다.
   - 작은 보조 타입(락 가드, 타이머 등): 생성자와 소멸자로 처리한다(RAII).
-  - 이름은 `Initialize()` / `Shutdown()` 한 쌍만 쓴다(`Init`, `Startup`, `Deinitialize` 등을 섞지 않는다).
-  - 엔진 실행 기반 예외: UEngine의 virtual void Init(IEngineLoop*) / virtual void Start() / virtual void Tick(float, bool) / virtual void PreExit()는 Unreal 대응 역할의 이름을 사용한다. 현재 Init은 비소유 루프 연결, Start는 빈 실행 시작 통로, Tick은 순수 가상, PreExit는 빈 기반 구현이다. UObject 생성 / 파괴와 실행 종료를 구분하고 기반 소멸자는 PreExit를 자동 호출하지 않는다. 일반 서브시스템의 Initialize / Shutdown 규칙을 바꾸지 않으며 UEngine 기반 자체의 상태 / 호출 순서 검사는 아직 없다. UGameEngine은 기존 세션이 있는 Init을 Fatal로 거부하고 PreExit는 준비 전 / 반복 호출을 허용한다. FEngineLoop는 int32 Init / void Exit를 사용하며 정상 Init은 0, 기존 엔진 Init은 Fatal이다. Exit는 PreExit 후 소유 엔진을 파괴하고 준비 전 / 반복 호출을 허용한다. 소멸자는 Exit를 자동 호출하지 않는다.
-  - 게임 세션 훅 예외: `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다. 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 서브시스템·GPU 자원의 이름 규칙을 바꾸는 예외는 아니다.
-  - `Initialize()` 전에 다른 함수를 호출하거나, `Shutdown()` 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
+  - 이름: 시작과 정리 함수 이름은 지금은 참고하는 Unreal 코드의 짝을 그대로 쓴다(예: `Init` – `Shutdown`, `StartupModule` – `ShutdownModule`). 대응하는 Unreal 이름이 없는 자체 객체는 단어가 대칭인 짝 `Initialize()` – `Deinitialize()`를 쓴다. 엔진 전체를 대칭 짝으로 맞추는 작업은 정한 시점에 한 번에 한다(DeferredTasks "초기화 / 정리 함수 이름의 대칭 짝").
+  - 엔진 실행 기반(Unreal 짝): UEngine의 virtual void Init(IEngineLoop*) / virtual void Start() / virtual void Tick(float, bool) / virtual void PreExit()는 Unreal 대응 역할의 이름을 사용한다. 현재 Init은 비소유 루프 연결, Start는 빈 실행 시작 통로, Tick은 순수 가상, PreExit는 빈 기반 구현이다. UObject 생성 / 파괴와 실행 종료를 구분하고 기반 소멸자는 PreExit를 자동 호출하지 않는다. 다른 객체의 이름 규칙을 바꾸지 않으며 UEngine 기반 자체의 상태 / 호출 순서 검사는 아직 없다. UGameEngine은 기존 세션이 있는 Init을 Fatal로 거부하고 PreExit는 준비 전 / 반복 호출을 허용한다. FEngineLoop는 int32 Init / void Exit를 사용하며 정상 Init은 0, 기존 엔진 Init은 Fatal이다. Exit는 PreExit 후 소유 엔진을 파괴하고 준비 전 / 반복 호출을 허용한다. 소멸자는 Exit를 자동 호출하지 않는다.
+  - 게임 세션 훅(Unreal 짝): `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다. 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 객체의 이름 규칙에 영향을 주지 않는다.
+  - 초기화 함수 전에 다른 함수를 호출하거나, 정리 함수 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
 
   ```cpp
   class FTexture
   {
   public:
     FTexture() = default;
-    ~FTexture();                  // Shutdown()을 호출하지 않았으면 assert
+    ~FTexture();                  // Deinitialize()를 호출하지 않았으면 assert
 
     [[nodiscard]] bool Initialize(const FTextureDesc& desc);
-    void Shutdown();
+    void Deinitialize();
 
     bool IsInitialized() const { return bInitialized; }
 
@@ -890,7 +897,7 @@
   SE_ASSERT(device != nullptr);
   SE_ASSERTF(index < count, "index {} out of range", index);
 
-  SE_VERIFY(renderer->Initialize());
+  SE_VERIFY(sound.Initialize());
 
   if (!SE_ENSURE(texture != nullptr))
   {
@@ -902,7 +909,7 @@
 
   ```cpp
   // 금지: Release에서 Initialize가 호출되지 않음
-  SE_ASSERT(renderer->Initialize());
+  SE_ASSERT(sound.Initialize());
   ```
 
 - **빌드 구성별 동작**
@@ -917,10 +924,11 @@
 
 ### 5.3 Logging `중요`
 
-- **레벨** — 7단계를 쓴다.
+- **레벨** — 로그 메시지에는 아래 7단계(`Fatal` ~ `VeryVerbose`)를 쓴다. 맨 앞의 `NoLogging`은 카테고리의 기준 레벨로만 쓴다.
 
   | 레벨 | 용도 |
   |---|---|
+  | `NoLogging` | 카테고리 기준 레벨 전용. 그 카테고리의 로그를 모두 끈다(`Fatal`은 항상 출력한다). 메시지 레벨로 쓰면 컴파일 에러다 |
   | `Fatal` | 복구할 수 없는 오류. 로그를 남기고 종료한다 |
   | `Error` | 기능이 실패함 |
   | `Warning` | 동작은 하지만 문제가 있음 |
