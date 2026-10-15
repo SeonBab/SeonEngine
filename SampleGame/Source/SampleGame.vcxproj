@@ -9,74 +9,87 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{C7BDB358-4452-4E76-8FD8-892D40987EA8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c7bdb358-4452-4e76-8fd8-892d40987ea8}</ProjectGuid>
     <RootNamespace>SampleGame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+  <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
-    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    </ImportGroup>
-    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    </ImportGroup>
-
-  <PropertyGroup Label="UserMacros" />
-
-  <Import Project="$(SERootDir)Engine\Build\SeonEngine.props" />
-
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)SampleGame;$(ProjectDir)..\..\Engine\Source\CoreUObject\Public;$(ProjectDir)..\..\Engine\Source\Engine\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SERootDir)Engine\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>d3d11.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Manifest>
-      <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
   </ItemDefinitionGroup>
-
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="SampleGame\SampleGameInstance.h" />
-    <ClInclude Include="SampleGame\SampleGameModule.h" />
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Device.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Actor.cpp" />
+    <ClCompile Include="..\..\Engine\Source\ActorComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Logging\Log.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Math\Matrix4.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Math\Quat.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Math\Rotator.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Math\Transform.cpp" />
+    <ClCompile Include="..\..\Engine\Source\TransformComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Windows\WindowsApplication.cpp" />
+    <ClCompile Include="..\..\Engine\Source\EngineMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SampleGame\SampleGameInstance.cpp" />
-    <ClCompile Include="SampleGame\SampleGameModule.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Engine\Source\Engine.vcxproj">
-      <Project>{3748f6eb-b447-44e4-9d8f-b73137ee7fe2}</Project>
-    </ProjectReference>
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h" />
+    <ClInclude Include="..\..\Engine\Source\Actor.h" />
+    <ClInclude Include="..\..\Engine\Source\ActorComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Containers\Array.h" />
+    <ClInclude Include="..\..\Engine\Source\Containers\SeonString.h" />
+    <ClInclude Include="..\..\Engine\Source\CoreTypes.h" />
+    <ClInclude Include="..\..\Engine\Source\Object.h" />
+    <ClInclude Include="..\..\Engine\Source\Logging\Log.h" />
+    <ClInclude Include="..\..\Engine\Source\Math\Matrix4.h" />
+    <ClInclude Include="..\..\Engine\Source\Math\Quat.h" />
+    <ClInclude Include="..\..\Engine\Source\Math\Rotator.h" />
+    <ClInclude Include="..\..\Engine\Source\Math\Transform.h" />
+    <ClInclude Include="..\..\Engine\Source\Math\Vector3.h" />
+    <ClInclude Include="..\..\Engine\Source\Templates\UniquePtr.h" />
+    <ClInclude Include="..\..\Engine\Source\Windows\WindowsHWrapper.h" />
+    <ClInclude Include="..\..\Engine\Source\TransformComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Windows\WindowsApplication.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
 </Project>

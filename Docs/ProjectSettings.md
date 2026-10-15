@@ -1,6 +1,95 @@
 # Project Settings
 
-프로젝트에 적용해 둔 설정이다.
+## 현재 구성 — 2026-10-15 재시작
+
+현재는 SampleGame/Source/SampleGame.vcxproj 하나로 SampleGame.exe를 만드는 구성이다. 아래의 이전 구성 기록은 현재 프로젝트·모듈·렌더링 기능의 상태를 나타내지 않는다.
+
+| 항목 | 현재 규칙 |
+|---|---|
+| 솔루션 | 루트 SeonEngine.slnx는 SampleGame/Source/SampleGame.vcxproj 하나를 참조 |
+| 프로젝트 | 실행 파일, 콘솔 서브시스템, x64 Debug/Release |
+| 도구 | Visual Studio 2026, MSVC v145, Windows SDK 10.0 계열 |
+| 소스 | Engine/Source/EngineMain.cpp, Engine/Source/D3D11/D3D11Device.h/.cpp, Engine/Source/Object.h, Engine/Source/Windows/WindowsApplication.h/.cpp·WindowsHWrapper.h, Engine/Source/Actor.h/.cpp·ActorComponent.h/.cpp·TransformComponent.h/.cpp, Containers/Array.h·Templates/UniquePtr.h·Math/Matrix4.h/.cpp·Math/Quat.h/.cpp·Math/Rotator.h/.cpp·Math/Transform.h/.cpp·Math/Vector3.h·CoreTypes.h |
+| 진입점 | main → D3D11 장치 준비 → RunWindowsApplication → D3D11 정리. 생성·조회·표시 → 메시지 펌프·대기 → 창·클래스 정리. 정상 종료 코드는 WM_QUIT에서 받고 API 실패는 1 |
+| 엔진 include | $(SERootDir)Engine/Source를 등록하고 기존 include 경로를 상속. EngineMain.cpp는 Windows/WindowsApplication.h를 포함 |
+| 파일 등록 | 엔진 EngineMain.cpp와 WindowsApplication·Actor·ActorComponent·TransformComponent의 cpp/header 및 WindowsHWrapper.h·Containers/Array.h·Templates/UniquePtr.h·Math/Matrix4.h/.cpp·Math/Quat.h/.cpp·Math/Rotator.h/.cpp·Math/Transform.h/.cpp·Math/Vector3.h·CoreTypes.h를 명시 등록. 엔진 파일은 ../../Engine/Source 기준. filters는 표시 폴더만 관리. 자동 생성 스크립트는 게임 영역만 검색하므로 실행하지 않음 |
+| 엔진·게임 경계 | 같은 프로젝트에 빌드하되 게임 → 엔진 방향. 엔진에서 구체 게임 코드를 참조하지 않음 |
+| 공통 설정 | Directory.Build.props/targets를 유지. 별도의 SeonEngine.props는 가져오지 않음 |
+| Windows·D3D11 링크 | 실행 프로젝트의 AdditionalDependencies에 d3d11.lib·user32.lib, 기존 링크 의존성 상속 |
+| 외부 라이브러리 | 기존 vcpkg manifest의 DirectXMath·ImGui 유지. DirectXMath는 Math/Rotator.cpp·Matrix4.cpp·Transform.cpp에서 사용하며 ImGui·UI 연결은 아직 없음 |
+| CRT | Debug /MDd, Release /MD. vcpkg 라이브러리는 x64-windows-static-md |
+| 최적화 | Debug 비활성, Release MaxSpeed. 두 구성 모두 디버그 정보 생성 |
+| 출력 | Binaries/x64/Debug 또는 Release의 SampleGame.exe |
+| 중간 파일 | Intermediate/SampleGame/x64/구성/ |
+| 현재 제외 | 별도 Engine.lib, 엔진 소비 props, 게임 프레임 갱신·셰이더·화면 렌더링 |
+
+WindowsApplication.cpp는 WindowsHWrapper.h를 통해 Windows.h를 포함하고 내부 WindowProc을 정의한다. 래퍼는 WIN32_LEAN_AND_MEAN과 NOMINMAX만 조건부 정의하고 Windows.h를 읽는다. 프로젝트·필터에 Engine/Source/Windows/WindowsHWrapper.h를 등록했다. 이전 엔진의 TCHAR 치환과 CreateWindow/IsMinimized 매크로 해제는 도입하지 않았다.
+
+WM_DESTROY는 PostQuitMessage(0), 그 외는 DefWindowProcW에 위임한다. GetModuleHandleW로 모듈을 조회하고 WNDCLASSEXW의 lpfnWndProc에 WindowProc을 연결해 RegisterClassExW로 등록한다. 이 클래스의 창을 생성·조회·파괴한 뒤 UnregisterClassW로 해제한다. cbSize=sizeof(windowClass), CS_HREDRAW/CS_VREDRAW, LoadCursorW(nullptr, IDC_ARROW), COLOR_WINDOW+1로 클래스 설정을 준비한다. 시스템 공유 커서는 직접 파괴하지 않으며 LoadCursorW 실패도 오류 출력 후 1을 반환한다.
+
+창 스타일은 WS_OVERLAPPEDWINDOW, 확장 스타일 0, 메뉴 없음이다. RECT{0,0,1280,720}을 AdjustWindowRectEx로 보정하고 right-left/bottom-top을 콘솔에 출력한다. 계산 실패 시 오류를 보존·출력한 뒤 등록 클래스 해제를 시도하고 해제 오류도 별도로 출력한다. 성공 시에는 크기 출력 뒤 창 생성·표시·메시지 반복과 정리로 이어진다.
+
+계산한 스타일과 크기로 CreateWindowExW를 호출한다. 제목은 SeonEngine, 부모·메뉴·마지막 인자는 nullptr다. GetClientRect 성공 뒤 ShowWindow(SW_SHOW)로 표시한다. cpp 내부 PumpMessages(int& outExitCode)는 PeekMessageW(PM_REMOVE)로 메시지를 꺼내고 WM_QUIT에서 false와 종료 코드를 전달한다. TranslateMessage/DispatchMessageW 후 큐가 비면 true를 반환한다. 바깥 반복은 WaitMessage로 기다리며 대기 실패를 오류·1로 처리한다.
+
+기본 창 처리의 닫기 요청은 창 파괴와 WM_DESTROY의 종료 메시지로 이어진다. 반복 종료 후 IsWindow로 남은 창만 파괴하고 클래스를 해제한다. 생성·조회 실패 정리는 유지한다. UpdateWindow·프레임 갱신·렌더링은 추가하지 않았다. SDK 타입과 user32.lib 설정도 유지한다. 제품 빌드는 통과했지만 현재 제품 창 표시·닫기는 도구 앱 승인 문제로 미검증이며 메시지 큐 독립 검사 결과와 구분한다.
+
+언어 표준 C++20, UTF-8, 표준 준수 전처리기, /W4·/WX, 예외 비활성·RTTI 활성 및 기존 매크로는 공통 설정을 그대로 따른다. 기존 엔진 매크로의 필요성 정리는 별도 검토 대상이다. cpp 서식은 루트 .clang-format, 파일 인코딩·줄바꿈은 .editorconfig와 .gitattributes를 따른다.
+
+빌드는 저장소 루트에서 MSBuild SeonEngine.slnx /p:Configuration=Debug /p:Platform=x64로 수행하며 Release도 같은 방식이다. vcpkg 복원을 위해 네트워크와 캐시 쓰기 권한이 필요할 수 있다. 프로그램은 크기를 출력하고 창을 표시한 뒤 종료 메시지까지 기다린다. 현재 두 구성의 빌드와 독립 메시지 큐 검사는 통과했으며 제품 창 표시·닫기와 정상 종료는 Computer Use 앱 사용 미승인으로 미검증이다.
+
+AActor는 TArray<TUniquePtr<FActorComponent>>로 컴포넌트를 단독 소유한다. AddComponent는 기반 타입의 스마트 포인터를 lvalue 참조로 받아 소속이 자신이면 목록으로 이전하고 true를 반환한다. 성공하면 입력은 비워지며 빈 포인터·다른 소속이면 false와 함께 입력·기존 목록을 유지한다. 할당 실패는 false 복구 대상이 아니다. UObject를 상속하는 가상 소멸자가 보관한 컴포넌트를 정리하며 Actor는 복사·이동을 금지한다. GetComponent<T>() const는 FActorComponent 자신 또는 public 파생 타입으로 변환 가능한 첫 컴포넌트를 추가 순서대로 찾아 비소유 T*로 반환하며 없으면 nullptr다. RTTI의 포인터 dynamic_cast를 사용하고 const Actor에서도 수정 가능한 컴포넌트를 반환한다. 반환 주소는 컴포넌트 파괴 시 무효다. 기반 포인터를 통한 파생 Actor 소멸은 지원하며 제거 API는 아직 없다. 같은 실제 타입의 중복은 추가 객체의 AllowsMultipleComponents 정책에 따라 검사한다. FActorComponent는 비소유 AActor 참조와 가상 소멸자를 유지하며 Actor보다 오래 살아서는 안 된다. 게임 진입점은 아직 두 타입을 생성하지 않는다. TArray·TUniquePtr는 각각 std::vector·std::unique_ptr의 최소 별칭이고 MakeUnique는 생성 인수를 std::make_unique로 전달한다.
+
+Math/Vector3.h의 FVector3는 x·y·z를 float로 보관하며 각 기본값은 0.0f다. 별도 생성자·연산·좌표 변환·DirectXMath 의존은 없다. 좌표축·회전 순서는 아래 2026-10-16 결정대로 사용하며 위치 단위는 미정이고 FRotator 각도 입력은 도 단위다. 타입 정의 당시에는 이 규칙이 없었고 Vector3 축 주석은 2026-10-16에 반영했다.
+
+Math/Quat.h의 FQuat는 float x·y·z·w를 보관하며 기본값 (0, 0, 0, 1)은 회전 없음이다. 각 성분은 축별 각도가 아니다. FRotator 전방 선언과 [[nodiscard]] FRotator ToRotator() const가 있으며 Math/Quat.cpp에서 구현한다. 유한하고 정규화된 입력에서 왼손·고정 축 Z→X→Y 각도를 추출해 도 단위로 반환한다. pitch는 [-90,90], yaw·roll은 [-180,180]도 범위의 대표값이다. cosPitch가 1e-6 이하이면 roll=0인 표현을 고른다. 원본은 유지하며 입력 검사·정규화·별도 생성자는 추가하지 않는다. cpp는 Math/Rotator.h를 포함하므로 호출자는 반환 값을 사용할 때 해당 타입 정의를 포함한다. 임의로 지정한 네 성분을 유효한 회전으로 검사·보정하지 않는다. FQuat는 FTransform의 회전 필드로 사용한다. FTransformComponent가 FTransform을 보관하며 Actor 생성자가 기본 컴포넌트를 만들어 소유한다.
+
+Engine/Source/CoreTypes.h는 Windows/MSVC의 기본 정수 타입에 int8·int16·int32·int64 및 uint8·uint16·uint32·uint64 별칭을 직접 연결하고 sizeof의 1·2·4·8바이트 크기를 static_assert로 확인한다. float·double은 그대로 사용한다. 문자 별칭·플랫폼 타입 계층은 추가하지 않으며 기존 main·SDK 타입·수학 데이터의 선언도 이번에 변경하지 않았다.
+
+Math/Transform.h의 FTransform은 FVector3 position{}, FQuat rotation{}, FVector3 scale{1.0f, 1.0f, 1.0f}를 보관한다. 기본값은 위치 0·회전 없음·크기 1배다. Math/Transform.cpp의 [[nodiscard]] FMatrix4 ToMatrixWithScale() const는 유한한 위치·크기와 정규화된 유한 회전을 전제로 원점 기준 크기 → 회전 → 이동 행렬을 반환하고 원본은 유지한다. cpp에서 XMMatrixAffineTransformation·XMStoreFloat4x4를 사용하고 결과 16개 성분을 FMatrix4로 복사한다. 입력 검사·정규화는 없다. 헤더는 Math/Matrix4.h를 직접 포함하고 cpp를 프로젝트·기존 Math 필터에 등록했다. 기본 FTransform의 행렬은 항등이며 FMatrix4 자체의 영행렬 기본값은 유지한다. 부모 관계·NoScale·역변환·렌더러 연결은 없으며 좌표축·회전 순서는 아래 2026-10-16 결정대로 사용하며 위치 단위는 미정이고 FRotator 각도 입력은 도 단위다. FTransformComponent의 데이터 보관에 사용하며 Actor 생성자가 기본 컴포넌트를 만들어 소유한다.
+
+Engine/Source/TransformComponent.h/.cpp의 FTransformComponent는 FActorComponent를 public 상속하고 FTransform transform{}을 보관한다. 생성자는 소속 AActor&를 기반 생성자로 전달한다. GetTransform() const는 복사본을 반환하고 SetTransform(const FTransform&)은 값을 복사한다. GetPosition/GetQuaternion/GetScale은 각 필드의 복사본을 반환하고 SetPosition(FVector3)/SetQuaternion(FQuat)/SetScale(FVector3)은 해당 필드만 복사해 저장한다. 기존 데이터 접근 함수는 각도 변환·정규화·좌표 변환·값 검사를 수행하지 않는다. SetRotation(FRotator newRotation)은 유한한 도 단위 입력을 ToQuat()으로 변환한 뒤 SetQuaternion에 전달해 회전 필드만 변경한다. 위치·크기·입력 객체는 유지한다. GetRotation() const는 GetQuaternion().ToRotator()를 호출해 도 단위 대표 각도의 독립된 FRotator 값을 반환한다. 유한하고 정규화된 저장 회전을 전제로 하며 조회 시 전체 데이터는 유지하고 검사·보정하지 않는다. 각도 범위와 특이점 정책은 ToRotator를 따른다. TransformComponent.h는 Math/Rotator.h를 직접 포함한다. 생성만으로 Actor 목록에 등록되지 않으며 기존 AddComponent/GetComponent로 명시적 보관·조회가 가능하다. 컴포넌트 생성자 자체의 자동 등록·중복 방지·공간 변환·검사·정규화는 없다. AActor 생성자가 별도로 기본 FTransformComponent 하나를 만들어 소유한다.
+
+## 창 설정 전달 — 2026-10-15 정정
+
+위의 고정 제목·크기 설명은 기본값을 뜻한다. WindowsApplication.h의 FWindowDescription은 std::wstring title=L"SeonEngine", int width=1280, int height=720을 제공한다. EngineMain.cpp가 기본 설정 객체를 만들고 RunWindowsApplication(const FWindowDescription&)에 전달한다. 크기는 요청 클라이언트 영역의 유효한 양수 픽셀이며 함수가 RECT로 보정한다. 제목은 c_str()로 CreateWindowExW에 전달한다. 설정은 호출 중에만 읽고 보관하지 않는다. 등록·표시·메시지·정리와 빌드 설정은 유지한다. 별도 엔진 문자열 타입이 없는 현재 단계에서 이 Windows 실행 설정에 한해 std::wstring 직접 사용을 허용한다. 입력 검증·DPI 정책·추가 창 옵션은 아직 없다.
+
+AActor 생성자는 기본 FTransformComponent 하나를 소유 목록의 첫 항목으로 만든다. 생성 직후 GetComponent<FTransformComponent>()로 조회할 수 있다. 같은 실제 기본 Transform은 일반 중복 금지 규칙으로 거부된다. 서로 다른 파생 Transform은 별개 타입으로 추가 가능하며 기본 Transform을 대체하지 않는다. Transform 계열 전체를 정확히 하나로 제한하는 정책은 아니다.
+
+## 창 클래스 등록 함수 분리 — 2026-10-15 정정
+
+WindowsApplication.cpp의 내부 RegisterWindowClass(HINSTANCE, const wchar_t*)가 WNDCLASSEXW 설정·커서 조회·RegisterClassExW와 해당 실패 로그를 담당한다. 성공 true/실패 false이며 RunWindowsApplication은 실패를 종료 코드 1로 전달한다. UnregisterClassW와 창 생성·메시지·정리는 실행 함수에 남긴다. 공개 API·프로젝트·빌드 옵션과 기존 API 호출 내용은 유지한다.
+
+FActorComponent의 virtual bool AllowsMultipleComponents() const는 같은 실제 타입의 복수 추가 허용 정책을 조회하며 기본 구현은 false다. 필요한 파생 타입만 타입별 고정값 true를 재정의하고 재정의하지 않은 자손은 상위 정책을 물려받는다. 상속 계열 전체를 하나의 제한 그룹으로 묶지 않는다. AddComponent는 빈 포인터·소속 검사 뒤 이 가상 함수를 호출한다. false일 때 typeid(*객체)로 기존 목록의 같은 실제 타입이 있는지 검사해 거부하고, true일 때는 복수를 허용한다. 거부 시 호출자 포인터와 기존 목록은 유지된다.
+
+## 엔진 진입점 소유 — 2026-10-15 정정
+
+표준 main은 Engine/Source/EngineMain.cpp에 있다. SampleGame 실행 프로젝트가 이 소스를 ../../Engine/Source/EngineMain.cpp로 컴파일하고 filters는 Engine/Source에 표시한다. 기존 게임 Main.cpp 등록은 제거했다. 게임 개발자는 게임 코드에서 콘텐츠·규칙을 작성하고 엔진 실행 진입점·플랫폼 처리·종료 순서를 수정하지 않는 책임 경계를 따른다. 현재 게임 소스 폴더가 비어 있어도 실행 프로젝트는 엔진 소스로 빌드된다. 게임별 설정·게임 생성·갱신 연결 API는 후속이며 현재 기본 설정과 실행 동작은 동일하다. 별도 Engine.lib·프로젝트 분리·운영체제 파일 접근 제한은 이번에 도입하지 않았다.
+
+AActor::GetComponents<T>(TArray<T*>& outComponents) const는 FActorComponent 자신 또는 public 파생 타입만 허용한다. 출력 배열을 비운 뒤 자기 목록에서 T와 파생 타입의 모든 객체를 추가 순서대로 채운다. 일치가 없으면 빈 배열이며 확보된 공간은 재사용하고 부족하면 늘어난다. 반환 포인터는 비소유·수명 연장 없음·컴포넌트 파괴 시 무효이며 const Actor에서도 수정 가능한 객체를 가리킨다. 출력 배열 변경은 Actor 소유 목록을 변경하지 않는다.
+
+좌표·회전 규칙(2026-10-16 결정): +X 오른쪽·+Y 위·+Z 앞의 왼손 좌표계를 사용한다. 양의 회전은 해당 양의 축에 대한 왼손 법칙이며 각도 합성은 고정 기준 축 Z(roll)→X(pitch)→Y(yaw) 순서다. 기준 축은 회전을 표현하는 공간의 처음 축이고 자동으로 월드 축을 뜻하지 않는다. 내부 회전 저장은 FQuat를 유지한다. 위치 단위·행렬 및 렌더링 구현은 미정이며 FRotator 사용자 각도는 도 단위를 선택했다. 기존 수학 타입의 데이터와 접근 함수는 그대로이며 Vector3 축 주석은 확정 방향으로 정합화했고 FRotator 도 단위 데이터도 추가했다. 승인된 변환 함수 ToQuat은 아래 계약을 따른다.
+
+Math/Rotator.h의 FRotator는 float pitch(X)·yaw(Y)·roll(Z)을 도 단위로 보관하며 기본값은 모두 0이다. 기존 엔진과 같은 도 입력·계산 시 라디안 변환 방향을 선택했지만 좌표계·회전 순서는 새 왼손·고정 축 Z→X→Y를 따른다. [[nodiscard]] FQuat ToQuat() const는 유한한 도 단위 입력을 라디안으로 바꿔 XMQuaternionRotationRollPitchYaw로 계산하고 정규화된 FQuat 값을 반환한다. 원본은 유지하며 왼손·고정 축 Z→X→Y 순서다. DirectXMath.h는 Rotator.cpp에서만 포함하고 공개 헤더는 Math/Quat.h를 포함한다. NaN·무한대 검사·각도 보정은 없으며 역변환은 FQuat::ToRotator()가 담당한다. 컴포넌트 SetRotation(FRotator)은 이 ToQuat 변환을 사용한다. 위치 단위는 계속 미정이다.
+
+## UObject와 Actor 기반 — 2026-10-16 정정
+
+사용처가 없는 UGameInstance를 보류하고 GameInstance.h·프로젝트/필터 등록을 제거했다. Object.h의 가상 소멸자를 가진 UObject는 유지한다. Actor.h는 Object.h를 포함하고 AActor : public UObject 및 ~AActor() override를 제공한다. Actor.cpp의 소멸자 정의·컴포넌트 소유/추가/조회·복사/이동 금지와 FActorComponent는 유지한다. AActor 이름은 Actor 계열 규칙에 따라 유지한다. GC·리플렉션·객체 표·생성 API·게임 인스턴스/수명 연결은 없다.
+
+Math/Matrix4.h/.cpp의 FMatrix4는 float m[4][4]를 행 우선으로 보관한다. m[행][열]의 인덱스는 0부터 시작하며 기본값은 모두 0인 영행렬이다. SetIdentity()는 전체를 FMatrix4{}로 초기화한 뒤 네 대각 성분을 1로 설정한다. 이전 자체 엔진과 같은 초기화 방식으로 2026-10-16에 정정했다. header/cpp를 실행 프로젝트와 기존 Math 필터에 등록했다. [[nodiscard]] FMatrix4 operator*(const FMatrix4& other) const는 두 원본을 유지하고 곱을 값으로 반환한다. cpp에서만 DirectXMath의 XMLoadFloat4x4·XMMatrixMultiply·XMStoreFloat4x4를 사용한다. 별도로 채택한 행 벡터 규칙에서 A*B는 A 다음 B를 적용한다. 공개 헤더의 배열·영행렬 기본값과 기존 수학 타입은 유지한다. 역행렬·GPU 전달은 없으며 FTransform의 행렬 생성은 ToMatrixWithScale에서 담당한다. 셰이더 배치는 별도다.
+
+## WindowsApplication 수명 분리 — 2026-10-16 정정
+
+WindowsApplication.h/.cpp에 FWindowsApplication을 두고 instance·window·bClassRegistered를 보관한다. Initialize는 준비·생성·표시와 실패 시 부분 정리 시도, PumpMessages는 스레드 큐 처리, Shutdown은 남은 자원 정리와 성공 여부 반환이다. RunWindowsApplication은 지역 객체로 이들을 조합하고 WaitMessage를 반복 쪽에 유지한다. 복사/이동은 불가하고 Shutdown은 명시적으로 호출한다. 기본 소멸자의 자동 정리는 없다. 빈 Shutdown 반복은 허용하지만 전체 재시작·다중 창/스레드 계약은 없다. SDK 핸들 멤버를 위해 WindowsApplication.h도 WindowsHWrapper.h를 포함한다. 이전 cpp-only·함수 지역 핸들 설명은 이 절로 정정한다. 공개 실행 함수·프로젝트·옵션·기존 창 스타일과 크기는 유지한다.
+
+## D3D11 장치·즉시 컨텍스트 — 2026-10-16
+
+Engine/Source/D3D11/D3D11Device.h/.cpp의 FD3D11Device를 프로젝트에 등록하고 Engine/Source/D3D11 필터를 추가했다. AdditionalDependencies에 d3d11.lib를 추가하며 기존 user32.lib·상속은 유지한다. 헤더는 WindowsHWrapper.h·d3d11.h·wrl/client.h를 사용한다. Initialize는 기본 어댑터의 하드웨어 feature level 11_0을 flags 0으로 요청한다. 생성 실패 HRESULT는 D3D11 카테고리 오류 로그와 false, main은 1로 전달한다. 현재 장치 준비 중복도 false로 거부하며 기존 자원은 보존한다. Shutdown은 context/device ComPtr를 순서대로 Reset하며 소멸자 자동 참조 해제도 가능하다. 복사/이동은 제공하지 않는다.
+
+EngineMain.cpp가 장치를 준비한 뒤 기존 Windows 실행을 호출하고 결과 반환 전에 정리한다. 스왑 체인·창 출력·프레임 갱신·셰이더·렌더링은 아직 없다. SDK의 WRL ComPtr를 직접 사용하며 별도 엔진 COM 래퍼는 만들지 않는다. Debug 구성도 flags 0이므로 D3D 디버그 레이어가 켜졌다는 뜻이 아니다. WARP 자동 전환·어댑터 선택은 없다. 공통 props/targets·의존성 manifest·Windows 소스는 변경하지 않는다.
+
+## 이전 구성 참고 — 현재 규칙 아님
+
+아래는 재시작 전 설정 기록이다. 현재와 다른 모듈 경로·Engine.lib·WinMain·생성기 자동 실행·셰이더·객체 시스템에 관한 설명은 새 엔진의 지시나 구현 완료 근거로 사용하지 않는다. 새 구성과 겹치는 공통 도구 설정은 위 현재 구성 및 실제 파일을 기준으로 확인한다.
 
 ## 언어 표준
 
@@ -202,3 +291,21 @@ Slate 최소 게임 화면 위젯(2026-10-13): Engine/Source/Slate/Public/Widget
 게임용 화면 클라이언트 기반(2026-10-13): Engine/Public/Engine/GameViewportClient.h·Private/Engine/GameViewportClient.cpp를 기존 Engine 프로젝트·filters에 등록한다. 기존 Engine·CoreUObject 공개 검색 경로를 사용한다. 별도 프로젝트·라이브러리·검색 경로는 추가하지 않는다.
 
 입력 컴포넌트 소스 등록(2026-10-13): Engine/Source/Engine/Public/InputComponent.h·Private/InputComponent.cpp를 기존 프로젝트 생성기로 Engine.vcxproj와 filters에 등록했다. Public 검색 경로와 단일 Engine.lib 구성을 재사용하며 새 모듈·include 설정·SampleGame 프로젝트/filters 변경은 없다. 입력 기능 사용·런타임 등록은 이 프로젝트 등록과 별개다.
+
+## 최소 로그 함수 — 2026-10-15
+
+Engine/Source/Logging/Log.h/.cpp의 ELogLevel(Info/Warning/Error)과 WriteLog를 사용한다. 두 파일은 SampleGame/Source/SampleGame.vcxproj 및 Engine/Source/Logging 표시 필터에 등록했다. WindowsApplication.cpp의 일반 정보와 API 실패 출력 12곳을 공통 함수로 전달한다. 기존 오류 코드 저장·반환·정리 흐름은 유지한다.
+
+Debug/Release 모두 세 레벨을 stderr에 출력한다. 메시지 조립은 호출부 std::format, 함수 입력은 std::string_view다. 이전 SE_LOG·카테고리·Release 필터 정책은 새 코드에 적용하지 않는다. 현재 규칙은 [CodeConvention 5.3](Conventions/CodeConvention.md), 출력 실패·수명·스레드 한계도 해당 절을 따른다. 공통 빌드 옵션·외부 의존성은 변경하지 않았다.
+
+## 로그 카테고리 인자 확장 — 2026-10-15
+
+위 최소 로그 함수의 두 인자 API를 WriteLog(std::string_view category, ELogLevel level, std::string_view message)로 확장했다. 출력은 [카테고리][레벨] 메시지이며 빈 카테고리는 General로 표시한다. WindowsApplication 호출 12곳은 Windows를 지정한다. category도 호출 중에만 읽으며 저장하지 않는다. 레벨·stderr·Debug/Release 동일 출력 정책은 유지하며 카테고리 등록·필터·문자열 검증은 제공하지 않는다. 프로젝트 파일·외부 의존성·빌드 옵션은 이번 단계에서 변경하지 않았다.
+
+## FString·FStringView 별칭 — 2026-10-15
+
+Engine/Source/Containers/SeonString.h에 FString = std::string과 FStringView = std::string_view를 정의하고 프로젝트 header 목록·기존 Containers 필터에 등록했다. Logging/Log.h/.cpp의 카테고리·메시지 인자는 FStringView를 사용한다. 출력과 호출 방식은 유지한다. TCHAR·문자 타입 계층·변환기는 추가하지 않았고 Windows 경계의 기존 std::wstring 예외도 유지한다. 규칙은 CodeConvention 3.12/5.3이며 이전 로그의 std::string_view 직접 사용 예외는 이 단계에서 종료한다. 형식 문자열 편의 함수는 별도 후속 범위다.
+
+## 로그 형식 문자열 함수 — 2026-10-15
+
+Logging/Log.h에 WriteLog(FStringView category, ELogLevel level, std::format_string<ArgTypes...> format, ArgTypes&&... args) 템플릿을 정의했다. Log.cpp의 출력 전용 함수는 SE::Private::WriteLogMessage로 분리했다. 창 코드 12곳의 std::format을 생략했으며 기존 카테고리·출력·오류 처리 흐름은 유지한다. 완성 문자열은 "{}", message로 전달한다. FString/FStringView를 유지하고 TCHAR는 추가하지 않는다. 프로젝트·필터·빌드 옵션·외부 의존성은 변경하지 않았다. 현재 규칙은 CodeConvention 5.3을 따른다.

@@ -1,24 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{43E2B83B-2014-48F2-BC8F-14DA28F80BF1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source">
+      <UniqueIdentifier>{76C72BE0-78EF-48C9-ACD5-0DD491A540ED}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\D3D11">
+      <UniqueIdentifier>{DF67937B-A3F4-46D8-85F7-10278744B316}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Containers">
+      <UniqueIdentifier>{D97C0D88-DFBB-4B59-9A09-4FD976523083}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Logging">
+      <UniqueIdentifier>{A4C76551-0274-4CA7-B56E-A08E08701219}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Math">
+      <UniqueIdentifier>{9961C36C-83C7-4CD4-8A5C-2C151A474469}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Templates">
+      <UniqueIdentifier>{0501A8A3-2C8D-4A76-AEC1-9340645C1770}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Windows">
+      <UniqueIdentifier>{E19F74E1-8AB6-49D5-94D0-492A183BC0E4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="SampleGame">
-      <UniqueIdentifier>{3BD455E3-C243-3B48-AC31-A7600948691C}</UniqueIdentifier>
+      <UniqueIdentifier>{DCDA9E38-4136-4B28-8C78-CE8B25742CFD}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SampleGame\SampleGameInstance.h">
-      <Filter>SampleGame</Filter>
-    </ClInclude>
-    <ClInclude Include="SampleGame\SampleGameModule.h">
-      <Filter>SampleGame</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Device.cpp">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Actor.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\ActorComponent.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Logging\Log.cpp">
+      <Filter>Engine\Source\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Math\Matrix4.cpp">
+      <Filter>Engine\Source\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Math\Quat.cpp">
+      <Filter>Engine\Source\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Math\Rotator.cpp">
+      <Filter>Engine\Source\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Math\Transform.cpp">
+      <Filter>Engine\Source\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\TransformComponent.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Windows\WindowsApplication.cpp">
+      <Filter>Engine\Source\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\EngineMain.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SampleGame\SampleGameInstance.cpp">
-      <Filter>SampleGame</Filter>
-    </ClCompile>
-    <ClCompile Include="SampleGame\SampleGameModule.cpp">
-      <Filter>SampleGame</Filter>
-    </ClCompile>
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Actor.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\ActorComponent.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Containers\Array.h">
+      <Filter>Engine\Source\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Containers\SeonString.h">
+      <Filter>Engine\Source\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Object.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\CoreTypes.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Logging\Log.h">
+      <Filter>Engine\Source\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Math\Matrix4.h">
+      <Filter>Engine\Source\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Math\Quat.h">
+      <Filter>Engine\Source\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Math\Rotator.h">
+      <Filter>Engine\Source\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Math\Transform.h">
+      <Filter>Engine\Source\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Math\Vector3.h">
+      <Filter>Engine\Source\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Templates\UniquePtr.h">
+      <Filter>Engine\Source\Templates</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Windows\WindowsHWrapper.h">
+      <Filter>Engine\Source\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\TransformComponent.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Windows\WindowsApplication.h">
+      <Filter>Engine\Source\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

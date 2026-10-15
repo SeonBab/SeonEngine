@@ -142,6 +142,8 @@
   | 접두사 | 뜻 | 대상 |
   |---|---|---|
   | `F` | — | 다른 접두사가 적용되지 않는 일반 class / struct (값 타입, 소유권 등 특정 성질을 뜻하지 않음) |
+  | `A` | Actor 계열 | `AActor`와 그 파생 클래스. AActor는 UObject를 상속하지만 Actor 계열은 A를 유지한다. GC·리플렉션은 아직 없음 (2026-10-16 정정) |
+  | `U` | UObject 계열 | UObject 및 그 파생 클래스. 현재 상속 관계만 나타내며 GC·리플렉션·객체 등록을 뜻하지 않음 (2026-10-16) |
   | `T` | Template | 템플릿 class / struct |
   | `I` | Interface | 순수 가상 함수로만 이루어진 class |
   | `E` | Enum | 열거형 |
@@ -326,33 +328,24 @@
   - 예외: 대소문자를 무시했을 때 C / C++ 표준 헤더나 Windows SDK 헤더와 같아지는 이름(`String.h`, `Math.h`, `Memory.h` 등)이면 엔진 이름 `Seon`을 앞에 붙인다(`SeonString.h` → `FString`). Windows는 파일 이름의 대소문자를 구분하지 않아서, 표준 헤더를 찾을 때 엔진 헤더가 대신 잡힐 수 있다.
   - 렌더러 계약 예외: `IRenderer`는 `RendererInterface.h`, 기본 구현 `FRenderer`는 `Renderer.h`에 둔다. Public / Private include 경로에서 같은 파일 이름이 겹치지 않도록 계약과 구현을 구분한다. 다른 인터페이스에 일괄 적용하는 규칙은 아니다.
 
-- **파일 단위** — 파일마다 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다(예: `Texture.h`에 `FTextureDesc`, `ETextureFormat`, `FTexture`).
-- **Public / Private 분리** — 엔진 모듈마다 `Public`과 `Private` 폴더를 둔다.
-  - `Public`: 다른 모듈과 콘텐츠 코드가 include할 수 있는 헤더. 1.4 API Documentation의 "공개 API"는 이 폴더의 헤더를 뜻한다.
-  - `Private`: `.cpp` 전부와 모듈 내부 전용 헤더.
-  - 새 헤더는 기본적으로 `Private`에 두고, 공개가 필요해지면 `Public`으로 옮긴다.
-  - 콘텐츠 프로젝트의 include 경로에는 엔진 모듈의 `Public` 폴더만 추가한다.
+- **파일 단위** — 타입을 정의하는 파일에는 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다. WindowsApplication.h/.cpp는 단일 창의 수명을 관리하는 FWindowsApplication과 실행 조합 함수를 제공한다(2026-10-16 정정).
+- **현재 디렉터리 구조 (2026-10-15 정정)** — 실행 프로젝트 하나에서 엔진은 Engine/Source, 게임은 SampleGame/Source/SampleGame 아래에 둔다. 엔진은 Windows 등 역할별 폴더를 사용하고 Public/Private·별도 모듈 계층은 아직 나누지 않는다. 이 헤더 중 게임이 호출하는 함수를 공개 API로 보고 1.4의 문서 규칙을 적용한다.
 
   ```text
-  Renderer/
-  ├─ Public/
-  │  └─ Renderer.h
-  └─ Private/
-     ├─ Renderer.cpp
-     └─ RenderQueue.h
+  Engine/Source/Windows/
+  ├─ WindowsApplication.h
+  └─ WindowsApplication.cpp
   ```
 
-- **게임 모듈은 나누지 않음** — 게임 모듈은 다른 모듈이 include하지 않으므로 `Public` / `Private` 없이 모듈 폴더에 바로 파일을 둔다. 하위 폴더는 기능별로 나눈다. 다른 모듈이 include하게 된 게임 모듈만 엔진 모듈처럼 나눈다.
+- **게임 코드와 진입점 소유 (2026-10-15 정정)** — 게임 제작자는 SampleGame/Source/SampleGame 아래 게임 코드를 작성하고 엔진 API·확장 지점을 사용한다. main은 Engine/Source/EngineMain.cpp에 두며 엔진 개발 영역에서 초기화·반복·종료를 관리한다. 게임에서 별도 main을 정의하거나 엔진 진입점·플랫폼 구현을 게임별로 수정하지 않는다. 엔진에서 구체 게임 코드나 헤더를 참조하지 않는다. 게임을 만드는 확장 지점은 아직 미구현이며 이 규칙은 OS 파일 접근 권한 강제가 아니다.
 
   ```text
-  SampleGame/
-  ├─ SampleGame.cpp
-  └─ Player/
-     ├─ PlayerCharacter.h
-     └─ PlayerCharacter.cpp
+  Engine/Source/EngineMain.cpp       # 엔진이 소유하는 main
+  SampleGame/Source/SampleGame/       # 게임 전용 소스, 현재 비어 있음
   ```
 
-- **디렉터리 구조** — 모듈마다 폴더를 두고, 엔진 모듈은 그 안에 `Public` / `Private`를 둔다. 모듈 구성과 경로는 [Project Settings의 폴더 구조](../ProjectSettings.md#폴더-구조)를 따른다.
+- **이전 규칙의 적용 범위** — 엔진 모듈마다 Public/Private를 필수로 두던 규칙은 재시작 후 적용하지 않는다. 향후 공개·내부 경계가 필요해지면 별도 검토한다. 현재 프로젝트 배치는 [Project Settings](../ProjectSettings.md)의 현재 구성을 따른다.
+- **종료 코드 타입** — 표준 main과 그 결과를 전달하는 RunWindowsApplication은 int를 쓴다. 현재 실행 경계를 위한 선택이며 일반 엔진 데이터의 정수 타입 규칙을 일괄 변경하지 않는다.
 
 ### 2.2 Header 규칙 `필수`
 
@@ -363,15 +356,13 @@
   3. 서드파티 헤더
   4. 표준 라이브러리 헤더
 
-- **include 경로** — 모듈의 `Public` 폴더를 기준으로 경로를 쓴다. 모듈 내부의 `.cpp`와 Private 헤더에서는 자기 모듈의 `Private` 폴더도 기준으로 쓸 수 있다. 게임 모듈은 모듈 폴더가 기준이다(`#include "Player/PlayerCharacter.h"`).
+- **include 경로 (2026-10-15 정정)** — 엔진 헤더는 Engine/Source 기준으로 쓴다(`#include "Windows/WindowsApplication.h"`). cpp의 자기 헤더는 같은 폴더의 파일명으로 쓴다(`#include "WindowsApplication.h"`). 게임 내부 헤더 경로는 실제 필요가 생기는 단계에서 등록한다.
   - 엔진 헤더는 `""`, 표준 라이브러리와 서드파티 헤더는 `<>`로 include한다.
   - `../` 같은 상대 경로는 쓰지 않는다.
   - 헤더 이름은 엔진 전체에서 고유해야 한다. (다른 모듈에 같은 이름의 헤더를 두지 않는다)
 
   ```cpp
-  #include "Renderer.h"          // Renderer/Public/Renderer.h
-  #include "RHI/RHIDevice.h"     // Renderer/Public/RHI/RHIDevice.h
-  #include "Math/Vector3.h"      // Core/Public/Math/Vector3.h
+  #include "Windows/WindowsApplication.h" // Engine/Source 기준
 
   #include <vector>
 
@@ -381,6 +372,7 @@
 
 - **전방 선언** — 헤더에서 포인터, 레퍼런스, 함수 선언에만 쓰는 타입은 include하지 않고 전방 선언한다. 값 멤버, 부모 클래스, 헤더 안의 inline 함수에서 멤버를 사용하는 타입은 include한다. 전방 선언은 클래스처럼 전방 선언할 수 있는 타입에만 적용한다. 타입 별칭(`FString`, `TArray` 등)은 포인터나 레퍼런스로만 써도 별칭을 제공하는 헤더를 include한다.
 - **직접 쓰는 것만 include** — 파일은 자기가 직접 쓰는 헤더를 include한다. 다른 헤더를 통해 간접적으로 들어오는 헤더에 기대지 않는다. `.cpp`에서만 필요한 include는 헤더가 아니라 `.cpp`에 둔다.
+- **Windows SDK 입구 (2026-10-15)** — Windows 구현은 WindowsHWrapper.h를 통해 Windows.h를 포함한다. 래퍼는 WIN32_LEAN_AND_MEAN과 NOMINMAX를 Windows.h보다 먼저 정의한다. FWindowsApplication이 HINSTANCE/HWND를 멤버로 보관하므로 Windows 전용 WindowsApplication.h에서도 래퍼를 포함한다(2026-10-16 정정). 이 헤더를 포함하는 코드에도 SDK 선언이 노출된다. 다른 SDK 헤더를 무조건 래퍼에 모으거나 이전 엔진의 TCHAR·이름 충돌 처리를 자동 복원하지 않는다.
 - **`using namespace`** — 헤더에서는 쓰지 않는다. `.cpp`에서도 `using namespace std;`는 쓰지 않는다(Windows 헤더의 `byte`와 `std::byte`가 충돌한다). `.cpp`에서 `using std::vector;`처럼 이름 하나씩 가져오는 것은 허용한다.
 
 ### 2.3 Class 구성 `필수`
@@ -727,6 +719,8 @@
 
 ### 3.12 STL 사용 정책 `중요`
 
+- **새 엔진의 좁은 예외 — 2026-10-15:** WindowsApplication.h의 FWindowDescription.title은 승인한 창 설정 형태에 따라 std::wstring을 직접 소유한다. Windows 전용 실행 경계에만 적용하며 엔진 공통 문자열·UTF-8 변환 계층을 도입했다는 뜻이 아니다. 아래 이전 FString/FWindowsString의 미구현 경로를 이 설정을 위해 복원하지 않는다.
+
 - **컨테이너 / 문자열** — STL을 내부 구현으로 쓰고, 코드에서는 엔진 타입을 사용한다.
   - `TArray` / `FString`은 STL 별칭이며 멤버 함수는 STL 이름(`push_back`, `size` 등)을 그대로 쓴다. 이 부분은 1.2 Naming의 예외다.
   - `THashMap`은 래퍼 클래스다. `Add`는 추가 / 기존 값 교체 후 값 참조, `Find`는 값 포인터 / 미등록 nullptr, `Reset`은 항목 제거 / 버킷 공간 유지 계약을 제공한다. 외부에 STL 반복자와 멤버 함수를 노출하지 않는다. 현재 const 참조 입력만 제공하며 전체 Unreal TMap API는 지원하지 않는다.
@@ -747,8 +741,10 @@
   meshes.push_back(mesh);
   ```
 
-- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Core/Public/CoreTypes.h`). 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
-- **문자열 인코딩** — 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다. 변환은 `Platform/Windows/WindowsString.h`의 `FWindowsString`으로 한다.
+- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Engine/Source/CoreTypes.h`, 2026-10-15 새 배치). 실수는 `float` / `double`을 그대로 사용하며 별칭을 추가하지 않는다. 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
+- **문자열 별칭과 인코딩 — 2026-10-15 현재 규칙:** `Containers/SeonString.h`의 `FString = std::string`, `FStringView = std::string_view`를 사용한다. FString은 소유, FStringView는 비소유이며 원본 수명을 연장하지 않는다. 엔진 문자열은 UTF-8로 취급하되 별칭 자체는 인코딩을 검사하거나 변환하지 않는다. std::format 반환값은 FString과 같은 타입이므로 그대로 사용할 수 있다. 기존 Windows 경계의 std::wstring 사용 예외는 유지한다.
+  - 이전 최소 로그 단계의 std::string_view 직접 사용 예외를 종료하고 로그 인자에 FStringView를 사용한다. TCHAR·문자 별칭·UTF-8/UTF-16 변환 계층은 이번에 추가하지 않는다.
+- **이전 엔진의 문자열 변환 기록 — 현재 미구현:** 아래 FWindowsString 경로와 변환 API는 보관본의 정책이며 현재 새 엔진의 구현을 뜻하지 않는다. 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다. 변환은 `Platform/Windows/WindowsString.h`의 `FWindowsString`으로 한다.
   - `FWindowsString::UTF8ToWide`는 깨진 UTF-8 바이트를 U+FFFD로 바꾸고 계속한다. 변환 자체가 실패하면 `std::nullopt`를 돌려주므로 값이 있는지 확인하고 쓴다.
   - `FWindowsString::WideToUTF8`은 Windows API가 돌려준 UTF-16을 엔진 문자열로 받을 때 쓴다. 깨진 UTF-16(짝이 없는 서로게이트)을 만났을 때 할 일은 부르는 쪽이 `EInvalidCharacter`로 고른다. 사람이 읽을 글자는 `Replace`(기본, U+FFFD로 바꾸고 계속), 경로처럼 OS에 다시 넘길 값은 `Fail`(`std::nullopt`)이다. Windows는 파일 이름에 깨진 UTF-16을 허용하므로, 바꿔서 쓰면 다른 파일을 가리킨다.
   - 엔진의 UTF-8 경로를 UTF-16으로 바꿀 때 깨진 바이트를 어떻게 다룰지는 정하지 않았다.
@@ -814,6 +810,9 @@
   ```
 
 ### 4.2 객체 생명주기 `매우 중요`
+
+- **재시작 후 D3D11 장치 계약 (2026-10-16)** — FD3D11Device는 승인한 Initialize()/Shutdown() 이름을 사용한다. Initialize는 bool로 중복 준비·하드웨어 장치 생성 실패를 보고하고 HRESULT를 로그에 남긴다. main이 실패를 종료 코드 1로 전달하며 Fatal 처리로 바꾸지 않는다. Shutdown은 void이며 context/device ComPtr를 Reset한다. COM 참조는 소멸 시에도 자동 정리한다. 아래의 이전 InitD3DDevice·Fatal·일반 Initialize/Deinitialize 이름 설명은 이 새 클래스에 적용하지 않는다. 이 예외를 다른 API의 이름·실패 계약으로 확대하지 않는다.
+
 
 - **생성 / 파괴 책임** — 객체는 소유자가 만들고 파괴하며 단독 소유의 기본 표현은 `TUniquePtr`다. 직접 수명 관리는 4.1의 할당 정책을 따른다. 소유 관계는 나무 모양이 되며, 실행 엔진 객체는 FEngineLoop가 소유하며, 엔진 내부 객체는 각 담당 소유자가 만들고 파괴한다.
 
@@ -923,6 +922,27 @@
 - **실패 동작** — 파일 이름, 줄 번호, 조건식, 메시지를 치명 로그로 남긴다. 디버거가 연결되어 있으면 그 자리에서 멈추고(`__debugbreak`), 아니면 종료한다. `SE_ENSURE`는 로그와 디버거 중단만 하고 계속 진행하며, 같은 위치는 처음 한 번만 보고한다.
 
 ### 5.3 Logging `중요`
+
+#### 새 엔진 현재 규칙 — 2026-10-15
+
+- `Logging/Log.h`의 `ELogLevel::Info`, `Warning`, `Error`와 `WriteLog(category, level, format, args...)`를 사용한다. 세 레벨은 모두 stderr에 `[카테고리][레벨] 메시지`와 마지막 줄바꿈 하나를 출력한다. Debug/Release의 출력 정책은 같다.
+- 공개 WriteLog는 std::format_string으로 형식 문자열과 인자 타입을 컴파일할 때 검사하고 내부에서 std::format으로 메시지를 만든다. 완성된 FString/FStringView나 실행 중 생성한 문자열은 `WriteLog(category, level, "{}", message)`로 전달한다. 이때 message 안의 중괄호·%는 다시 해석하지 않는다. 리터럴 자체의 중괄호는 `{{`·`}}`로 쓴다.
+- 카테고리는 FStringView로 받고 완성된 메시지는 내부 SE::Private::WriteLogMessage에 FStringView로 즉시 전달한다. Containers/SeonString.h의 별칭을 사용하며 TCHAR는 추가하지 않는다. 동적 문자열을 형식 문자열 자리에 직접 넣는 이전 호출 방식은 지원하지 않는다.
+- 카테고리는 기능 영역을 나타내는 문자열이다(예: `Windows`). 빈 카테고리는 `General`로 표시한다. 카테고리와 메시지는 호출 중에만 빌려 쓰며 보관하지 않는다. 등록·이름 검증·카테고리별 필터는 제공하지 않는다.
+- 전역 로거 객체·장치 등록·필터·Fatal·파일·디버거 출력은 현재 제공하지 않는다.
+- 오류 코드 저장, 자원 정리, 반환과 프로그램 종료는 호출부 책임이다. 로그 함수는 void이며 출력 실패를 보고하거나 재시도하지 않는다. 호출 간 전체 로그 줄의 원자성·스레드 간 순서를 보장하지 않는다.
+
+```cpp
+WriteLog("Windows", ELogLevel::Error, "CreateWindowExW failed (error {})", errorCode);
+```
+
+2026-10-15 정정: 최소 함수의 두 인자(level, message)에서 문자열 카테고리를 앞에 받는 세 인자로 확장했다. 레벨과 출력 목적지는 유지한다.
+
+2026-10-15 정정: 메시지 조립을 호출부 std::format에서 WriteLog 템플릿으로 옮겼다. 출력 전용 함수는 SE::Private::WriteLogMessage로 분리했으며 메시지 출력 형식은 유지한다.
+
+#### 이전 엔진 규칙 — 현재 미적용
+
+아래는 재시작 이전의 SE_LOG·카테고리 설계 기록이다. 새 엔진에 자동 적용하지 않으며 2026-10-15부터 위 현재 규칙을 따른다. 이전 내용은 변경 이유를 비교할 수 있도록 유지한다.
 
 - **레벨** — 로그 메시지에는 아래 7단계(`Fatal` ~ `VeryVerbose`)를 쓴다. 맨 앞의 `NoLogging`은 카테고리의 기준 레벨로만 쓴다.
 
