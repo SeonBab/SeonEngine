@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Engine\Content">
+      <UniqueIdentifier>{943EF317-9277-4404-8663-A081B2E426A6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Content\Textures">
+      <UniqueIdentifier>{C114F48D-704F-42F0-B7D5-677EAED8CC5A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Image">
+      <UniqueIdentifier>{A26E8D35-90E9-422F-8255-A3AF2B594714}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{43E2B83B-2014-48F2-BC8F-14DA28F80BF1}</UniqueIdentifier>
     </Filter>
@@ -19,25 +28,58 @@
     <Filter Include="Engine\Source\Math">
       <UniqueIdentifier>{9961C36C-83C7-4CD4-8A5C-2C151A474469}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Misc">
+      <UniqueIdentifier>{BE3ED5C2-6195-4F7A-A418-B157C545A8DB}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Templates">
       <UniqueIdentifier>{0501A8A3-2C8D-4A76-AEC1-9340645C1770}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Source\Windows">
       <UniqueIdentifier>{E19F74E1-8AB6-49D5-94D0-492A183BC0E4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Renderer">
+      <UniqueIdentifier>{83E93C48-3B26-4D8A-A273-69FBC169EF52}</UniqueIdentifier>
+    </Filter>
     <Filter Include="SampleGame">
       <UniqueIdentifier>{DCDA9E38-4136-4B28-8C78-CE8B25742CFD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Shaders">
+      <UniqueIdentifier>{294D539E-FB39-459A-A7C9-20CAA96A9CF3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Shaders\Private">
+      <UniqueIdentifier>{FB2CF422-13A5-4BF1-BCB9-ECE043943BAA}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Device.cpp">
       <Filter>Engine\Source\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp">
+      <Filter>Engine\Source\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Shader.cpp">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Misc\Paths.cpp">
+      <Filter>Engine\Source\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11SwapChain.cpp">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Actor.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\World.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\ActorComponent.cpp">
       <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\StaticMeshComponent.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Logging\Log.cpp">
       <Filter>Engine\Source\Logging</Filter>
@@ -60,18 +102,72 @@
     <ClCompile Include="..\..\Engine\Source\Windows\WindowsApplication.cpp">
       <Filter>Engine\Source\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\Scene.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="SampleGame.cpp" />
+    <ClCompile Include="SampleActor.cpp" />
     <ClCompile Include="..\..\Engine\Source\EngineMain.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SampleActor.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\ModelLoader.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Image\Image.h">
+      <Filter>Engine\Source\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h">
+      <Filter>Engine\Source\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\Renderer.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\Scene.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Shader.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Misc\Paths.h">
+      <Filter>Engine\Source\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11SwapChain.h">
       <Filter>Engine\Source\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Actor.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\GameEntry.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\World.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\ActorComponent.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\StaticMeshComponent.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Containers\Array.h">
@@ -101,6 +197,9 @@
     <ClInclude Include="..\..\Engine\Source\Math\Transform.h">
       <Filter>Engine\Source\Math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Math\Vector2.h">
+      <Filter>Engine\Source\Math</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Math\Vector3.h">
       <Filter>Engine\Source\Math</Filter>
     </ClInclude>
@@ -116,5 +215,24 @@
     <ClInclude Include="..\..\Engine\Source\Windows\WindowsApplication.h">
       <Filter>Engine\Source\Windows</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\Engine\Shaders\Private\TriangleVertexShader.hlsl">
+      <Filter>Engine\Shaders\Private</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\TrianglePixelShader.hlsl">
+      <Filter>Engine\Shaders\Private</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\ModelVertexShader.hlsl">
+      <Filter>Engine\Shaders\Private</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\ModelPixelShader.hlsl">
+      <Filter>Engine\Shaders\Private</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\Engine\Content\Textures\Checker.png">
+      <Filter>Engine\Content\Textures</Filter>
+    </Content>
   </ItemGroup>
 </Project>

@@ -1,13 +1,13 @@
 #include "ActorComponent.h"
 
-FActorComponent::FActorComponent(AActor& owner)
+UActorComponent::UActorComponent(AActor& owner)
 	: owner(owner)
 {
 }
 
-FActorComponent::~FActorComponent() = default;
+UActorComponent::~UActorComponent() = default;
 
-bool FActorComponent::AllowsMultipleComponents() const
+bool UActorComponent::AllowsMultipleComponents() const
 {
 	return false;
 }

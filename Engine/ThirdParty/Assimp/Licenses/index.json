@@ -1,0 +1,72 @@
+[
+  {
+    "package": "assimp",
+    "version": "6.0.5",
+    "file": "assimp.txt",
+    "sha256": "4ab7cb6181f6d0070e58f1e0a0c81831784b9a57db7ebc3addf7c60565ea8af8",
+    "port_version": 0
+  },
+  {
+    "package": "jhasse-poly2tri",
+    "version": "2023-12-27",
+    "file": "jhasse-poly2tri.txt",
+    "sha256": "578790e1377a270831ede8c64d7c92d411b6e5a55ce32fbb84a35b376af25ee0",
+    "port_version": 2
+  },
+  {
+    "package": "kubazip",
+    "version": "0.3.15",
+    "file": "kubazip.txt",
+    "sha256": "6c7ff245cd8c1be2d053e04b65227937634089d473b4e98f64715c16e746637f",
+    "port_version": 0
+  },
+  {
+    "package": "minizip",
+    "version": "1.3.2",
+    "file": "minizip.txt",
+    "sha256": "8a3aa14b12f22fa91a6cc84b39d76298dc28ea577fb6bbcf0ebe94e4eda77d1d",
+    "port_version": 0
+  },
+  {
+    "package": "polyclipping",
+    "version": "6.4.2",
+    "file": "polyclipping.txt",
+    "sha256": "e3cc0380cc5eb9aedf5a7616fe9fde3710891bced21fd6a20a19194ccd4c1c88",
+    "port_version": 13
+  },
+  {
+    "package": "pugixml",
+    "version": "1.16",
+    "file": "pugixml.txt",
+    "sha256": "90974fbb120e966b452654eaae3ba6ee55f3647db3b28918a7649733ee99da97",
+    "port_version": 0
+  },
+  {
+    "package": "rapidjson",
+    "version": "2025-02-26",
+    "file": "rapidjson.txt",
+    "sha256": "a140e5d46fe734a1c78f1a3c3ef207871dd75648be71fdda8e309b23ab8b1f32",
+    "port_version": 0
+  },
+  {
+    "package": "stb",
+    "version": "2024-07-29",
+    "file": "stb.txt",
+    "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+    "port_version": 1
+  },
+  {
+    "package": "utfcpp",
+    "version": "4.2.1",
+    "file": "utfcpp.txt",
+    "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566",
+    "port_version": 0
+  },
+  {
+    "package": "zlib",
+    "version": "1.3.2",
+    "file": "zlib.txt",
+    "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+    "port_version": 2
+  }
+]

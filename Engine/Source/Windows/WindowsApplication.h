@@ -30,11 +30,14 @@ public:
 	/** 남은 창·클래스를 정리하고 성공 여부를 반환한다. 정리 전·후 반복 호출을 허용한다. */
 	bool Shutdown();
 
+	/** 창을 빌려 조회한다. 초기화 전에는 nullptr이며 파괴 후에는 사용하면 안 된다. */
+	HWND GetWindowHandle() const { return window; }
+
+	/** 클라이언트 영역의 픽셀 크기를 조회한다. 실패하면 로그를 남기고 출력 인자를 유지한다. */
+	bool GetClientSize(int& outWidth, int& outHeight) const;
+
 private:
 	HINSTANCE instance = nullptr;
 	HWND window = nullptr;
 	bool bClassRegistered = false;
 };
-
-/** 초기화·메시지 대기·정리를 조합한다. 정상 종료 코드는 WM_QUIT, API/정리 실패는 1이다. */
-int RunWindowsApplication(const FWindowDescription& description);

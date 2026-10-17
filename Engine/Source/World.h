@@ -1,0 +1,125 @@
+#pragma once
+
+#include "Actor.h"
+#include "Containers/Array.h"
+#include "Object.h"
+#include "Renderer/Scene.h"
+#include "Templates/UniquePtr.h"
+
+#include <concepts>
+#include <utility>
+
+class FRenderer;
+
+////////////////////////////////////////////////////////////////////////////////
+// 등록된 모든 액터와 렌더링 Scene을 단독 소유하고 부모·자식 관계 변경을 통제한다.
+// 부모 변경은 로컬 유지 또는 월드 기준 재계산을 선택하며 개별 제거는 자손도 함께 파괴한다.
+////////////////////////////////////////////////////////////////////////////////
+class UWorld : public UObject
+{
+public:
+	/** 등록된 액터와 렌더링 항목이 없는 월드를 만든다. GPU 자원은 생성하지 않는다. */
+	UWorld();
+
+	/** 남은 등록 액터를 실제 제거 경로로 정리한 뒤 Scene을 정리한다. 시작 완료 대상은 Quit로 종료 처리한 뒤 자손부터 파괴한다. */
+	~UWorld() override;
+
+	UWorld(const UWorld&) = delete;
+	UWorld& operator=(const UWorld&) = delete;
+	UWorld(UWorld&&) = delete;
+	UWorld& operator=(UWorld&&) = delete;
+
+	/** 소유한 Scene을 빌린다. 렌더러는 연결하지 않으며 World 소멸 후 참조는 무효다. */
+	[[nodiscard]] FScene& GetScene();
+
+	/** 소유한 Scene을 읽기 전용으로 빌린다. World 소멸 후 참조는 무효다. */
+	[[nodiscard]] const FScene& GetScene() const;
+
+	/**
+	 * 시작 시점의 등록 순서로 각 액터를 한 번 Tick한다. 같은 월드의 중첩 호출은 무시한다.
+	 * 도중 생성한 액터는 다음 호출부터 갱신하고 제거 중인 대상은 건너뛴다. 시간값은 그대로 전달한다.
+	 * 순회 중에는 요청 대상만 보관하며 직접 요청된 대상의 남은 Tick은 건너뛴다. 이미 실행 중인 Tick은 중단하지 않는다.
+	 * 첫 Tick 전에 시작 처리를 한 번 호출한다. 기반 BeginPlay 누락으로 미완료면 Tick을 보류하고 시작을 재호출하지 않는다.
+	 * 시작 처리 뒤 직접 제거 요청을 다시 확인해 해당 대상의 Tick은 생략한다.
+	 * 자손은 직접 요청되지 않았다면 Tick하며 종료 정리에서 처리 시점의 현재 자손을 함께 파괴한다.
+	 */
+	void Tick(float deltaSeconds);
+
+	/**
+	 * 초기 구성 후 미생성 정적 메시 컴포넌트의 렌더 상태를 등록 순서로 만든다.
+	 * 생성된 상태는 변경하지 않는다. 실패하면 false로 중단하고 앞서 성공한 등록은 유지한다.
+	 * Tick/생성·제거 콜백 밖에서 호출한다.
+	 * NOTE: 초기 준비 뒤 추가한 정적 메시 컴포넌트는 자동으로 렌더 등록되지 않는다.
+	 * NOTE: 컴포넌트 등록 수명에 통합할 때 초기 일괄 준비 함수와 호출의 존치 여부를 재검토한다.
+	 */
+	[[nodiscard]] bool CreateRenderStates(FRenderer& renderer);
+
+	/**
+	 * Tick 종료 후 그리기 전에 생성된 정적 메시 컴포넌트의 메시 변경과 현재 변환을 등록 순서로 전달한다.
+	 * 미생성 상태는 건너뛰며 자동 생성하지 않는다. 실패하면 false로 중단하고 앞서 성공한 갱신은 유지한다.
+	 * Tick/생성·제거 콜백 밖에서 명시 호출한다. 빈 월드와 갱신 대상이 없는 경우는 true다.
+	 */
+	[[nodiscard]] bool SendAllEndOfFrameUpdates(FRenderer& renderer);
+
+	/**
+	 * 이 월드를 전달해 액터를 생성하고 부모 없는 액터로 소유 목록에 등록한다. 생성자는 등록 전에 실행된다.
+	 * T는 AActor 자신 또는 public 파생 타입이며 UWorld&로 생성할 수 있어야 한다.
+	 * 반환 참조는 비소유이며 월드가 소멸하면 무효다. 할당 실패 복구·생명주기 이벤트는 제공하지 않는다.
+	 */
+	template<typename T>
+		requires std::derived_from<T, AActor> && std::constructible_from<T, UWorld&>
+	[[nodiscard]] T& SpawnActor();
+
+	/**
+	 * 출력 배열을 비우고 현재 등록된 모든 액터를 등록 순서대로 채운다. 배열 용량은 재사용한다.
+	 * 제거 요청이 보류된 액터도 실제 등록 해제 전까지 포함하며 소유권은 이전하지 않는다.
+	 * const 월드에서도 수정 가능한 비소유 포인터를 반환한다. 실제 파괴 뒤 주소는 무효다.
+	 */
+	void GetActors(TArray<AActor*>& outActors) const;
+
+	/**
+	 * 등록된 액터의 부모를 변경한다. nullptr 부모는 루트 분리이며 같은 부모 요청은 변경 없이 true다.
+	 * 기본 KeepLocal은 로컬 값을 유지한다. KeepWorld는 변경 전 월드 값으로 새 로컬을 계산하며 정확 재현은 보장하지 않는다.
+	 * null 대상·미등록·다른 월드·자기/자손 연결은 false이며 기존 관계·소유권·저장 Transform을 유지한다.
+	 * 자신이나 새 부모가 제거 중인 요청도 같은 부모/분리 여부와 무관하게 false다.
+	 * 제거 요청만 보류된 대상은 기존 규칙대로 부모를 변경할 수 있다.
+	 * 인수는 null 또는 살아 있는 객체여야 한다. true는 관계 처리 성공이며 이벤트·할당 실패 복구는 제공하지 않는다.
+	 */
+	[[nodiscard]] bool SetActorParent(AActor* actor, AActor* newParent, EActorTransformRule rule = EActorTransformRule::KeepLocal);
+
+	/**
+	 * 등록된 액터와 처리 시점의 모든 자손을 제거한다. Tick 중에는 요청만 보관하고 Tick 종료 정리에서 파괴한다.
+	 * 보류 중에는 제거 상태를 켜지 않고 부모 변경을 허용하되 직접 요청된 대상의 남은 Tick은 건너뛴다.
+	 * 같은 대상의 중복 요청은 true다.
+	 * Tick 밖에서는 관계/등록 정리 후 자손부터 즉시 파괴한다.
+	 * null·미등록·다른 월드 대상은 false다. 인수는 null 또는 살아 있는 객체여야 한다.
+	 * 소멸 중 다른 등록 액터의 제거 요청을 허용한다. 이미 분리한 제거 대상은 미등록으로 거부한다.
+	 * 관계/등록 정리 뒤 시작 완료 대상에 EndPlay(Destroyed)를 호출하고 파괴한다.
+	 * 실제 파괴 후 제거된 액터/컴포넌트의 외부 포인터는 무효다. GC·할당 실패 복구는 없다.
+	 */
+	[[nodiscard]] bool DestroyActor(AActor* actor);
+
+private:
+	/** 등록된 대상의 관계/소유를 정리하고 실제 파괴한다. Tick 순회가 끝난 안전한 구간에서만 호출한다. */
+	bool DestroyActorImmediately(AActor* actor, EEndPlayReason reason = EEndPlayReason::Destroyed);
+
+	/** 보관한 요청을 처리한다. 실제 파괴 전에 함께 제거되는 자손의 요청도 제외하며 추가 요청도 이어서 처리한다. */
+	void PurgeDestroyedActors();
+
+	// NOTE: 액터·컴포넌트 정리 중 Scene을 사용하므로 actors보다 먼저 선언해야 한다.
+	FScene scene;
+	TArray<TUniquePtr<AActor>> actors{};
+	TArray<AActor*> pendingDestroyActors{};
+	bool bIsTicking = false;
+};
+
+template<typename T>
+	requires std::derived_from<T, AActor> && std::constructible_from<T, UWorld&>
+T& UWorld::SpawnActor()
+{
+	TUniquePtr<T> actor = MakeUnique<T>(*this);
+	T* spawnedActor = actor.get();
+	actors.push_back(std::move(actor));
+
+	return *spawnedActor;
+}

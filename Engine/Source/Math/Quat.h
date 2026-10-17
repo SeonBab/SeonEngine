@@ -13,6 +13,9 @@ struct FQuat
 	float z = 0.0f;
 	float w = 1.0f;
 
+	/** 길이 제곱과 1의 차이가 0.01 이하인지 반환한다. 성분을 변경하지 않는다. */
+	[[nodiscard]] bool IsNormalized() const;
+
 	/** 유한하고 정규화된 회전에서 도 단위 각도를 반환한다. pitch ±90도 근처에서는 roll을 0으로 둔다. */
 	[[nodiscard]] FRotator ToRotator() const;
 };

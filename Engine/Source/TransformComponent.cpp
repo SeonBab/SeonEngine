@@ -1,56 +1,81 @@
 #include "TransformComponent.h"
 
-FTransformComponent::FTransformComponent(AActor& owner)
-	: FActorComponent(owner)
+#include "Actor.h"
+
+UTransformComponent::UTransformComponent(AActor& owner)
+	: UActorComponent(owner)
 {
 }
 
-FTransform FTransformComponent::GetTransform() const
+FTransform UTransformComponent::GetTransform() const
 {
 	return transform;
 }
 
-void FTransformComponent::SetTransform(const FTransform& newTransform)
+FTransform UTransformComponent::GetComponentTransform() const
+{
+	const AActor* parent = GetOwner().GetParent();
+	if (!parent) { return transform; }
+
+	const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
+
+	return transform * parentTransform->GetComponentTransform();
+}
+
+void UTransformComponent::SetTransform(const FTransform& newTransform)
 {
 	transform = newTransform;
 }
 
-FVector3 FTransformComponent::GetPosition() const
+void UTransformComponent::SetComponentTransform(const FTransform& newTransform)
+{
+	const AActor* parent = GetOwner().GetParent();
+	if (!parent)
+	{
+		SetTransform(newTransform);
+		return;
+	}
+
+	const auto* parentTransform = parent->GetComponent<UTransformComponent>();
+	SetTransform(newTransform.GetRelativeTransform(parentTransform->GetComponentTransform()));
+}
+
+FVector3 UTransformComponent::GetPosition() const
 {
 	return transform.position;
 }
 
-void FTransformComponent::SetPosition(FVector3 newPosition)
+void UTransformComponent::SetPosition(FVector3 newPosition)
 {
 	transform.position = newPosition;
 }
 
-FQuat FTransformComponent::GetQuaternion() const
+FQuat UTransformComponent::GetQuaternion() const
 {
 	return transform.rotation;
 }
 
-void FTransformComponent::SetQuaternion(FQuat newRotation)
+void UTransformComponent::SetQuaternion(FQuat newRotation)
 {
 	transform.rotation = newRotation;
 }
 
-FRotator FTransformComponent::GetRotation() const
+FRotator UTransformComponent::GetRotation() const
 {
 	return GetQuaternion().ToRotator();
 }
 
-void FTransformComponent::SetRotation(FRotator newRotation)
+void UTransformComponent::SetRotation(FRotator newRotation)
 {
 	SetQuaternion(newRotation.ToQuat());
 }
 
-FVector3 FTransformComponent::GetScale() const
+FVector3 UTransformComponent::GetScale() const
 {
 	return transform.scale;
 }
 
-void FTransformComponent::SetScale(FVector3 newScale)
+void UTransformComponent::SetScale(FVector3 newScale)
 {
 	transform.scale = newScale;
 }

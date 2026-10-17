@@ -167,29 +167,18 @@ bool FWindowsApplication::Shutdown()
 	return bSuccess;
 }
 
-int RunWindowsApplication(const FWindowDescription& description)
+bool FWindowsApplication::GetClientSize(int& outWidth, int& outHeight) const
 {
-	FWindowsApplication application;
-	if (!application.Initialize(description))
+	RECT clientRectangle{};
+	if (!GetClientRect(window, &clientRectangle))
 	{
-		return 1;
+		const DWORD errorCode = GetLastError();
+		WriteLog("Windows", ELogLevel::Error, "GetClientRect failed (error {})", errorCode);
+		return false;
 	}
 
-	int exitCode = 0;
-	while (application.PumpMessages(exitCode))
-	{
-		if (!WaitMessage())
-		{
-			const DWORD errorCode = GetLastError();
-			WriteLog("Windows", ELogLevel::Error, "WaitMessage failed (error {})", errorCode);
-			exitCode = 1;
-			break;
-		}
-	}
+	outWidth = static_cast<int>(clientRectangle.right - clientRectangle.left);
+	outHeight = static_cast<int>(clientRectangle.bottom - clientRectangle.top);
 
-	if (!application.Shutdown())
-	{
-		exitCode = 1;
-	}
-	return exitCode;
+	return true;
 }

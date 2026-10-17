@@ -28,3 +28,6 @@
 *.dll binary
 *.exe binary
 *.pdb binary
+
+# 외부 라이선스 원문은 고지 파일의 바이트와 해시를 유지한다.
+/Engine/ThirdParty/Assimp/Licenses/*.txt -text

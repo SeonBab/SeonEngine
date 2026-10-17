@@ -5,6 +5,14 @@
 #include <cmath>
 #include <numbers>
 
+bool FQuat::IsNormalized() const
+{
+	constexpr float Tolerance = 0.01f;
+	const float lengthSquared = x * x + y * y + z * z + w * w;
+
+	return std::abs(1.0f - lengthSquared) <= Tolerance;
+}
+
 FRotator FQuat::ToRotator() const
 {
 	const double qx = x;

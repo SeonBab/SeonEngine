@@ -1,0 +1,1408 @@
+LICENSE:
+
+Open Asset Import Library (assimp)
+
+Copyright (c) 2006-2026, assimp team
+All rights reserved.
+
+Redistribution and use of this software in source and binary forms,
+with or without modification, are permitted provided that the
+following conditions are met:
+
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
+
+* Redistributions in binary form must reproduce the above
+  copyright notice, this list of conditions and the
+  following disclaimer in the documentation and/or other
+  materials provided with the distribution.
+
+* Neither the name of the assimp team, nor the names of its
+  contributors may be used to endorse or promote products
+  derived from this software without specific prior
+  written permission of the assimp team.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+******************************************************************************
+
+AN EXCEPTION applies to all files in the ./test/models-nonbsd folder.
+These are 3d models for testing purposes, from various free sources
+on the internet. They are - unless otherwise stated - copyright of
+their respective creators, which may impose additional requirements
+on the use of their work. For any of these models, see
+<model-name>.source.txt for more legal information. Contact us if you
+are a copyright holder and believe that we credited you inproperly or
+if you don't want your files to appear in the repository.
+
+
+******************************************************************************
+
+Poly2Tri Copyright (c) 2009-2010, Poly2Tri Contributors
+http://code.google.com/p/poly2tri/
+
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+* Neither the name of Poly2Tri nor the names of its contributors may be
+  used to endorse or promote products derived from this software without specific
+  prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+LICENSE:
+
+ISC License
+
+Copyright (c) 2015, Mapbox
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+
+LICENSE:
+
+The MIT License (MIT)
+
+Copyright (c) 2014 Kim Kulling
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+o3dgcCommon.h:
+
+/*
+Copyright (c) 2013 Khaled Mammou - Advanced Micro Devices, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+
+#pragma once
+#ifndef O3DGC_COMMON_H
+#define O3DGC_COMMON_H
+
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+
+namespace o3dgc
+{
+    typedef float        Real;
+    const double O3DGC_MAX_DOUBLE       = 1.79769e+308;
+    const long O3DGC_MIN_LONG           = -2147483647;
+    const long O3DGC_MAX_LONG           =  2147483647;
+    const long O3DGC_MAX_UCHAR8         = 255;
+    const long O3DGC_MAX_TFAN_SIZE      = 256;
+    const unsigned long O3DGC_MAX_ULONG = 4294967295;
+
+    const unsigned long O3DGC_SC3DMC_START_CODE               = 0x00001F1;
+    const unsigned long O3DGC_DV_START_CODE                   = 0x00001F2;
+    const unsigned long O3DGC_SC3DMC_MAX_NUM_FLOAT_ATTRIBUTES = 256;
+    const unsigned long O3DGC_SC3DMC_MAX_NUM_INT_ATTRIBUTES   = 256;
+    const unsigned long O3DGC_SC3DMC_MAX_DIM_ATTRIBUTES = 32;
+
+    const unsigned long O3DGC_SC3DMC_MAX_PREDICTION_NEIGHBORS = 2;
+    const unsigned long O3DGC_SC3DMC_MAX_PREDICTION_SYMBOLS   = 257;
+
+    enum O3DGCEndianness
+    {
+        O3DGC_BIG_ENDIAN     = 0,
+        O3DGC_LITTLE_ENDIAN  = 1
+    };
+    enum O3DGCErrorCode
+    {
+        O3DGC_OK,
+        O3DGC_ERROR_BUFFER_FULL,
+        O3DGC_ERROR_CREATE_FILE,
+        O3DGC_ERROR_OPEN_FILE,
+        O3DGC_ERROR_READ_FILE,
+        O3DGC_ERROR_CORRUPTED_STREAM,
+        O3DGC_ERROR_NON_SUPPORTED_FEATURE
+    };
+    enum O3DGCSC3DMCBinarization
+    {
+        O3DGC_SC3DMC_BINARIZATION_FL     = 0,            // Fixed Length (not supported)
+        O3DGC_SC3DMC_BINARIZATION_BP     = 1,            // BPC (not supported)
+        O3DGC_SC3DMC_BINARIZATION_FC     = 2,            // 4 bits Coding (not supported)
+        O3DGC_SC3DMC_BINARIZATION_AC     = 3,            // Arithmetic Coding (not supported)
+        O3DGC_SC3DMC_BINARIZATION_AC_EGC = 4,            // Arithmetic Coding & EGCk
+        O3DGC_SC3DMC_BINARIZATION_ASCII  = 5             // Arithmetic Coding & EGCk
+    };
+    enum O3DGCStreamType
+    {
+        O3DGC_STREAM_TYPE_UNKOWN = 0,
+        O3DGC_STREAM_TYPE_ASCII  = 1,
+        O3DGC_STREAM_TYPE_BINARY = 2
+    };
+    enum O3DGCSC3DMCQuantizationMode
+    {
+        O3DGC_SC3DMC_DIAG_BB             = 0, // supported
+        O3DGC_SC3DMC_MAX_ALL_DIMS        = 1, // supported
+        O3DGC_SC3DMC_MAX_SEP_DIM         = 2  // supported
+    };
+    enum O3DGCSC3DMCPredictionMode
+    {
+        O3DGC_SC3DMC_NO_PREDICTION                    = 0, // supported
+        O3DGC_SC3DMC_DIFFERENTIAL_PREDICTION          = 1, // supported
+        O3DGC_SC3DMC_XOR_PREDICTION                   = 2, // not supported
+        O3DGC_SC3DMC_ADAPTIVE_DIFFERENTIAL_PREDICTION = 3, // not supported
+        O3DGC_SC3DMC_CIRCULAR_DIFFERENTIAL_PREDICTION = 4, // not supported
+        O3DGC_SC3DMC_PARALLELOGRAM_PREDICTION         = 5,  // supported
+        O3DGC_SC3DMC_SURF_NORMALS_PREDICTION          = 6   // supported
+    };
+    enum O3DGCSC3DMCEncodingMode
+    {
+        O3DGC_SC3DMC_ENCODE_MODE_QBCR       = 0,        // not supported
+        O3DGC_SC3DMC_ENCODE_MODE_SVA        = 1,        // not supported
+        O3DGC_SC3DMC_ENCODE_MODE_TFAN       = 2,        // supported
+    };
+    enum O3DGCDVEncodingMode
+    {
+        O3DGC_DYNAMIC_VECTOR_ENCODE_MODE_LIFT       = 0
+    };
+    enum O3DGCIFSFloatAttributeType
+    {
+        O3DGC_IFS_FLOAT_ATTRIBUTE_TYPE_UNKOWN   = 0,
+        O3DGC_IFS_FLOAT_ATTRIBUTE_TYPE_POSITION = 1,
+        O3DGC_IFS_FLOAT_ATTRIBUTE_TYPE_NORMAL   = 2,
+        O3DGC_IFS_FLOAT_ATTRIBUTE_TYPE_COLOR    = 3,
+        O3DGC_IFS_FLOAT_ATTRIBUTE_TYPE_TEXCOORD = 4,
+        O3DGC_IFS_FLOAT_ATTRIBUTE_TYPE_WEIGHT   = 5
+        
+    };
+    enum O3DGCIFSIntAttributeType
+    {
+        O3DGC_IFS_INT_ATTRIBUTE_TYPE_UNKOWN   = 0,
+        O3DGC_IFS_INT_ATTRIBUTE_TYPE_INDEX    = 1,
+        O3DGC_IFS_INT_ATTRIBUTE_TYPE_JOINT_ID = 2,
+        O3DGC_IFS_INT_ATTRIBUTE_TYPE_INDEX_BUFFER_ID = 3
+    };
+
+    template<class T> 
+    inline const T absolute(const T& a)
+    {
+        return (a < (T)(0)) ? -a : a;
+    }
+    template<class T> 
+    inline const T min(const T& a, const T& b)
+    {
+        return (b < a) ? b : a;
+    }
+    template<class T> 
+    inline const T max(const T& a, const T& b)
+    {
+        return (b > a) ? b : a;
+    }
+    template<class T> 
+    inline void swap(T& a, T& b)
+    {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
+    inline double log2( double n )  
+    {  
+        return log(n) / log(2.0);  
+    }
+
+    inline O3DGCEndianness SystemEndianness()
+    {
+        unsigned long num = 1;
+        return ( *((char *)(&num)) == 1 )? O3DGC_LITTLE_ENDIAN : O3DGC_BIG_ENDIAN ;
+    }
+    class SC3DMCStats
+    {
+    public: 
+                                    SC3DMCStats(void)
+                                    {
+                                        memset(this, 0, sizeof(SC3DMCStats));
+                                    };
+        
+        double                      m_timeCoord;
+        double                      m_timeNormal;
+        double                      m_timeCoordIndex;
+        double                      m_timeFloatAttribute[O3DGC_SC3DMC_MAX_NUM_FLOAT_ATTRIBUTES];
+        double                      m_timeIntAttribute  [O3DGC_SC3DMC_MAX_NUM_INT_ATTRIBUTES  ];
+        double                      m_timeReorder;
+
+        unsigned long               m_streamSizeCoord;
+        unsigned long               m_streamSizeNormal;
+        unsigned long               m_streamSizeCoordIndex;
+        unsigned long               m_streamSizeFloatAttribute[O3DGC_SC3DMC_MAX_NUM_FLOAT_ATTRIBUTES];
+        unsigned long               m_streamSizeIntAttribute  [O3DGC_SC3DMC_MAX_NUM_INT_ATTRIBUTES  ];
+
+    };
+    typedef struct 
+    {
+        long          m_a;
+        long          m_b;
+        long          m_c;
+    } SC3DMCTriplet;
+
+    typedef struct 
+    {
+        SC3DMCTriplet m_id;
+        long          m_pred[O3DGC_SC3DMC_MAX_DIM_ATTRIBUTES];
+    } SC3DMCPredictor;
+
+    inline bool operator< (const SC3DMCTriplet& lhs, const SC3DMCTriplet& rhs)
+    {
+          if (lhs.m_c != rhs.m_c)
+          {
+              return (lhs.m_c < rhs.m_c);
+          }
+          else if (lhs.m_b != rhs.m_b)
+          {
+              return (lhs.m_b < rhs.m_b);
+          }
+          return (lhs.m_a < rhs.m_a);
+    }
+    inline bool operator== (const SC3DMCTriplet& lhs, const SC3DMCTriplet& rhs)
+    {
+          return (lhs.m_c == rhs.m_c && lhs.m_b == rhs.m_b && lhs.m_a == rhs.m_a);
+    }
+
+
+    // fix me: optimize this function (e.g., binary search)
+    inline unsigned long Insert(SC3DMCTriplet e, unsigned long & nPred, SC3DMCPredictor * const list)
+    {
+        unsigned long pos = 0xFFFFFFFF;
+        bool foundOrInserted = false;
+        for (unsigned long j = 0; j < nPred; ++j)
+        {
+            if (e == list[j].m_id)
+            {
+                foundOrInserted = true;
+                break;
+            }
+            else if (e < list[j].m_id)
+            {
+                if (nPred < O3DGC_SC3DMC_MAX_PREDICTION_NEIGHBORS)
+                {
+                    ++nPred;
+                }
+                for (unsigned long h = nPred-1; h > j; --h)
+                {
+                    list[h] = list[h-1];
+                }
+                list[j].m_id = e;
+                pos = j;
+                foundOrInserted = true;
+                break;
+            }
+        }
+        if (!foundOrInserted && nPred < O3DGC_SC3DMC_MAX_PREDICTION_NEIGHBORS)
+        {
+            pos = nPred;
+            list[nPred++].m_id = e;
+        }
+        return pos;
+    }
+    template <class T> 
+    inline void SphereToCube(const T x, const T y, const T z, 
+                             T & a, T & b, char & index)
+    {
+        T ax = absolute(x);
+        T ay = absolute(y);
+        T az = absolute(z);
+        if (az >= ax && az >= ay)
+        {
+            if (z >= (T)(0))
+            {
+                index = 0;
+                a = x;
+                b = y;
+            }
+            else
+            {
+                index = 1;
+                a = -x;
+                b = -y;
+            }
+        }
+        else if (ay >= ax && ay >= az)
+        {
+            if (y >= (T)(0))
+            {
+                index = 2;
+                a = z;
+                b = x;
+            }
+            else
+            {
+                index = 3;
+                a = -z;
+                b = -x;
+            }
+        }
+        else if (ax >= ay && ax >= az)
+        {
+            if (x >= (T)(0))
+            {
+                index = 4;
+                a = y;
+                b = z;
+            }
+            else
+            {
+                index = 5;
+                a = -y;
+                b = -z;
+            }
+        }
+    }
+    inline void CubeToSphere(const Real a, const Real b, const char index,
+                             Real & x, Real & y, Real & z)
+    {
+        switch( index )
+        {
+        case 0:
+            x = a;
+            y = b;
+            z =  (Real) sqrt(max(0.0, 1.0 - x*x-y*y));
+            break;
+        case 1:
+            x = -a;
+            y = -b;
+            z = -(Real) sqrt(max(0.0, 1.0 - x*x-y*y));
+            break;
+        case 2:
+            z = a;
+            x = b;
+            y =  (Real) sqrt(max(0.0, 1.0 - x*x-z*z));
+            break;
+        case 3:
+            z = -a;
+            x = -b;
+            y = -(Real) sqrt(max(0.0, 1.0 - x*x-z*z));
+            break;
+        case 4:
+            y = a;
+            z = b;
+            x =  (Real) sqrt(max(0.0, 1.0 - y*y-z*z));
+            break;
+        case 5:
+            y = -a;
+            z = -b;
+            x = -(Real) sqrt(max(0.0, 1.0 - y*y-z*z));
+            break;
+        }
+    }
+    inline unsigned long IntToUInt(long value)
+    {
+        return (value < 0)?(unsigned long) (-1 - (2 * value)):(unsigned long) (2 * value);
+    }
+    inline long UIntToInt(unsigned long uiValue)
+    {
+        return (uiValue & 1)?-((long) ((uiValue+1) >> 1)):((long) (uiValue >> 1));
+    }
+    inline void ComputeVectorMinMax(const Real * const tab, 
+                                    unsigned long size, 
+                                    unsigned long dim,
+                                    unsigned long stride,
+                                    Real * minTab,
+                                    Real * maxTab,
+                                    O3DGCSC3DMCQuantizationMode quantMode)
+    {
+        if (size == 0 || dim == 0)
+        {
+            return;
+        }
+        unsigned long p = 0;
+        for(unsigned long d = 0; d < dim; ++d)
+        {
+            maxTab[d] = minTab[d] = tab[p++];
+        }
+        p = stride;
+        for(unsigned long i = 1; i < size; ++i)
+        {
+            for(unsigned long d = 0; d < dim; ++d)
+            {
+                if (maxTab[d] < tab[p+d]) maxTab[d] = tab[p+d];
+                if (minTab[d] > tab[p+d]) minTab[d] = tab[p+d];
+            }
+            p += stride;
+        }
+
+        if (quantMode == O3DGC_SC3DMC_DIAG_BB)
+        {
+            Real diag = Real( 0.0 );
+            Real r;
+            for(unsigned long d = 0; d < dim; ++d)
+            {
+                r     = (maxTab[d] - minTab[d]);
+                diag += r*r;
+            } 
+            diag = static_cast<Real>(sqrt(diag));
+            for(unsigned long d = 0; d < dim; ++d)
+            {
+                 maxTab[d] = minTab[d] + diag;
+            } 
+        }
+        else if (quantMode == O3DGC_SC3DMC_MAX_ALL_DIMS)
+        {            
+            Real maxr = (maxTab[0] - minTab[0]);
+            Real r;
+            for(unsigned long d = 1; d < dim; ++d)
+            {
+                r = (maxTab[d] - minTab[d]);
+                if ( r > maxr)
+                {
+                    maxr = r;
+                }
+            } 
+            for(unsigned long d = 0; d < dim; ++d)
+            {
+                 maxTab[d] = minTab[d] + maxr;
+            } 
+        }
+    }
+}
+#endif // O3DGC_COMMON_H
+
+
+o3dgcArithmeticCodec.cpp:
+
+/*
+Copyright (c) 2004 Amir Said (said@ieee.org) & William A. Pearlman (pearlw@ecse.rpi.edu)
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+-   Redistributions of source code must retain the above copyright notice, this list 
+    of conditions and the following disclaimer. 
+
+-   Redistributions in binary form must reproduce the above copyright notice, this list of 
+    conditions and the following disclaimer in the documentation and/or other materials 
+    provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
+THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER 
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+OF SUCH DAMAGE.
+
+*/
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                                                                           -
+//                       ****************************                        -
+//                        ARITHMETIC CODING EXAMPLES                         -
+//                       ****************************                        -
+//                                                                           -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                                                                           -
+// Fast arithmetic coding implementation                                     -
+// -> 32-bit variables, 32-bit product, periodic updates, table decoding     -
+//                                                                           -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                                                                           -
+// Version 1.00  -  April 25, 2004                                           -
+//                                                                           -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                                                                           -
+//                                  WARNING                                  -
+//                                 =========                                 -
+//                                                                           -
+// The only purpose of this program is to demonstrate the basic principles   -
+// of arithmetic coding. It is provided as is, without any express or        -
+// implied warranty, without even the warranty of fitness for any particular -
+// purpose, or that the implementations are correct.                         -
+//                                                                           -
+// Permission to copy and redistribute this code is hereby granted, provided -
+// that this warning and copyright notices are not removed or altered.       -
+//                                                                           -
+// Copyright (c) 2004 by Amir Said (said@ieee.org) &                         -
+//                       William A. Pearlman (pearlw@ecse.rpi.edu)           -
+//                                                                           -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//                                                                           -
+// A description of the arithmetic coding method used here is available in   -
+//                                                                           -
+// Lossless Compression Handbook, ed. K. Sayood                              -
+// Chapter 5: Arithmetic Coding (A. Said), pp. 101-152, Academic Press, 2003 -
+//                                                                           -
+// A. Said, Introduction to Arithetic Coding Theory and Practice             -
+// HP Labs report HPL-2004-76  -  http://www.hpl.hp.com/techreports/         -
+//                                                                           -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+// - - Inclusion - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#include <stdlib.h>
+#include "o3dgcArithmeticCodec.h"
+
+namespace o3dgc
+{
+    // - - Constants - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    const unsigned AC__MinLength = 0x01000000U;   // threshold for renormalization
+    const unsigned AC__MaxLength = 0xFFFFFFFFU;      // maximum AC interval length
+
+                                               // Maximum values for binary models
+    const unsigned BM__LengthShift = 13;     // length bits discarded before mult.
+    const unsigned BM__MaxCount    = 1 << BM__LengthShift;  // for adaptive models
+
+                                              // Maximum values for general models
+    const unsigned DM__LengthShift = 15;     // length bits discarded before mult.
+    const unsigned DM__MaxCount    = 1 << DM__LengthShift;  // for adaptive models
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - Static functions  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    AI_WONT_RETURN static void AC_Error(const char * msg) AI_WONT_RETURN_SUFFIX;
+    static void AC_Error(const char * msg)
+    {
+      fprintf(stderr, "\n\n -> Arithmetic coding error: ");
+      fputs(msg, stderr);
+      fputs("\n Execution terminated!\n", stderr);
+      getchar();
+      exit(1);
+    }
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - Coding implementations  - - - - - - - - - - - - - - - - - - - - - - - -
+
+    inline void Arithmetic_Codec::propagate_carry(void)
+    {
+      unsigned char * p;            // carry propagation on compressed data buffer
+      for (p = ac_pointer - 1; *p == 0xFFU; p--) *p = 0;
+      ++*p;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    inline void Arithmetic_Codec::renorm_enc_interval(void)
+    {
+      do {                                          // output and discard top byte
+        *ac_pointer++ = (unsigned char)(base >> 24);
+        base <<= 8;
+      } while ((length <<= 8) < AC__MinLength);        // length multiplied by 256
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    inline void Arithmetic_Codec::renorm_dec_interval(void)
+    {
+      do {                                          // read least-significant byte
+        value = (value << 8) | unsigned(*++ac_pointer);
+      } while ((length <<= 8) < AC__MinLength);        // length multiplied by 256
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::put_bit(unsigned bit)
+    {
+    #ifdef _DEBUG
+      if (mode != 1) AC_Error("encoder not initialized");
+    #endif
+
+      length >>= 1;                                              // halve interval
+      if (bit) {
+        unsigned init_base = base;
+        base += length;                                               // move base
+        if (init_base > base) propagate_carry();               // overflow = carry
+      }
+
+      if (length < AC__MinLength) renorm_enc_interval();        // renormalization
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::get_bit(void)
+    {
+    #ifdef _DEBUG
+      if (mode != 2) AC_Error("decoder not initialized");
+    #endif
+
+      length >>= 1;                                              // halve interval
+      unsigned bit = (value >= length);                              // decode bit
+      if (bit) value -= length;                                       // move base
+
+      if (length < AC__MinLength) renorm_dec_interval();        // renormalization
+
+      return bit;                                         // return data bit value
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::put_bits(unsigned data, unsigned bits)
+    {
+    #ifdef _DEBUG
+      if (mode != 1) AC_Error("encoder not initialized");
+      if ((bits < 1) || (bits > 20)) AC_Error("invalid number of bits");
+      if (data >= (1U << bits)) AC_Error("invalid data");
+    #endif
+
+      unsigned init_base = base;
+      base += data * (length >>= bits);            // new interval base and length
+
+      if (init_base > base) propagate_carry();                 // overflow = carry
+      if (length < AC__MinLength) renorm_enc_interval();        // renormalization
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::get_bits(unsigned bits)
+    {
+    #ifdef _DEBUG
+      if (mode != 2) AC_Error("decoder not initialized");
+      if ((bits < 1) || (bits > 20)) AC_Error("invalid number of bits");
+    #endif
+
+      unsigned s = value / (length >>= bits);      // decode symbol, change length
+
+      value -= length * s;                                      // update interval
+      if (length < AC__MinLength) renorm_dec_interval();        // renormalization
+
+      return s;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::encode(unsigned bit,
+                                  Static_Bit_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 1) AC_Error("encoder not initialized");
+    #endif
+
+      unsigned x = M.bit_0_prob * (length >> BM__LengthShift);   // product l x p0
+                                                                // update interval
+      if (bit == 0)
+        length  = x;
+      else {
+        unsigned init_base = base;
+        base   += x;
+        length -= x;
+        if (init_base > base) propagate_carry();               // overflow = carry
+      }
+
+      if (length < AC__MinLength) renorm_enc_interval();        // renormalization
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::decode(Static_Bit_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 2) AC_Error("decoder not initialized");
+    #endif
+
+      unsigned x = M.bit_0_prob * (length >> BM__LengthShift);   // product l x p0
+      unsigned bit = (value >= x);                                     // decision
+                                                        // update & shift interval
+      if (bit == 0)
+        length  = x;
+      else {
+        value  -= x;                                 // shifted interval base = 0
+        length -= x;
+      }
+
+      if (length < AC__MinLength) renorm_dec_interval();        // renormalization
+
+      return bit;                                         // return data bit value
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::encode(unsigned bit,
+                                  Adaptive_Bit_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 1) AC_Error("encoder not initialized");
+    #endif
+
+      unsigned x = M.bit_0_prob * (length >> BM__LengthShift);   // product l x p0
+                                                                // update interval
+      if (bit == 0) {
+        length = x;
+        ++M.bit_0_count;
+      }
+      else {
+        unsigned init_base = base;
+        base   += x;
+        length -= x;
+        if (init_base > base) propagate_carry();               // overflow = carry
+      }
+
+      if (length < AC__MinLength) renorm_enc_interval();        // renormalization
+
+      if (--M.bits_until_update == 0) M.update();         // periodic model update
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::decode(Adaptive_Bit_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 2) AC_Error("decoder not initialized");
+    #endif
+
+      unsigned x = M.bit_0_prob * (length >> BM__LengthShift);   // product l x p0
+      unsigned bit = (value >= x);                                     // decision
+                                                                // update interval
+      if (bit == 0) {
+        length = x;
+        ++M.bit_0_count;
+      }
+      else {
+        value  -= x;
+        length -= x;
+      }
+
+      if (length < AC__MinLength) renorm_dec_interval();        // renormalization
+
+      if (--M.bits_until_update == 0) M.update();         // periodic model update
+
+      return bit;                                         // return data bit value
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::encode(unsigned data,
+                                  Static_Data_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 1) AC_Error("encoder not initialized");
+      if (data >= M.data_symbols) AC_Error("invalid data symbol");
+    #endif
+
+      unsigned x, init_base = base;
+                                                               // compute products
+      if (data == M.last_symbol) {
+        x = M.distribution[data] * (length >> DM__LengthShift);
+        base   += x;                                            // update interval
+        length -= x;                                          // no product needed
+      }
+      else {
+        x = M.distribution[data] * (length >>= DM__LengthShift);
+        base   += x;                                            // update interval
+        length  = M.distribution[data+1] * length - x;
+      }
+             
+      if (init_base > base) propagate_carry();                 // overflow = carry
+
+      if (length < AC__MinLength) renorm_enc_interval();        // renormalization
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::decode(Static_Data_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 2) AC_Error("decoder not initialized");
+    #endif
+
+      unsigned n, s, x, y = length;
+
+      if (M.decoder_table) {              // use table look-up for faster decoding
+
+        unsigned dv = value / (length >>= DM__LengthShift);
+        unsigned t = dv >> M.table_shift;
+
+        s = M.decoder_table[t];         // initial decision based on table look-up
+        n = M.decoder_table[t+1] + 1;
+
+        while (n > s + 1) {                        // finish with bisection search
+          unsigned m = (s + n) >> 1;
+          if (M.distribution[m] > dv) n = m; else s = m;
+        }
+                                                               // compute products
+        x = M.distribution[s] * length;
+        if (s != M.last_symbol) y = M.distribution[s+1] * length;
+      }
+
+      else {                                  // decode using only multiplications
+
+        x = s = 0;
+        length >>= DM__LengthShift;
+        unsigned m = (n = M.data_symbols) >> 1;
+                                                    // decode via bisection search
+        do {
+          unsigned z = length * M.distribution[m];
+          if (z > value) {
+            n = m;
+            y = z;                                             // value is smaller
+          }
+          else {
+            s = m;
+            x = z;                                     // value is larger or equal
+          }
+        } while ((m = (s + n) >> 1) != s);
+      }
+
+      value -= x;                                               // update interval
+      length = y - x;
+
+      if (length < AC__MinLength) renorm_dec_interval();        // renormalization
+
+      return s;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::encode(unsigned data,
+                                  Adaptive_Data_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 1) AC_Error("encoder not initialized");
+      if (data >= M.data_symbols) 
+      {
+          AC_Error("invalid data symbol");
+      }
+    #endif
+
+      unsigned x, init_base = base;
+                                                               // compute products
+      if (data == M.last_symbol) {
+        x = M.distribution[data] * (length >> DM__LengthShift);
+        base   += x;                                            // update interval
+        length -= x;                                          // no product needed
+      }
+      else {
+        x = M.distribution[data] * (length >>= DM__LengthShift);
+        base   += x;                                            // update interval
+        length  = M.distribution[data+1] * length - x;
+      }
+
+      if (init_base > base) propagate_carry();                 // overflow = carry
+
+      if (length < AC__MinLength) renorm_enc_interval();        // renormalization
+
+      ++M.symbol_count[data];
+      if (--M.symbols_until_update == 0) M.update(true);  // periodic model update
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::decode(Adaptive_Data_Model & M)
+    {
+    #ifdef _DEBUG
+      if (mode != 2) AC_Error("decoder not initialized");
+    #endif
+
+      unsigned n, s, x, y = length;
+
+      if (M.decoder_table) {              // use table look-up for faster decoding
+
+        unsigned dv = value / (length >>= DM__LengthShift);
+        unsigned t = dv >> M.table_shift;
+
+        s = M.decoder_table[t];         // initial decision based on table look-up
+        n = M.decoder_table[t+1] + 1;
+
+        while (n > s + 1) {                        // finish with bisection search
+          unsigned m = (s + n) >> 1;
+          if (M.distribution[m] > dv) n = m; else s = m;
+        }
+                                                               // compute products
+        x = M.distribution[s] * length;
+        if (s != M.last_symbol) {
+            y = M.distribution[s+1] * length;
+        }
+      }
+
+      else {                                  // decode using only multiplications
+
+        x = s = 0;
+        length >>= DM__LengthShift;
+        unsigned m = (n = M.data_symbols) >> 1;
+                                                    // decode via bisection search
+        do {
+          unsigned z = length * M.distribution[m];
+          if (z > value) {
+            n = m;
+            y = z;                                             // value is smaller
+          }
+          else {
+            s = m;
+            x = z;                                     // value is larger or equal
+          }
+        } while ((m = (s + n) >> 1) != s);
+      }
+
+      value -= x;                                               // update interval
+      length = y - x;
+
+      if (length < AC__MinLength) renorm_dec_interval();        // renormalization
+
+      ++M.symbol_count[s];
+      if (--M.symbols_until_update == 0) M.update(false);  // periodic model update
+
+      return s;
+    }
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - Other Arithmetic_Codec implementations  - - - - - - - - - - - - - - - -
+
+    Arithmetic_Codec::Arithmetic_Codec(void)
+    {
+      mode = buffer_size = 0;
+      new_buffer = code_buffer = 0;
+    }
+
+    Arithmetic_Codec::Arithmetic_Codec(unsigned max_code_bytes,
+                                       unsigned char * user_buffer)
+    {
+      mode = buffer_size = 0;
+      new_buffer = code_buffer = 0;
+      set_buffer(max_code_bytes, user_buffer);
+    }
+
+    Arithmetic_Codec::~Arithmetic_Codec(void)
+    {
+      delete [] new_buffer;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::set_buffer(unsigned max_code_bytes,
+                                      unsigned char * user_buffer)
+    {
+                                                      // test for reasonable sizes
+      if (!max_code_bytes)// || (max_code_bytes > 0x10000000U)) // updated by K. Mammou
+      {
+        AC_Error("invalid codec buffer size");
+      }
+      if (mode != 0) AC_Error("cannot set buffer while encoding or decoding");
+
+      if (user_buffer != 0) {                       // user provides memory buffer
+        buffer_size = max_code_bytes;
+        code_buffer = user_buffer;               // set buffer for compressed data
+        delete [] new_buffer;                 // free anything previously assigned
+        new_buffer = 0;
+        return;
+      }
+
+      if (max_code_bytes <= buffer_size) return;               // enough available
+
+      buffer_size = max_code_bytes;                           // assign new memory
+      delete [] new_buffer;                   // free anything previously assigned
+      new_buffer = new unsigned char[buffer_size+16];        // 16 extra bytes
+      code_buffer = new_buffer;                  // set buffer for compressed data
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::start_encoder(void)
+    {
+      if (mode != 0) AC_Error("cannot start encoder");
+      if (buffer_size == 0) AC_Error("no code buffer set");
+
+      mode   = 1;
+      base   = 0;            // initialize encoder variables: interval and pointer
+      length = AC__MaxLength;
+      ac_pointer = code_buffer;                       // pointer to next data byte
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::start_decoder(void)
+    {
+      if (mode != 0) AC_Error("cannot start decoder");
+      if (buffer_size == 0) AC_Error("no code buffer set");
+
+                      // initialize decoder: interval, pointer, initial code value
+      mode   = 2;
+      length = AC__MaxLength;
+      ac_pointer = code_buffer + 3;
+      value = (unsigned(code_buffer[0]) << 24)|(unsigned(code_buffer[1]) << 16) |
+              (unsigned(code_buffer[2]) <<  8)| unsigned(code_buffer[3]);
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::read_from_file(FILE * code_file)
+    {
+      unsigned shift = 0, code_bytes = 0;
+      int file_byte;
+                          // read variable-length header with number of code bytes
+      do {
+        if ((file_byte = getc(code_file)) == EOF)
+          AC_Error("cannot read code from file");
+        code_bytes |= unsigned(file_byte & 0x7F) << shift;
+        shift += 7;
+      } while (file_byte & 0x80);
+                                                           // read compressed data
+      if (code_bytes > buffer_size) AC_Error("code buffer overflow");
+      if (fread(code_buffer, 1, code_bytes, code_file) != code_bytes)
+        AC_Error("cannot read code from file");
+
+      start_decoder();                                       // initialize decoder
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::stop_encoder(void)
+    {
+      if (mode != 1) AC_Error("invalid to stop encoder");
+      mode = 0;
+
+      unsigned init_base = base;            // done encoding: set final data bytes
+
+      if (length > 2 * AC__MinLength) {
+        base  += AC__MinLength;                                     // base offset
+        length = AC__MinLength >> 1;             // set new length for 1 more byte
+      }
+      else {
+        base  += AC__MinLength >> 1;                                // base offset
+        length = AC__MinLength >> 9;            // set new length for 2 more bytes
+      }
+
+      if (init_base > base) propagate_carry();                 // overflow = carry
+
+      renorm_enc_interval();                // renormalization = output last bytes
+
+      unsigned code_bytes = unsigned(ac_pointer - code_buffer);
+      if (code_bytes > buffer_size) AC_Error("code buffer overflow");
+
+      return code_bytes;                                   // number of bytes used
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    unsigned Arithmetic_Codec::write_to_file(FILE * code_file)
+    {
+      unsigned header_bytes = 0, code_bytes = stop_encoder(), nb = code_bytes;
+
+                         // write variable-length header with number of code bytes
+      do {
+        int file_byte = int(nb & 0x7FU);
+        if ((nb >>= 7) > 0) file_byte |= 0x80;
+        if (putc(file_byte, code_file) == EOF)
+          AC_Error("cannot write compressed data to file");
+        header_bytes++;
+      } while (nb);
+                                                          // write compressed data
+      if (fwrite(code_buffer, 1, code_bytes, code_file) != code_bytes)
+        AC_Error("cannot write compressed data to file");
+
+      return code_bytes + header_bytes;                              // bytes used
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Arithmetic_Codec::stop_decoder(void)
+    {
+      if (mode != 2) AC_Error("invalid to stop decoder");
+      mode = 0;
+    }
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - Static bit model implementation - - - - - - - - - - - - - - - - - - - - -
+
+    Static_Bit_Model::Static_Bit_Model(void)
+    {
+      bit_0_prob = 1U << (BM__LengthShift - 1);                        // p0 = 0.5
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Static_Bit_Model::set_probability_0(double p0)
+    {
+      if ((p0 < 0.0001)||(p0 > 0.9999)) AC_Error("invalid bit probability");
+      bit_0_prob = unsigned(p0 * (1 << BM__LengthShift));
+    }
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - Adaptive bit model implementation - - - - - - - - - - - - - - - - - - - -
+
+    Adaptive_Bit_Model::Adaptive_Bit_Model(void)
+    {
+      reset();
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Adaptive_Bit_Model::reset(void)
+    {
+                                           // initialization to equiprobable model
+      bit_0_count = 1;
+      bit_count   = 2;
+      bit_0_prob  = 1U << (BM__LengthShift - 1);
+      update_cycle = bits_until_update = 4;         // start with frequent updates
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Adaptive_Bit_Model::update(void)
+    {
+                                       // halve counts when a threshold is reached
+
+      if ((bit_count += update_cycle) > BM__MaxCount) {
+        bit_count = (bit_count + 1) >> 1;
+        bit_0_count = (bit_0_count + 1) >> 1;
+        if (bit_0_count == bit_count) ++bit_count;
+      }
+                                               // compute scaled bit 0 probability
+      unsigned scale = 0x80000000U / bit_count;
+      bit_0_prob = (bit_0_count * scale) >> (31 - BM__LengthShift);
+
+                                                 // set frequency of model updates
+      update_cycle = (5 * update_cycle) >> 2;
+      if (update_cycle > 64) update_cycle = 64;
+      bits_until_update = update_cycle;
+    }
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - Static data model implementation  - - - - - - - - - - - - - - - - - - -
+
+    Static_Data_Model::Static_Data_Model(void)
+    {
+      data_symbols = 0;
+      distribution = 0;
+    }
+
+    Static_Data_Model::~Static_Data_Model(void)
+    {
+      delete [] distribution;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Static_Data_Model::set_distribution(unsigned number_of_symbols,
+                                             const double probability[])
+    {
+      if ((number_of_symbols < 2) || (number_of_symbols > (1 << 11)))
+        AC_Error("invalid number of data symbols");
+
+      if (data_symbols != number_of_symbols) {     // assign memory for data model
+        data_symbols = number_of_symbols;
+        last_symbol = data_symbols - 1;
+        delete [] distribution;
+                                         // define size of table for fast decoding
+        if (data_symbols > 16) {
+          unsigned table_bits = 3;
+          while (data_symbols > (1U << (table_bits + 2))) ++table_bits;
+          table_size  = 1 << table_bits;
+          table_shift = DM__LengthShift - table_bits;
+          distribution = new unsigned[data_symbols+table_size+2];
+          decoder_table = distribution + data_symbols;
+        }
+        else {                                  // small alphabet: no table needed
+          decoder_table = 0;
+          table_size = table_shift = 0;
+          distribution = new unsigned[data_symbols];
+        }
+      }
+                                 // compute cumulative distribution, decoder table
+      unsigned s = 0;
+      double sum = 0.0, p = 1.0 / double(data_symbols);
+
+      for (unsigned k = 0; k < data_symbols; k++) {
+        if (probability) p = probability[k];
+        if ((p < 0.0001) || (p > 0.9999)) AC_Error("invalid symbol probability");
+        distribution[k] = unsigned(sum * (1 << DM__LengthShift));
+        sum += p;
+        if (table_size == 0) continue;
+        unsigned w = distribution[k] >> table_shift;
+        while (s < w) decoder_table[++s] = k - 1;
+      }
+
+      if (table_size != 0) {
+        decoder_table[0] = 0;
+        while (s <= table_size) decoder_table[++s] = data_symbols - 1;
+      }
+
+      if ((sum < 0.9999) || (sum > 1.0001)) AC_Error("invalid probabilities");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // - - Adaptive data model implementation  - - - - - - - - - - - - - - - - - -
+
+    Adaptive_Data_Model::Adaptive_Data_Model(void)
+    {
+      data_symbols = 0;
+      distribution = 0;
+    }
+
+    Adaptive_Data_Model::Adaptive_Data_Model(unsigned number_of_symbols)
+    {
+      data_symbols = 0;
+      distribution = 0;
+      set_alphabet(number_of_symbols);
+    }
+
+    Adaptive_Data_Model::~Adaptive_Data_Model(void)
+    {
+      delete [] distribution;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Adaptive_Data_Model::set_alphabet(unsigned number_of_symbols)
+    {
+      if ((number_of_symbols < 2) || (number_of_symbols > (1 << 11)))
+        AC_Error("invalid number of data symbols");
+
+      if (data_symbols != number_of_symbols) {     // assign memory for data model
+        data_symbols = number_of_symbols;
+        last_symbol = data_symbols - 1;
+        delete [] distribution;
+                                         // define size of table for fast decoding
+        if (data_symbols > 16) {
+          unsigned table_bits = 3;
+          while (data_symbols > (1U << (table_bits + 2))) ++table_bits;
+          table_size  = 1 << table_bits;
+          table_shift = DM__LengthShift - table_bits;
+          distribution = new unsigned[2*data_symbols+table_size+2];
+          decoder_table = distribution + 2 * data_symbols;
+        }
+        else {                                  // small alphabet: no table needed
+          decoder_table = 0;
+          table_size = table_shift = 0;
+          distribution = new unsigned[2*data_symbols];
+        }
+        symbol_count = distribution + data_symbols;
+      }
+
+      reset();                                                 // initialize model
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Adaptive_Data_Model::update(bool from_encoder)
+    {
+                                       // halve counts when a threshold is reached
+
+      if ((total_count += update_cycle) > DM__MaxCount) {
+        total_count = 0;
+        for (unsigned n = 0; n < data_symbols; n++)
+          total_count += (symbol_count[n] = (symbol_count[n] + 1) >> 1);
+      }
+      assert(total_count > 0);
+                                 // compute cumulative distribution, decoder table
+      unsigned k, sum = 0, s = 0;
+      unsigned scale = 0x80000000U / total_count;
+
+      if (from_encoder || (table_size == 0))
+        for (k = 0; k < data_symbols; k++) {
+          distribution[k] = (scale * sum) >> (31 - DM__LengthShift);
+          sum += symbol_count[k];
+        }
+      else {
+        assert(decoder_table);
+        for (k = 0; k < data_symbols; k++) {
+          distribution[k] = (scale * sum) >> (31 - DM__LengthShift);
+          sum += symbol_count[k];
+          unsigned w = distribution[k] >> table_shift;
+          while (s < w) decoder_table[++s] = k - 1;
+        }
+        decoder_table[0] = 0;
+        while (s <= table_size) decoder_table[++s] = data_symbols - 1;
+      }
+                                                 // set frequency of model updates
+      update_cycle = (5 * update_cycle) >> 2;
+      unsigned max_cycle = (data_symbols + 6) << 3;
+      if (update_cycle > max_cycle) update_cycle = max_cycle;
+      symbols_until_update = update_cycle;
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    void Adaptive_Data_Model::reset(void)
+    {
+      if (data_symbols == 0) return;
+
+                          // restore probability estimates to uniform distribution
+      total_count = 0;
+      update_cycle = data_symbols;
+      for (unsigned k = 0; k < data_symbols; k++) symbol_count[k] = 1;
+      update(false);
+      symbols_until_update = update_cycle = (data_symbols + 6) >> 1;
+    }
+}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
