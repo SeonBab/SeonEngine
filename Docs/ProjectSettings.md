@@ -1,5 +1,31 @@
 # Project Settings
 
+## 공개 TGA 로더 연결 — 2026-10-19
+
+LoadImageFile은 기존 경로 검사 뒤 대소문자 구분 없는 .tga 확장자를 자체 LoadTGAImage로 전달한다. 그 밖에는 기존 WIC 경로를 그대로 사용한다. TGA는 비압축24비트/색상표 없음/인터리브 없음이며 방향 정규화와 알파255를 적용한다. 내부 함수의 maybe_unused/임시 NOTE를 제거하고 ImageUtils.h의 공개 지원 계약을 갱신했다. PNG/DDS의 처리와 공개 선언·프로젝트 등록·TriWorld는 변경하지 않았다.
+
+Debug/Release x64 전체 빌드와 두 구성의 공개 API 실행 검사를 통과했다. 실제 지형 전체RGBA, 네 방향/ID길이, 잘린 파일/미지원 형식/기존 출력 보존, 확장자 대소문자8조합·상대/한글/다중점 경로, 빈 경로/내장 널, PNG/BC1/2/3, 호출자 STA/MTA COM환경 보존을 확인했다. CPU 로딩 검증이며 GPU·제품 창 검사는 수행하지 않았다. 증거는 Temp/tga_public_20261019다. 아래 연결 전 기록은 이전 단계 이력이다.
+
+## 비압축 24비트 TGA 내부 로더 — 2026-10-19
+
+ImageUtils.cpp의 내부 LoadTGAImage가 파일 열기 → ReadTGAHeader → ValidateTGAHeader → ID 건너뛰기 → 행별 BGR 읽기 → 위쪽 행/왼쪽 픽셀부터 RGBA8로 변환 → 성공 후 출력 이동을 수행한다. 알파는255다. ValidateTGAHeader를 복구하고 실제 읽기 지원과 맞춰24비트만 허용하도록 정정했다. 두 헤더 보조 함수는 이제 내부 호출되므로 임시 maybe_unused/NOTE를 제거했고 공개 경로 연결 전인 LoadTGAImage에만 남긴다.
+
+파일 크기와 필요한 원본/출력 크기를 배열 할당 전에 확인하고, ID 길이와 각 행 읽기도 검사한다. 실패 시 기존 outImage는 유지하며 메모리 부족의 false 복구는 보장하지 않는다. trailing 데이터는 허용하며 footer/확장 메타데이터는 해석하지 않는다. 공개 LoadImageFile과 헤더 API·프로젝트 등록·TriWorld는 그대로다. 공개 로더는 여전히 PNG/DDS만 지원한다.
+
+Debug/Release x64 전체 빌드와 두 구성의 독립 실행을 통과했다. 네 방향/ID0·13·255/색상·알파/얇은 이미지/유니코드/파일 누락/모든 잘림/미지원 조건/출력 보존과 기존 헤더·PNG·BC1/2/3 검사를 확인했다. 실제512×512 지형은 전체RGBA가 별도 채널 계산 결과와 일치한다. CPU 디코딩 확인이며 GPU·제품 창 검사는 수행하지 않았다. 증거는 Temp/tga_pixels_20261019다.
+
+## TGA 헤더 지원 조건 검사 — 2026-10-19
+
+ImageUtils.cpp 내부에 ValidateTGAHeader(const FTGAHeader&)를 추가했다. imageType2, colorMapType/Length0, 양수 너비/높이, 24/32비트, descriptor 상위2비트0을 요구한다. 실패는 로그와 false이며 입력을 수정하지 않는다. 파일을 소비하지 않고 기존 ReadTGAHeader나 공개 LoadImageFile에는 아직 연결하지 않았다. 이전 헤더 읽기 기록의 「형식 검사 없음」은 이 내부 검사 함수 추가 전 상태다. 현재도 PNG/DDS만 공개 로딩을 지원한다.
+
+Debug/Release 각각 C++20 /W4 /WX로 실제 ImageUtils.cpp를 포함한 독립 검사 실행에 성공했다. 실제 지형·모든 일반 저장 방향·조건별 거부·입력 보존·파일 위치18 유지와 기존 헤더 읽기 및 PNG/BC1/2/3 회귀 검사를 통과했다. 이번 단계에서 전체 제품 빌드·GPU·제품 창 검사는 수행하지 않았다. 증거는 Temp/tga_validation_20261019다.
+
+## TGA 헤더 읽기 준비 — 2026-10-19
+
+ImageUtils.cpp 내부에 FTGAHeader와 ReadTGAHeader를 추가했다. 열린 파일의 현재 위치에서 18바이트를 읽고 필요한 필드를 바이트 오프셋과 리틀 엔디언으로 해석한다. 짧은 읽기는 false이며 출력 헤더를 보존한다. 형식 지원 검사·ID 건너뛰기·픽셀 변환·LoadImageFile 연결은 아직 없다. 공개 로더의 지원 범위는 기존 PNG/DDS 그대로다. 프로젝트 등록과 외부 라이브러리 추가는 없다.
+
+Debug/Release x64 전체 빌드와 두 구성의 내부 함수 검사(실제 지형 파일, 필드 오프셋/바이트 순서, 18바이트 경계, 0~17바이트 실패/출력 보존)를 통과했다. 기존 PNG 및 BC1/2/3 DDS 로딩 회귀 검사도 통과했다. CPU 파일 해석 단계이며 제품 창·GPU 표시를 검증한 것은 아니다. 증거는 개인 작업 공간 Temp/tga_header_20261019에 둔다. 별도 진행 중인 UI/Renderer 변경은 이번 작업 범위에서 제외한다.
+
 ## 메시 텍스처 그리기 접근 전환·전체 빌드 복구 — 2026-10-18
 
 Renderer.cpp의 DrawMesh는 mesh.baseColorTexture.textureView를 const 참조로 읽어 바인딩하며 비어 있으면 기존 whiteTextureView를 사용한다. 옛 baseColorTextureView 소스 참조는 제거됐다. 메시 보관 타입·공통 생성 호출·그리기 접근의 연결 후 격리 출력 Debug/Release x64 전체 제품 빌드가 각각 종료0이다. 아래 이전 단계의 컴파일 불가 상태는 해소됐다. 실제 제품 화면/GPU 실행은 미확인이다. 프로젝트 등록이나 기본 체크/흰색 텍스처 초기화는 이번에 바꾸지 않았다.
