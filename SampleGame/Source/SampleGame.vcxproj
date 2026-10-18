@@ -60,64 +60,84 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Device.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp" />
-    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11SwapChain.cpp" />
-    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Shader.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Misc\Paths.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Actor.cpp" />
-    <ClCompile Include="..\..\Engine\Source\World.cpp" />
-    <ClCompile Include="..\..\Engine\Source\ActorComponent.cpp" />
-    <ClCompile Include="..\..\Engine\Source\StaticMeshComponent.cpp" />
-      <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Logging\Log.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Math\Matrix4.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Math\Quat.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Math\Rotator.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Math\Transform.cpp" />
-    <ClCompile Include="..\..\Engine\Source\TransformComponent.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Windows\WindowsApplication.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp" />
-    <ClCompile Include="..\..\Engine\Source\Renderer\Scene.cpp" />
-    <ClCompile Include="..\..\Engine\Source\EngineMain.cpp" />
-    <ClCompile Include="SampleGame.cpp" />
-    <ClCompile Include="SampleActor.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h" />
-    <ClInclude Include="SampleActor.h" />
-    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshData.h" />
-    <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h" />
-    <ClInclude Include="..\..\Engine\Source\Renderer\ModelLoader.h" />
-    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h" />
+    <ClInclude Include="..\..\Engine\Source\Actor.h" />
+    <ClInclude Include="..\..\Engine\Source\Components\ActorComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Components\CameraComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Components\InputComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Components\StaticMeshComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Components\TransformComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Containers\Array.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Containers\SeonString.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\CoreTypes.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Logging\Log.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Math\Matrix4.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Math\Quat.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Math\Rotator.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Math\Transform.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Math\Vector2.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Math\Vector3.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Misc\Paths.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Templates\UniquePtr.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Time\FrameTimer.h" />
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h" />
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Shader.h" />
+    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11SwapChain.h" />
+    <ClInclude Include="..\..\Engine\Source\GameClient.h" />
     <ClInclude Include="..\..\Engine\Source\Image\Image.h" />
     <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputState.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\Key.h" />
+    <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
+    <ClInclude Include="..\..\Engine\Source\Object.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\ModelLoader.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Renderer.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Scene.h" />
-    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h" />
-    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11SwapChain.h" />
-    <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Shader.h" />
-    <ClInclude Include="..\..\Engine\Source\Misc\Paths.h" />
-    <ClInclude Include="..\..\Engine\Source\Actor.h" />
-    <ClInclude Include="..\..\Engine\Source\World.h" />
-    <ClInclude Include="..\..\Engine\Source\GameEntry.h" />
-    <ClInclude Include="..\..\Engine\Source\ActorComponent.h" />
-    <ClInclude Include="..\..\Engine\Source\StaticMeshComponent.h" />
-    <ClInclude Include="..\..\Engine\Source\Containers\Array.h" />
-    <ClInclude Include="..\..\Engine\Source\Containers\SeonString.h" />
-    <ClInclude Include="..\..\Engine\Source\CoreTypes.h" />
-    <ClInclude Include="..\..\Engine\Source\Object.h" />
-    <ClInclude Include="..\..\Engine\Source\Logging\Log.h" />
-    <ClInclude Include="..\..\Engine\Source\Math\Matrix4.h" />
-    <ClInclude Include="..\..\Engine\Source\Math\Quat.h" />
-    <ClInclude Include="..\..\Engine\Source\Math\Rotator.h" />
-    <ClInclude Include="..\..\Engine\Source\Math\Transform.h" />
-    <ClInclude Include="..\..\Engine\Source\Math\Vector2.h" />
-    <ClInclude Include="..\..\Engine\Source\Math\Vector3.h" />
-    <ClInclude Include="..\..\Engine\Source\Templates\UniquePtr.h" />
-    <ClInclude Include="..\..\Engine\Source\Windows\WindowsHWrapper.h" />
-    <ClInclude Include="..\..\Engine\Source\TransformComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshData.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h" />
+    <ClInclude Include="..\..\Engine\Source\UI\GameWidgetSubsystem.h" />
+    <ClInclude Include="..\..\Engine\Source\UI\ImageWidget.h" />
+    <ClInclude Include="..\..\Engine\Source\UI\UserWidget.h" />
+    <ClInclude Include="..\..\Engine\Source\UI\Widget.h" />
     <ClInclude Include="..\..\Engine\Source\Windows\WindowsApplication.h" />
+    <ClInclude Include="..\..\Engine\Source\Windows\WindowsHWrapper.h" />
+    <ClInclude Include="..\..\Engine\Source\Windows\WindowsInput.h" />
+    <ClInclude Include="..\..\Engine\Source\World.h" />
+    <ClInclude Include="SampleActor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Engine\Source\Actor.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Components\ActorComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Components\CameraComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Components\InputComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Components\StaticMeshComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Components\TransformComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Logging\Log.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Math\Matrix4.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Math\Quat.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Math\Rotator.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Math\Transform.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Misc\Paths.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Core\Time\FrameTimer.cpp" />
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Device.cpp" />
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Shader.cpp" />
+    <ClCompile Include="..\..\Engine\Source\D3D11\D3D11SwapChain.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Input\InputState.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Renderer\Scene.cpp" />
+    <ClCompile Include="..\..\Engine\Source\UI\GameWidgetSubsystem.cpp" />
+    <ClCompile Include="..\..\Engine\Source\UI\ImageWidget.cpp" />
+    <ClCompile Include="..\..\Engine\Source\UI\UserWidget.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Windows\WindowsApplication.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Windows\WindowsInput.cpp" />
+    <ClCompile Include="..\..\Engine\Source\World.cpp" />
+    <ClCompile Include="SampleActor.cpp" />
+    <ClCompile Include="SampleGame.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\..\Engine\Shaders\Private\TriangleVertexShader.hlsl">
@@ -132,20 +152,6 @@
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
       <ObjectFileOutput>$(OutDir)Shaders\TrianglePixelShader.cso</ObjectFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-    </FxCompile>
-    <FxCompile Include="..\..\Engine\Shaders\Private\ModelVertexShader.hlsl">
-      <ShaderType>Vertex</ShaderType>
-      <ShaderModel>5.0</ShaderModel>
-      <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\ModelVertexShader.cso</ObjectFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-    </FxCompile>
-    <FxCompile Include="..\..\Engine\Shaders\Private\ModelPixelShader.hlsl">
-      <ShaderType>Pixel</ShaderType>
-      <ShaderModel>5.0</ShaderModel>
-      <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\ModelPixelShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemGroup>

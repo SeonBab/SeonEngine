@@ -1,7 +1,7 @@
 #include "SampleActor.h"
 
-#include "Math/Rotator.h"
-#include "TransformComponent.h"
+#include "Components/TransformComponent.h"
+#include "Core/Math/Rotator.h"
 
 ASampleActor::ASampleActor(UWorld& world)
 	: AActor(world)

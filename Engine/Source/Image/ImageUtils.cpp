@@ -1,6 +1,6 @@
 #include "ImageUtils.h"
 
-#include "Logging/Log.h"
+#include "Core/Logging/Log.h"
 #include "Windows/WindowsHWrapper.h"
 
 #include <wincodec.h>

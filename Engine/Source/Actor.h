@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ActorComponent.h"
-#include "Containers/Array.h"
-#include "CoreTypes.h"
+#include "Components/ActorComponent.h"
+#include "Core/Containers/Array.h"
+#include "Core/CoreTypes.h"
+#include "Core/Templates/UniquePtr.h"
 #include "Object.h"
-#include "Templates/UniquePtr.h"
 
 #include <concepts>
 

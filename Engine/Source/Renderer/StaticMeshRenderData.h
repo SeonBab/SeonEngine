@@ -1,6 +1,7 @@
 #pragma once
 
-#include "CoreTypes.h"
+#include "Core/CoreTypes.h"
+#include "Renderer/Texture2D.h"
 #include "Windows/WindowsHWrapper.h"
 
 #include <d3d11.h>
@@ -26,16 +27,8 @@ public:
 	FStaticMeshRenderData& operator=(FStaticMeshRenderData&&) = default;
 
 private:
-	enum class EVertexFormat : uint8
-	{
-		PositionColorUV,
-		PositionNormalUV
-	};
-
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-	// SRV가 텍스처 참조도 유지하므로 생성 시의 임시 Texture2D 포인터를 따로 보관하지 않는다.
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> baseColorTextureView;
+	UTexture2D baseColorTexture;
 	uint32 indexCount = 0;
-	EVertexFormat vertexFormat = EVertexFormat::PositionColorUV;
 };

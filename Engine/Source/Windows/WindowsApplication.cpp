@@ -1,6 +1,8 @@
 #include "WindowsApplication.h"
 
-#include "Logging/Log.h"
+#include "Core/Logging/Log.h"
+#include "Input/InputState.h"
+#include "Windows/WindowsInput.h"
 #include "WindowsHWrapper.h"
 
 namespace
@@ -11,6 +13,33 @@ namespace
 	{
 		switch (message)
 		{
+			case WM_NCCREATE:
+			{
+				const auto* create = reinterpret_cast<const CREATESTRUCTW*>(lParam);
+				auto* input = static_cast<FInputState*>(create->lpCreateParams);
+				if (input == nullptr) { return FALSE; }
+
+				SetLastError(ERROR_SUCCESS);
+				const LONG_PTR previous = SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(input));
+				if (previous == 0 && GetLastError() != ERROR_SUCCESS) { return FALSE; }
+
+				return TRUE;
+			}
+
+			case WM_KILLFOCUS:
+			{
+				auto* input = reinterpret_cast<FInputState*>(GetWindowLongPtrW(window, GWLP_USERDATA));
+				if (input != nullptr)
+				{
+					input->Reset();
+				}
+				return 0;
+			}
+
+			case WM_NCDESTROY:
+				SetWindowLongPtrW(window, GWLP_USERDATA, 0);
+				return DefWindowProcW(window, message, wParam, lParam);
+
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
@@ -50,6 +79,11 @@ namespace
 
 }
 
+FWindowsApplication::FWindowsApplication(FInputState& input)
+	: inputState(input)
+{
+}
+
 bool FWindowsApplication::Initialize(const FWindowDescription& description)
 {
 	if (window != nullptr || bClassRegistered)
@@ -87,7 +121,7 @@ bool FWindowsApplication::Initialize(const FWindowDescription& description)
 	const int windowHeight = static_cast<int>(windowRectangle.bottom - windowRectangle.top);
 	WriteLog("Windows", ELogLevel::Info, "Requested client area: {} x {}; window size: {} x {}", description.width, description.height, windowWidth, windowHeight);
 
-	window = CreateWindowExW(windowExStyle, WindowClassName, description.title.c_str(), windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, nullptr);
+	window = CreateWindowExW(windowExStyle, WindowClassName, description.title.c_str(), windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, &inputState);
 	if (window == nullptr)
 	{
 		const DWORD errorCode = GetLastError();
@@ -121,6 +155,18 @@ bool FWindowsApplication::PumpMessages(int& outExitCode)
 		{
 			outExitCode = static_cast<int>(message.wParam);
 			return false;
+		}
+
+		if (message.hwnd == window)
+		{
+			if (message.message == WM_KEYDOWN)
+			{
+				inputState.SetKeyDown(TranslateWindowsKey(message.wParam), true);
+			}
+			else if (message.message == WM_KEYUP)
+			{
+				inputState.SetKeyDown(TranslateWindowsKey(message.wParam), false);
+			}
 		}
 
 		TranslateMessage(&message);

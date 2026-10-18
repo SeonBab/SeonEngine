@@ -1,9 +1,10 @@
 #pragma once
 
-#include "CoreTypes.h"
+#include "Core/CoreTypes.h"
+#include "Core/Math/Matrix4.h"
+#include "Core/Math/Vector2.h"
 #include "D3D11/D3D11Device.h"
 #include "D3D11/D3D11SwapChain.h"
-#include "Math/Matrix4.h"
 #include "Renderer/StaticMeshRenderData.h"
 #include "Windows/WindowsHWrapper.h"
 
@@ -11,8 +12,8 @@
 #include <wrl/client.h>
 
 struct FStaticMeshData;
-struct FModelMeshData;
 struct FImage;
+class UTexture2D;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 단일 Windows 창의 공통 D3D11 자원과 프레임 그리기를 관리한다. 그릴 GPU 메시는 호출자가 제공한다.
@@ -36,18 +37,16 @@ public:
 	 * 비어 있지 않은 정점/인덱스와 정점 범위 안의 인덱스를 요구하며 인덱스 개수는 3의 배수여야 한다.
 	 * 두 버퍼가 모두 준비된 뒤 출력의 소유권을 교체한다. 실패하면 기존 출력은 유지한다.
 	 * 호출자가 자원을 소유하며 CPU 입력은 호출 후 보관할 필요가 없다. 장치가 바뀌면 다시 생성해야 한다.
+	 * 이미지는 호출 동안만 빌려 함께 업로드한다. nullptr면 흰색 기본 텍스처를 사용하며 지정한 이미지 생성 실패는 false다.
 	 */
-	[[nodiscard]] bool CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh);
-
-	/** 같은 생성 계약으로 모델 정점을 직접 업로드한다. 기본 흰색 텍스처를 사용하며 재질·법선은 사용하지 않는다. */
-	[[nodiscard]] bool CreateMesh(const FModelMeshData& meshData, FStaticMeshRenderData& outMesh);
+	[[nodiscard]] bool CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh, const FImage* baseColorImage = nullptr);
 
 	/**
-	 * 모델 메시와 양수 크기의 RGBA8 이미지를 GPU로 복사한다. UV로 이미지 색상을 읽으며 조명·재질색은 적용하지 않는다.
-	 * 버퍼·텍스처/SRV 모두 준비된 뒤 출력을 교체한다. 실패 시 기존 출력을 유지하며 CPU 입력은 호출 후 해제할 수 있다.
-	 * 이미지는 단일 밉이며 같은 이미지를 여러 번 넘겨도 GPU 텍스처를 공유하지 않는다.
+	 * 초기화 후 같은 스레드에서 양수 크기의 RGBA8 이미지를 단일 밉의 변경 불가 GPU 텍스처로 복사한다.
+	 * 텍스처와 SRV 모두 준비된 뒤 출력의 소유권을 교체한다. 실패하면 기존 출력은 유지한다.
+	 * 호출자가 자원을 소유하며 CPU 입력은 성공 후 해제할 수 있다. 장치가 바뀌면 다시 생성해야 한다.
 	 */
-	[[nodiscard]] bool CreateMesh(const FModelMeshData& meshData, const FImage& baseColorImage, FStaticMeshRenderData& outMesh);
+	[[nodiscard]] bool CreateTexture2D(const FImage& image, UTexture2D& outTexture);
 
 	/**
 	 * 초기화 후 같은 스레드에서 객체의 로컬→월드 행렬을 값으로 설정한다. 다음 DrawMesh부터 적용한다.
@@ -69,6 +68,14 @@ public:
 	/** 활성 프레임에서 현재 장치의 GPU 메시를 그린다. 행렬은 현재 설정을 사용하고 기존 정점은 체크 텍스처, 모델은 메시 텍스처/기본 흰색을 사용한다. */
 	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh);
 
+	/**
+	 * 활성 프레임에서 현재 장치의 텍스처를 클라이언트 영역 왼쪽 위 기준 픽셀 위치·크기로 그린다.
+	 * 위치·크기는 유한하고 크기는 양수여야 하며 행렬 성분의 유한 범위를 넘는 변환은 false다. 음수 위치는 허용하고 화면 밖은 GPU가 자른다.
+	 * 월드 변환 데이터는 유지하며 셰이더/버퍼 바인딩은 변경한다. 현재 알파 합성은 지원하지 않는다.
+	 * true는 그리기 요청 성공이며 GPU 작업 완료나 화면 표시를 뜻하지 않는다.
+	 */
+	[[nodiscard]] bool DrawImage(const UTexture2D& texture, FVector2 position, FVector2 size);
+
 	/** 시작한 프레임을 닫고 Present한다. 그리기 없는 프레임도 허용하며 Present 실패 시 false를 반환한다. */
 	[[nodiscard]] bool EndFrame();
 
@@ -81,14 +88,12 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> modelVertexShader;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> modelPixelShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> modelInputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> transformConstantBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> baseTexture;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> baseTextureView;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> baseSampler;
+	// TODO(seon): UI 배칭·전용 정점 도입 시 공통 사각형의 보관 형식을 재검토한다.
+	FStaticMeshRenderData imageQuad;
 	FMatrix4 localToWorld{};
 	FMatrix4 worldToClip{};
 	int bufferWidth = 0;

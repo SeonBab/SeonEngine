@@ -4,6 +4,8 @@
 
 #include <string>
 
+class FInputState;
+
 /** 창 제목과 요청할 클라이언트 영역의 픽셀 크기다. 크기는 유효한 양수로 지정한다. */
 struct FWindowDescription
 {
@@ -16,7 +18,8 @@ struct FWindowDescription
 class FWindowsApplication
 {
 public:
-	FWindowsApplication() = default;
+	/** 입력 상태를 비소유로 빌린다. 입력 객체는 이 객체보다 오래 살아 있어야 한다. */
+	explicit FWindowsApplication(FInputState& input);
 
 	FWindowsApplication(const FWindowsApplication&) = delete;
 	FWindowsApplication& operator=(const FWindowsApplication&) = delete;
@@ -37,6 +40,7 @@ public:
 	bool GetClientSize(int& outWidth, int& outHeight) const;
 
 private:
+	FInputState& inputState;
 	HINSTANCE instance = nullptr;
 	HWND window = nullptr;
 	bool bClassRegistered = false;

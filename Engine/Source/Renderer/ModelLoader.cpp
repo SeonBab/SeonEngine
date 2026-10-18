@@ -1,6 +1,8 @@
 #include "ModelLoader.h"
 
-#include "Logging/Log.h"
+#include "Core/Logging/Log.h"
+#include "Renderer/StaticMeshData.h"
+#include "Renderer/Vertex.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
@@ -91,7 +93,7 @@ namespace
 		return true;
 	}
 
-	bool ImportMeshes(const aiScene& scene, const TArray<FModelMaterialData>& materials, TArray<FModelMeshData>& meshes)
+	bool ImportMeshes(const aiScene& scene, const TArray<FModelMaterialData>& materials, TArray<FStaticMeshData>& meshes)
 	{
 		meshes.reserve(scene.mNumMeshes);
 		for (unsigned int i = 0; i < scene.mNumMeshes; ++i)
@@ -100,7 +102,7 @@ namespace
 			const aiMesh& source = *scene.mMeshes[i];
 			if (source.HasBones() || source.mNumAnimMeshes != 0) { return Fail("Bones and morph targets are not supported."); }
 			if (!source.HasPositions() || !source.HasFaces() || !source.HasNormals()) { return Fail("Every mesh must have vertices, faces and normals."); }
-			FModelMeshData mesh;
+			FStaticMeshData mesh;
 			if (scene.mNumMaterials != 0)
 			{
 				if (source.mMaterialIndex >= scene.mNumMaterials) { return Fail("A mesh material index is out of range."); }
@@ -126,7 +128,7 @@ namespace
 				{
 					return Fail("A mesh contains non-finite vertex data.");
 				}
-				FModelVertex vertex;
+				FVertex vertex;
 				vertex.position = {position.x, position.y, position.z};
 				vertex.normal = {normal.x, normal.y, normal.z};
 				if (bHasUV) { vertex.uv = {source.mTextureCoords[0][vertexIndex].x, source.mTextureCoords[0][vertexIndex].y}; }

@@ -1,7 +1,6 @@
 #include "D3D11Device.h"
 
-#include "Logging/Log.h"
-#include "Renderer/ModelData.h"
+#include "Core/Logging/Log.h"
 
 #include <cstddef>
 #include <limits>
@@ -165,39 +164,6 @@ bool FD3D11Device::CreateVertexBuffer(const TArray<FVertex>& vertices, Microsoft
 	return true;
 }
 
-bool FD3D11Device::CreateVertexBuffer(const TArray<FModelVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer)
-{
-	if (!device || vertices.empty())
-	{
-		WriteLog("D3D11", ELogLevel::Error, "Creating a vertex buffer requires an initialized device and nonempty vertices.");
-		return false;
-	}
-	if (vertices.size() > std::numeric_limits<UINT>::max() / sizeof(FModelVertex))
-	{
-		WriteLog("D3D11", ELogLevel::Error, "Vertex buffer size exceeds the D3D11 ByteWidth range.");
-		return false;
-	}
-
-	D3D11_BUFFER_DESC description{};
-	description.ByteWidth = static_cast<UINT>(vertices.size() * sizeof(FModelVertex));
-	description.Usage = D3D11_USAGE_IMMUTABLE;
-	description.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	D3D11_SUBRESOURCE_DATA initialData{};
-	initialData.pSysMem = vertices.data();
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> createdBuffer;
-	const HRESULT result = device->CreateBuffer(&description, &initialData, createdBuffer.GetAddressOf());
-	if (FAILED(result))
-	{
-		WriteLog("D3D11", ELogLevel::Error, "CreateBuffer(vertex buffer) failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
-		return false;
-	}
-
-	outBuffer = std::move(createdBuffer);
-
-	return true;
-}
-
 bool FD3D11Device::CreateIndexBuffer(const TArray<uint32>& indices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer)
 {
 	if (!device || indices.empty())
@@ -256,40 +222,6 @@ bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, 
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> createdLayout;
 	const HRESULT result = device->CreateInputLayout(elements, 3, vertexShaderBytecode.data(), vertexShaderBytecode.size(), createdLayout.GetAddressOf());
-	if (FAILED(result))
-	{
-		WriteLog("D3D11", ELogLevel::Error, "CreateInputLayout failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
-		return false;
-	}
-
-	outLayout = std::move(createdLayout);
-
-	return true;
-}
-
-bool FD3D11Device::CreateModelInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout)
-{
-	if (!device || vertexShaderBytecode.empty())
-	{
-		WriteLog("D3D11", ELogLevel::Error, "Creating an input layout requires an initialized device and nonempty vertex shader bytecode.");
-		return false;
-	}
-
-	static_assert(std::is_standard_layout_v<FModelVertex> && std::is_trivially_copyable_v<FModelVertex>);
-	static_assert(sizeof(FModelVertex) == 32);
-	// 법선은 버퍼에 보관하고 현재 셰이더에는 위치와 UV를 전달한다.
-	D3D11_INPUT_ELEMENT_DESC elements[2]{};
-	elements[0].SemanticName = "POSITION";
-	elements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	elements[0].AlignedByteOffset = static_cast<UINT>(offsetof(FModelVertex, position));
-	elements[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	elements[1].SemanticName = "TEXCOORD";
-	elements[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	elements[1].AlignedByteOffset = static_cast<UINT>(offsetof(FModelVertex, uv));
-	elements[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> createdLayout;
-	const HRESULT result = device->CreateInputLayout(elements, 2, vertexShaderBytecode.data(), vertexShaderBytecode.size(), createdLayout.GetAddressOf());
 	if (FAILED(result))
 	{
 		WriteLog("D3D11", ELogLevel::Error, "CreateInputLayout failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));

@@ -1,7 +1,7 @@
 #include "Actor.h"
 
-#include "ActorComponent.h"
-#include "TransformComponent.h"
+#include "Components/ActorComponent.h"
+#include "Components/TransformComponent.h"
 #include "World.h"
 
 #include <typeinfo>

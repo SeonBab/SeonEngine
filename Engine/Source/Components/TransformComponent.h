@@ -1,10 +1,10 @@
 #pragma once
 
 #include "ActorComponent.h"
-#include "Math/Quat.h"
-#include "Math/Rotator.h"
-#include "Math/Transform.h"
-#include "Math/Vector3.h"
+#include "Core/Math/Quat.h"
+#include "Core/Math/Rotator.h"
+#include "Core/Math/Transform.h"
+#include "Core/Math/Vector3.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 액터에 붙어 위치·회전·크기 데이터를 보관한다.

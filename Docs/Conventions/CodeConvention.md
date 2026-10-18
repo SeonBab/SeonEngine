@@ -745,8 +745,8 @@
   meshes.push_back(mesh);
   ```
 
-- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Engine/Source/CoreTypes.h`, 2026-10-15 새 배치). 실수는 `float` / `double`을 그대로 사용하며 별칭을 추가하지 않는다. 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
-- **문자열 별칭과 인코딩 — 2026-10-15 현재 규칙:** `Containers/SeonString.h`의 `FString = std::string`, `FStringView = std::string_view`를 사용한다. FString은 소유, FStringView는 비소유이며 원본 수명을 연장하지 않는다. 엔진 문자열은 UTF-8로 취급하되 별칭 자체는 인코딩을 검사하거나 변환하지 않는다. std::format 반환값은 FString과 같은 타입이므로 그대로 사용할 수 있다. 기존 Windows 경계의 std::wstring 사용 예외는 유지한다.
+- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Engine/Source/Core/CoreTypes.h`, 2026-10-15 새 배치). 실수는 `float` / `double`을 그대로 사용하며 별칭을 추가하지 않는다. 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
+- **문자열 별칭과 인코딩 — 2026-10-15 현재 규칙:** `Core/Containers/SeonString.h`의 `FString = std::string`, `FStringView = std::string_view`를 사용한다. FString은 소유, FStringView는 비소유이며 원본 수명을 연장하지 않는다. 엔진 문자열은 UTF-8로 취급하되 별칭 자체는 인코딩을 검사하거나 변환하지 않는다. std::format 반환값은 FString과 같은 타입이므로 그대로 사용할 수 있다. 기존 Windows 경계의 std::wstring 사용 예외는 유지한다.
   - 이전 최소 로그 단계의 std::string_view 직접 사용 예외를 종료하고 로그 인자에 FStringView를 사용한다. TCHAR·문자 별칭·UTF-8/UTF-16 변환 계층은 이번에 추가하지 않는다.
 - **이전 엔진의 문자열 변환 기록 — 현재 미구현:** 아래 FWindowsString 경로와 변환 API는 보관본의 정책이며 현재 새 엔진의 구현을 뜻하지 않는다. 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다. 변환은 `Platform/Windows/WindowsString.h`의 `FWindowsString`으로 한다.
   - `FWindowsString::UTF8ToWide`는 깨진 UTF-8 바이트를 U+FFFD로 바꾸고 계속한다. 변환 자체가 실패하면 `std::nullopt`를 돌려주므로 값이 있는지 확인하고 쓴다.
@@ -929,9 +929,9 @@
 
 #### 새 엔진 현재 규칙 — 2026-10-15
 
-- `Logging/Log.h`의 `ELogLevel::Info`, `Warning`, `Error`와 `WriteLog(category, level, format, args...)`를 사용한다. 세 레벨은 모두 stderr에 `[카테고리][레벨] 메시지`와 마지막 줄바꿈 하나를 출력한다. Debug/Release의 출력 정책은 같다.
+- `Core/Logging/Log.h`의 `ELogLevel::Info`, `Warning`, `Error`와 `WriteLog(category, level, format, args...)`를 사용한다. 세 레벨은 모두 stderr에 `[카테고리][레벨] 메시지`와 마지막 줄바꿈 하나를 출력한다. Debug/Release의 출력 정책은 같다.
 - 공개 WriteLog는 std::format_string으로 형식 문자열과 인자 타입을 컴파일할 때 검사하고 내부에서 std::format으로 메시지를 만든다. 완성된 FString/FStringView나 실행 중 생성한 문자열은 `WriteLog(category, level, "{}", message)`로 전달한다. 이때 message 안의 중괄호·%는 다시 해석하지 않는다. 리터럴 자체의 중괄호는 `{{`·`}}`로 쓴다.
-- 카테고리는 FStringView로 받고 완성된 메시지는 내부 SE::Private::WriteLogMessage에 FStringView로 즉시 전달한다. Containers/SeonString.h의 별칭을 사용하며 TCHAR는 추가하지 않는다. 동적 문자열을 형식 문자열 자리에 직접 넣는 이전 호출 방식은 지원하지 않는다.
+- 카테고리는 FStringView로 받고 완성된 메시지는 내부 SE::Private::WriteLogMessage에 FStringView로 즉시 전달한다. Core/Containers/SeonString.h의 별칭을 사용하며 TCHAR는 추가하지 않는다. 동적 문자열을 형식 문자열 자리에 직접 넣는 이전 호출 방식은 지원하지 않는다.
 - 카테고리는 기능 영역을 나타내는 문자열이다(예: `Windows`). 빈 카테고리는 `General`로 표시한다. 카테고리와 메시지는 호출 중에만 빌려 쓰며 보관하지 않는다. 등록·이름 검증·카테고리별 필터는 제공하지 않는다.
 - 전역 로거 객체·장치 등록·필터·Fatal·파일·디버거 출력은 현재 제공하지 않는다.
 - 오류 코드 저장, 자원 정리, 반환과 프로그램 종료는 호출부 책임이다. 로그 함수는 void이며 출력 실패를 보고하거나 재시도하지 않는다. 호출 간 전체 로그 줄의 원자성·스레드 간 순서를 보장하지 않는다.

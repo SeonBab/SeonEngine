@@ -1,15 +1,17 @@
 #pragma once
 
 #include "Actor.h"
-#include "Containers/Array.h"
+#include "Core/Containers/Array.h"
+#include "Core/Templates/UniquePtr.h"
 #include "Object.h"
 #include "Renderer/Scene.h"
-#include "Templates/UniquePtr.h"
 
 #include <concepts>
 #include <utility>
 
 class FRenderer;
+class FInputState;
+class UCameraComponent;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 등록된 모든 액터와 렌더링 Scene을 단독 소유하고 부모·자식 관계 변경을 통제한다.
@@ -36,14 +38,31 @@ public:
 	[[nodiscard]] const FScene& GetScene() const;
 
 	/**
-	 * 시작 시점의 등록 순서로 각 액터를 한 번 Tick한다. 같은 월드의 중첩 호출은 무시한다.
+	 * 이 월드에 등록된 카메라 액터를 비소유로 선택한다. nullptr는 선택 해제다.
+	 * 미등록·다른 월드·제거 중·카메라 없음은 false이며 기존 선택을 유지한다.
+	 * 제거 요청만 보류된 대상은 선택할 수 있으며 실제 제거 전에 선택을 해제한다.
+	 * 인수는 null 또는 살아 있는 객체여야 한다. 같은 대상의 재선택도 true다.
+	 */
+	[[nodiscard]] bool SetActiveCamera(AActor* actor);
+
+	/**
+	 * 선택한 액터에서 첫 카메라 컴포넌트와 파생 타입을 조회한다. 선택이 없으면 nullptr다.
+	 * 반환 포인터는 비소유이며 실제 액터 파괴 뒤 무효다. const 월드에서도 수정할 수 있다.
+	 */
+	[[nodiscard]] UCameraComponent* GetActiveCamera() const;
+
+	/**
+	 * 시작 시점의 등록 순서로 각 액터의 입력 컴포넌트를 처리한 뒤 Tick한다. 같은 월드의 중첩 호출은 무시한다.
 	 * 도중 생성한 액터는 다음 호출부터 갱신하고 제거 중인 대상은 건너뛴다. 시간값은 그대로 전달한다.
 	 * 순회 중에는 요청 대상만 보관하며 직접 요청된 대상의 남은 Tick은 건너뛴다. 이미 실행 중인 Tick은 중단하지 않는다.
 	 * 첫 Tick 전에 시작 처리를 한 번 호출한다. 기반 BeginPlay 누락으로 미완료면 Tick을 보류하고 시작을 재호출하지 않는다.
 	 * 시작 처리 뒤 직접 제거 요청을 다시 확인해 해당 대상의 Tick은 생략한다.
+	 * 입력 목록은 액터의 시작 처리 완료 뒤 수집하며 해당 처리 중 추가한 컴포넌트는 다음 호출부터 반영한다.
+	 * 입력 중 자기 제거 요청은 현재 ProcessInput이 반환한 뒤 남은 입력 컴포넌트와 Tick을 생략한다.
+	 * 입력은 이번 호출 동안만 빌리며 저장하지 않는다. 입력 콜백도 기존 Tick의 제거 보류 범위 안에서 실행한다.
 	 * 자손은 직접 요청되지 않았다면 Tick하며 종료 정리에서 처리 시점의 현재 자손을 함께 파괴한다.
 	 */
-	void Tick(float deltaSeconds);
+	void Tick(float deltaSeconds, const FInputState& input);
 
 	/**
 	 * 초기 구성 후 미생성 정적 메시 컴포넌트의 렌더 상태를 등록 순서로 만든다.
@@ -109,6 +128,7 @@ private:
 	// NOTE: 액터·컴포넌트 정리 중 Scene을 사용하므로 actors보다 먼저 선언해야 한다.
 	FScene scene;
 	TArray<TUniquePtr<AActor>> actors{};
+	AActor* activeCameraActor = nullptr;
 	TArray<AActor*> pendingDestroyActors{};
 	bool bIsTicking = false;
 };

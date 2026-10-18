@@ -1,12 +1,12 @@
 #include "Scene.h"
 
-#include "Logging/Log.h"
+#include "Core/Logging/Log.h"
 #include "Renderer/Renderer.h"
 
 #include <algorithm>
 #include <utility>
 
-bool FScene::AddStaticMesh(FRenderer& renderer, const FStaticMeshData& meshData, const FMatrix4& localToWorld, uint64& outMeshId)
+bool FScene::AddStaticMesh(FRenderer& renderer, const FStaticMeshData& meshData, const FMatrix4& localToWorld, uint64& outMeshId, const FImage* baseColorImage)
 {
 	if (nextMeshId == 0)
 	{
@@ -15,7 +15,7 @@ bool FScene::AddStaticMesh(FRenderer& renderer, const FStaticMeshData& meshData,
 	}
 
 	FStaticMeshEntry entry;
-	if (!renderer.CreateMesh(meshData, entry.renderData))
+	if (!renderer.CreateMesh(meshData, entry.renderData, baseColorImage))
 	{
 		return false;
 	}
@@ -28,72 +28,12 @@ bool FScene::AddStaticMesh(FRenderer& renderer, const FStaticMeshData& meshData,
 	return true;
 }
 
-bool FScene::SetMeshData(uint64 meshId, FRenderer& renderer, const FStaticMeshData& meshData)
+bool FScene::SetMeshData(uint64 meshId, FRenderer& renderer, const FStaticMeshData& meshData, const FImage* baseColorImage)
 {
 	FStaticMeshEntry* entry = FindMeshEntry(meshId);
 	if (entry == nullptr) { return false; }
 
-	return renderer.CreateMesh(meshData, entry->renderData);
-}
-
-bool FScene::AddStaticMesh(FRenderer& renderer, const FModelMeshData& meshData, const FMatrix4& localToWorld, uint64& outMeshId)
-{
-	if (nextMeshId == 0)
-	{
-		WriteLog("Scene", ELogLevel::Error, "Scene mesh IDs are exhausted.");
-		return false;
-	}
-
-	FStaticMeshEntry entry;
-	if (!renderer.CreateMesh(meshData, entry.renderData))
-	{
-		return false;
-	}
-	entry.meshId = nextMeshId;
-	entry.localToWorld = localToWorld;
-	staticMeshes.push_back(std::move(entry));
-	outMeshId = nextMeshId;
-	++nextMeshId;
-
-	return true;
-}
-
-bool FScene::SetMeshData(uint64 meshId, FRenderer& renderer, const FModelMeshData& meshData)
-{
-	FStaticMeshEntry* entry = FindMeshEntry(meshId);
-	if (entry == nullptr) { return false; }
-
-	return renderer.CreateMesh(meshData, entry->renderData);
-}
-
-bool FScene::AddStaticMesh(FRenderer& renderer, const FModelMeshData& meshData, const FImage& baseColorImage, const FMatrix4& localToWorld, uint64& outMeshId)
-{
-	if (nextMeshId == 0)
-	{
-		WriteLog("Scene", ELogLevel::Error, "Scene mesh IDs are exhausted.");
-		return false;
-	}
-
-	FStaticMeshEntry entry;
-	if (!renderer.CreateMesh(meshData, baseColorImage, entry.renderData))
-	{
-		return false;
-	}
-	entry.meshId = nextMeshId;
-	entry.localToWorld = localToWorld;
-	staticMeshes.push_back(std::move(entry));
-	outMeshId = nextMeshId;
-	++nextMeshId;
-
-	return true;
-}
-
-bool FScene::SetMeshData(uint64 meshId, FRenderer& renderer, const FModelMeshData& meshData, const FImage& baseColorImage)
-{
-	FStaticMeshEntry* entry = FindMeshEntry(meshId);
-	if (entry == nullptr) { return false; }
-
-	return renderer.CreateMesh(meshData, baseColorImage, entry->renderData);
+	return renderer.CreateMesh(meshData, entry->renderData, baseColorImage);
 }
 
 bool FScene::SetLocalToWorld(uint64 meshId, const FMatrix4& matrix)
@@ -119,12 +59,8 @@ bool FScene::RemoveStaticMesh(uint64 meshId)
 	return true;
 }
 
-bool FScene::RenderFrame(FRenderer& renderer, int width, int height)
+bool FScene::Draw(FRenderer& renderer)
 {
-	if (!renderer.BeginFrame(width, height))
-	{
-		return false;
-	}
 	for (const FStaticMeshEntry& entry : staticMeshes)
 	{
 		if (!renderer.SetLocalToWorld(entry.localToWorld) || !renderer.DrawMesh(entry.renderData))
@@ -133,7 +69,7 @@ bool FScene::RenderFrame(FRenderer& renderer, int width, int height)
 		}
 	}
 
-	return renderer.EndFrame();
+	return true;
 }
 
 FScene::FStaticMeshEntry* FScene::FindMeshEntry(uint64 meshId)

@@ -1,8 +1,10 @@
 #include "World.h"
 
 #include "Actor.h"
-#include "StaticMeshComponent.h"
-#include "TransformComponent.h"
+#include "Components/CameraComponent.h"
+#include "Components/InputComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/TransformComponent.h"
 
 #include <algorithm>
 
@@ -26,6 +28,35 @@ const FScene& UWorld::GetScene() const
 	return scene;
 }
 
+bool UWorld::SetActiveCamera(AActor* actor)
+{
+	if (!actor)
+	{
+		activeCameraActor = nullptr;
+
+		return true;
+	}
+
+	const auto ownedActor = std::find_if(actors.begin(), actors.end(), [actor](const auto& entry)
+	{
+		return entry.get() == actor;
+	});
+	if (ownedActor == actors.end()) { return false; }
+	if (&actor->GetWorld() != this || actor->IsActorBeingDestroyed()) { return false; }
+	if (!actor->GetComponent<UCameraComponent>()) { return false; }
+
+	activeCameraActor = actor;
+
+	return true;
+}
+
+UCameraComponent* UWorld::GetActiveCamera() const
+{
+	if (!activeCameraActor) { return nullptr; }
+
+	return activeCameraActor->GetComponent<UCameraComponent>();
+}
+
 void UWorld::GetActors(TArray<AActor*>& outActors) const
 {
 	outActors.clear();
@@ -35,11 +66,12 @@ void UWorld::GetActors(TArray<AActor*>& outActors) const
 	}
 }
 
-void UWorld::Tick(float deltaSeconds)
+void UWorld::Tick(float deltaSeconds, const FInputState& input)
 {
 	if (bIsTicking) { return; }
 
 	const auto tickCount = actors.size();
+	TArray<UInputComponent*> inputComponents;
 	bIsTicking = true;
 	for (decltype(actors.size()) index = 0; index < tickCount; ++index)
 	{
@@ -52,6 +84,20 @@ void UWorld::Tick(float deltaSeconds)
 
 		actor->DispatchBeginPlay();
 		if (!actor->HasActorBegunPlay()) { continue; }
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		actor->GetComponents(inputComponents);
+		for (UInputComponent* component : inputComponents)
+		{
+			component->ProcessInput(input, deltaSeconds);
+			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			{
+				break;
+			}
+		}
 		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
 		{
 			continue;
@@ -233,6 +279,10 @@ bool UWorld::DestroyActorImmediately(AActor* actor, EEndPlayReason reason)
 	if (oldParent)
 	{
 		oldParent->children.erase(oldChild);
+	}
+	if (std::find(subtree.begin(), subtree.end(), activeCameraActor) != subtree.end())
+	{
+		activeCameraActor = nullptr;
 	}
 	// 소멸 중 같은 주소에 새 액터가 생성돼도 이전 요청이 남지 않게 한다.
 	std::erase_if(pendingDestroyActors, [&subtree](AActor* pendingActor)

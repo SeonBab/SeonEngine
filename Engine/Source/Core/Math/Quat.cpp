@@ -1,6 +1,6 @@
 #include "Quat.h"
 
-#include "Math/Rotator.h"
+#include "Core/Math/Rotator.h"
 
 #include <cmath>
 #include <numbers>

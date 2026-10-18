@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "CoreTypes.h"
+#include "Core/Containers/Array.h"
+#include "Core/CoreTypes.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 단일 2D 이미지의 CPU RGBA8 픽셀을 소유한다. 기본 상태는 크기 0과 빈 배열이다.

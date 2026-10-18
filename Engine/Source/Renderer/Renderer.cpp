@@ -1,16 +1,16 @@
 #include "Renderer.h"
 
-#include "Containers/Array.h"
-#include "CoreTypes.h"
+#include "Core/Containers/Array.h"
+#include "Core/CoreTypes.h"
+#include "Core/Logging/Log.h"
+#include "Core/Math/Matrix4.h"
+#include "Core/Misc/Paths.h"
 #include "D3D11/D3D11Shader.h"
 #include "Image/Image.h"
-#include "Image/ImageUtils.h"
-#include "Logging/Log.h"
-#include "Math/Matrix4.h"
-#include "Misc/Paths.h"
-#include "Renderer/ModelData.h"
 #include "Renderer/StaticMeshData.h"
+#include "Renderer/Texture2D.h"
 
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <optional>
@@ -61,12 +61,8 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 	const std::filesystem::path shaderDir = *baseDir / L"Shaders";
 	TArray<uint8> vertexShaderBytecode;
 	TArray<uint8> pixelShaderBytecode;
-	TArray<uint8> modelVertexShaderBytecode;
-	TArray<uint8> modelPixelShaderBytecode;
 	if (!ReadShaderBytecode(shaderDir / L"TriangleVertexShader.cso", vertexShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"TrianglePixelShader.cso", pixelShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"ModelVertexShader.cso", modelVertexShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"ModelPixelShader.cso", modelPixelShaderBytecode))
+		!ReadShaderBytecode(shaderDir / L"TrianglePixelShader.cso", pixelShaderBytecode))
 	{
 		return false;
 	}
@@ -85,10 +81,7 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 	}
 
 	WriteLog("D3D11", ELogLevel::Info, "Vertex and pixel shaders created.");
-	if (!graphics.CreateInputLayout(vertexShaderBytecode, inputLayout) ||
-		!graphics.CreateVertexShader(modelVertexShaderBytecode, modelVertexShader) ||
-		!graphics.CreatePixelShader(modelPixelShaderBytecode, modelPixelShader) ||
-		!graphics.CreateModelInputLayout(modelVertexShaderBytecode, modelInputLayout))
+	if (!graphics.CreateInputLayout(vertexShaderBytecode, inputLayout))
 	{
 		Shutdown();
 		return false;
@@ -112,9 +105,10 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 
 	WriteLog("D3D11", ELogLevel::Info, "Transform constant buffer initialized.");
 
-	FImage image;
-	const std::filesystem::path texturePath = *baseDir / L"Content" / L"Textures" / L"Checker.png";
-	if (!FImageUtils::LoadImageFile(texturePath, image))
+	FMatrix4 initialImageTransform;
+	initialImageTransform.SetIdentity();
+	if (!graphics.CreateConstantBuffer(TransformBufferByteSize, imageTransformConstantBuffer) ||
+		!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &initialImageTransform, TransformBufferByteSize))
 	{
 		Shutdown();
 		return false;
@@ -128,15 +122,13 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 	samplerDescription.MaxAnisotropy = 1;
 	samplerDescription.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
-	if (!graphics.CreateTexture2D(static_cast<uint32>(image.sizeX), static_cast<uint32>(image.sizeY), image.rawData, baseTexture) ||
-		!graphics.CreateShaderResourceView(baseTexture.Get(), baseTextureView) ||
-		!graphics.CreateSamplerState(samplerDescription, baseSampler))
+	if (!graphics.CreateSamplerState(samplerDescription, baseSampler))
 	{
 		Shutdown();
 		return false;
 	}
 
-	WriteLog("D3D11", ELogLevel::Info, "Checker texture, SRV and point/clamp sampler created.");
+	WriteLog("D3D11", ELogLevel::Info, "Point/clamp sampler created.");
 	const TArray<uint8> whitePixel{255, 255, 255, 255};
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> whiteTexture;
 	if (!graphics.CreateTexture2D(1, 1, whitePixel, whiteTexture) ||
@@ -157,10 +149,23 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 	worldToClip = initialWorldToClip;
 	bInitialized = true;
 
+	const FStaticMeshData imageQuadData =
+		{
+			{{{0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {0.0f, 0.0f}},
+				{{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {1.0f, 0.0f}},
+				{{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {1.0f, 1.0f}},
+				{{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {0.0f, 1.0f}}},
+			{0, 1, 2, 0, 2, 3}};
+	if (!CreateMesh(imageQuadData, imageQuad))
+	{
+		Shutdown();
+		return false;
+	}
+
 	return true;
 }
 
-bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh)
+bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh, const FImage* baseColorImage)
 {
 	if (!bInitialized)
 	{
@@ -176,56 +181,34 @@ bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderDat
 		return false;
 	}
 
-	// 두 자원 모두 준비된 뒤에만 교체해 실패 시 기존 메시를 보존한다.
+	if (baseColorImage && !CreateTexture2D(*baseColorImage, newMesh.baseColorTexture)) { return false; }
+
+	// 버퍼와 지정한 이미지가 모두 준비된 뒤에만 기존 메시를 교체한다.
 	newMesh.indexCount = static_cast<uint32>(meshData.indices.size());
 	outMesh = std::move(newMesh);
 
 	return true;
 }
 
-bool FRenderer::CreateMesh(const FModelMeshData& meshData, FStaticMeshRenderData& outMesh)
+bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 {
 	if (!bInitialized)
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Creating a mesh requires an initialized renderer.");
+		WriteLog("Renderer", ELogLevel::Error, "Creating a texture requires an initialized renderer.");
 		return false;
 	}
-	if (!ValidateTriangleMesh(meshData.vertices.size(), meshData.indices)) { return false; }
-
-	FStaticMeshRenderData newMesh;
-	if (!graphics.CreateVertexBuffer(meshData.vertices, newMesh.vertexBuffer) ||
-		!graphics.CreateIndexBuffer(meshData.indices, newMesh.indexBuffer))
+	if (image.sizeX <= 0 || image.sizeY <= 0)
 	{
+		WriteLog("Renderer", ELogLevel::Error, "A texture image requires positive dimensions.");
 		return false;
 	}
 
-	// 두 자원 모두 준비된 뒤에만 교체해 실패 시 기존 메시를 보존한다.
-	newMesh.vertexFormat = FStaticMeshRenderData::EVertexFormat::PositionNormalUV;
-	newMesh.indexCount = static_cast<uint32>(meshData.indices.size());
-	outMesh = std::move(newMesh);
-
-	return true;
-}
-
-bool FRenderer::CreateMesh(const FModelMeshData& meshData, const FImage& baseColorImage, FStaticMeshRenderData& outMesh)
-{
-	if (baseColorImage.sizeX <= 0 || baseColorImage.sizeY <= 0)
-	{
-		WriteLog("Renderer", ELogLevel::Error, "A mesh color image requires positive dimensions.");
-		return false;
-	}
-
-	FStaticMeshRenderData newMesh;
-	if (!CreateMesh(meshData, newMesh)) { return false; }
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-	if (!graphics.CreateTexture2D(static_cast<uint32>(baseColorImage.sizeX), static_cast<uint32>(baseColorImage.sizeY), baseColorImage.rawData, texture) ||
-		!graphics.CreateShaderResourceView(texture.Get(), newMesh.baseColorTextureView))
-	{
-		return false;
-	}
+	UTexture2D newTexture;
+	if (!graphics.CreateTexture2D(static_cast<uint32>(image.sizeX), static_cast<uint32>(image.sizeY), image.rawData, texture)) { return false; }
+	if (!graphics.CreateShaderResourceView(texture.Get(), newTexture.textureView)) { return false; }
 
-	// 이미지 준비도 성공한 뒤 교체해 기존 메시와 텍스처를 함께 보존한다.
-	outMesh = std::move(newMesh);
+	outTexture = std::move(newTexture);
 
 	return true;
 }
@@ -316,28 +299,69 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 		return false;
 	}
 
-	if (mesh.vertexFormat == FStaticMeshRenderData::EVertexFormat::PositionNormalUV)
-	{
-		graphics.SetVertexShader(modelVertexShader.Get());
-		graphics.SetPixelShader(modelPixelShader.Get());
-		graphics.SetInputLayout(modelInputLayout.Get());
-		graphics.SetVertexBuffer(mesh.vertexBuffer.Get(), static_cast<uint32>(sizeof(FModelVertex)));
-		graphics.SetPixelShaderResourceView(mesh.baseColorTextureView ? mesh.baseColorTextureView.Get() : whiteTextureView.Get());
-		graphics.SetPixelShaderSamplerState(baseSampler.Get());
-	}
-	else
-	{
-		graphics.SetVertexShader(vertexShader.Get());
-		graphics.SetPixelShader(pixelShader.Get());
-		graphics.SetInputLayout(inputLayout.Get());
-		graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
-		graphics.SetPixelShaderResourceView(baseTextureView.Get());
-		graphics.SetPixelShaderSamplerState(baseSampler.Get());
-	}
+	graphics.SetVertexShader(vertexShader.Get());
+	graphics.SetPixelShader(pixelShader.Get());
+	graphics.SetInputLayout(inputLayout.Get());
+	graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
+	const auto& textureView = mesh.baseColorTexture.textureView;
+	graphics.SetPixelShaderResourceView(textureView ? textureView.Get() : whiteTextureView.Get());
+	graphics.SetPixelShaderSamplerState(baseSampler.Get());
 	graphics.SetVertexShaderConstantBuffer(transformConstantBuffer.Get());
 	graphics.SetIndexBuffer(mesh.indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(mesh.indexCount, 0, 0);
+
+	return true;
+}
+
+bool FRenderer::DrawImage(const UTexture2D& texture, FVector2 position, FVector2 size)
+{
+	if (!bFrameActive)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires an active frame.");
+		return false;
+	}
+	if (!texture.textureView || !std::isfinite(position.x) || !std::isfinite(position.y) ||
+		!std::isfinite(size.x) || !std::isfinite(size.y) || size.x <= 0.0f || size.y <= 0.0f)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture, finite position and positive finite size.");
+		return false;
+	}
+	Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
+	texture.textureView->GetDevice(textureDevice.GetAddressOf());
+	if (textureDevice.Get() != graphics.GetDevice())
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture from the current renderer device.");
+		return false;
+	}
+
+	const float width = static_cast<float>(bufferWidth);
+	const float height = static_cast<float>(bufferHeight);
+	FMatrix4 imageToClip{};
+	imageToClip.m[0][0] = 2.0f * (size.x / width);
+	imageToClip.m[1][1] = -2.0f * (size.y / height);
+	imageToClip.m[2][2] = 1.0f;
+	imageToClip.m[3][0] = 2.0f * (position.x / width) - 1.0f;
+	imageToClip.m[3][1] = 1.0f - 2.0f * (position.y / height);
+	imageToClip.m[3][3] = 1.0f;
+	if (!std::isfinite(imageToClip.m[0][0]) || !std::isfinite(imageToClip.m[1][1]) ||
+		!std::isfinite(imageToClip.m[3][0]) || !std::isfinite(imageToClip.m[3][1]))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Image transform exceeds the finite matrix range.");
+		return false;
+	}
+	if (!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &imageToClip, static_cast<uint32>(sizeof(imageToClip)))) { return false; }
+
+	graphics.SetVertexShader(vertexShader.Get());
+	graphics.SetPixelShader(pixelShader.Get());
+	graphics.SetInputLayout(inputLayout.Get());
+	graphics.SetVertexBuffer(imageQuad.vertexBuffer.Get());
+	graphics.SetPixelShaderResourceView(texture.textureView.Get());
+	graphics.SetPixelShaderSamplerState(baseSampler.Get());
+	graphics.SetVertexShaderConstantBuffer(imageTransformConstantBuffer.Get());
+	graphics.SetIndexBuffer(imageQuad.indexBuffer.Get());
+	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	graphics.DrawIndexed(imageQuad.indexCount, 0, 0);
 
 	return true;
 }
@@ -369,14 +393,11 @@ void FRenderer::Shutdown()
 		graphics.SetVertexShader(nullptr);
 	}
 	swapChain.Shutdown();
+	imageQuad = FStaticMeshRenderData{};
 	baseSampler.Reset();
 	whiteTextureView.Reset();
-	baseTextureView.Reset();
-	baseTexture.Reset();
 	transformConstantBuffer.Reset();
-	modelInputLayout.Reset();
-	modelPixelShader.Reset();
-	modelVertexShader.Reset();
+	imageTransformConstantBuffer.Reset();
 	inputLayout.Reset();
 	pixelShader.Reset();
 	vertexShader.Reset();

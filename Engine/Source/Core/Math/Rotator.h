@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Math/Quat.h"
+#include "Core/Math/Quat.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // pitch(X)·yaw(Y)·roll(Z)을 도 단위로 보관한다. 기본값은 모두 0이다.

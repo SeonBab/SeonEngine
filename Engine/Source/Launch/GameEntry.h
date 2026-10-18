@@ -1,5 +1,7 @@
 #pragma once
 
+class FGameClient;
+class FRenderer;
 class UWorld;
 
 /**
@@ -10,3 +12,11 @@ class UWorld;
  * NOTE: 모듈·클래스 등록이 필요해지면 게임 구성의 연결 방식을 재검토한다.
  */
 [[nodiscard]] bool ConfigureGameWorld(UWorld& world);
+
+/**
+ * 엔진이 준비한 Client의 초기 구성을 게임에서 수행한다. 실행 파일마다 게임 쪽 구현 하나를 제공한다.
+ * Client와 초기화된 Renderer는 빌린 참조이며 소유권은 실행부에 남는다.
+ * World 구성 성공 뒤 렌더 상태 준비 전에 한 번 호출한다.
+ * false이면 반복을 시작하지 않고 Client와 World를 정리한다. 부분 구성을 자동 롤백하지 않는다.
+ */
+[[nodiscard]] bool ConfigureGameClient(FGameClient& gameClient, FRenderer& renderer);

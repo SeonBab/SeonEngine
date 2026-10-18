@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "CoreTypes.h"
+#include "Core/Containers/Array.h"
+#include "Core/CoreTypes.h"
 
 #include <filesystem>
 

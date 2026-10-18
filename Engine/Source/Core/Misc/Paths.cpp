@@ -1,6 +1,6 @@
 #include "Paths.h"
 
-#include "Logging/Log.h"
+#include "Core/Logging/Log.h"
 #include "Windows/WindowsHWrapper.h"
 
 #include <string>

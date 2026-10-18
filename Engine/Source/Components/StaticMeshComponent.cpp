@@ -1,7 +1,7 @@
 #include "StaticMeshComponent.h"
 
 #include "Actor.h"
-#include "Logging/Log.h"
+#include "Core/Logging/Log.h"
 #include "Renderer/Scene.h"
 #include "TransformComponent.h"
 #include "World.h"
@@ -19,6 +19,12 @@ UStaticMeshComponent::~UStaticMeshComponent()
 void UStaticMeshComponent::SetMeshData(const FStaticMeshData& newMeshData)
 {
 	meshData = newMeshData;
+	MarkRenderStateDirty();
+}
+
+void UStaticMeshComponent::SetBaseColorImage(const FImage& newBaseColorImage)
+{
+	baseColorImage = newBaseColorImage;
 	MarkRenderStateDirty();
 }
 
@@ -42,7 +48,7 @@ bool UStaticMeshComponent::CreateRenderState(FRenderer& renderer)
 		return false;
 	}
 
-	if (!GetOwner().GetWorld().GetScene().AddStaticMesh(renderer, meshData, GetLocalToWorld(), sceneMeshId)) { return false; }
+	if (!GetOwner().GetWorld().GetScene().AddStaticMesh(renderer, meshData, GetLocalToWorld(), sceneMeshId, baseColorImage ? &*baseColorImage : nullptr)) { return false; }
 
 	bRenderStateDirty = false;
 
@@ -53,7 +59,7 @@ bool UStaticMeshComponent::UpdateRenderState(FRenderer& renderer)
 {
 	if (!IsRenderStateCreated()) { return false; }
 	if (!IsRenderStateDirty()) { return true; }
-	if (!GetOwner().GetWorld().GetScene().SetMeshData(sceneMeshId, renderer, meshData)) { return false; }
+	if (!GetOwner().GetWorld().GetScene().SetMeshData(sceneMeshId, renderer, meshData, baseColorImage ? &*baseColorImage : nullptr)) { return false; }
 
 	bRenderStateDirty = false;
 

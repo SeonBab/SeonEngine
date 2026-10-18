@@ -1,14 +1,12 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "CoreTypes.h"
+#include "Core/Containers/Array.h"
+#include "Core/CoreTypes.h"
 #include "Renderer/Vertex.h"
 #include "Windows/WindowsHWrapper.h"
 
 #include <d3d11.h>
 #include <wrl/client.h>
-
-struct FModelVertex;
 
 /** D3D11 장치와 즉시 컨텍스트를 소유한다. COM 참조는 명시적 정리 또는 소멸 시 해제한다. */
 class FD3D11Device
@@ -61,20 +59,14 @@ public:
 	/** 준비된 컨텍스트에 인덱스 그리기를 요청한다. 입력·셰이더·출력 상태와 인덱스/정점 범위는 호출자가 보장한다. */
 	void DrawIndexed(uint32 indexCount, uint32 startIndexLocation, int32 baseVertexLocation);
 
-	/** 위치·RGBA 정점 배열로 변경 불가 버퍼를 만든다. 장치·입력·크기 검사나 API가 실패하면 로그/false이며 기존 출력은 유지한다. */
+	/** 공통 FVertex 정점 배열로 변경 불가 버퍼를 만든다. 장치·입력·크기 검사나 API가 실패하면 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateVertexBuffer(const TArray<FVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer);
-
-	/** 모델 정점을 변환 없이 GPU 버퍼로 복사한다. 실패하면 기존 출력은 유지한다. */
-	[[nodiscard]] bool CreateVertexBuffer(const TArray<FModelVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer);
 
 	/** 32비트 인덱스 배열로 변경 불가 버퍼를 만든다. 장치·입력·크기 검사나 API가 실패하면 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateIndexBuffer(const TArray<uint32>& indices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer);
 
 	/** 준비된 장치에서 FVertex의 POSITION0 float3·COLOR0 float4·TEXCOORD0 float2 레이아웃을 만든다. 실패하면 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout);
-
-	/** 모델 정점의 위치·UV를 읽는 입력 레이아웃을 만든다. 실패하면 기존 출력은 유지한다. */
-	[[nodiscard]] bool CreateModelInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout);
 
 	/** 준비된 컨텍스트에 같은 장치의 입력 레이아웃을 연결한다. nullptr면 해제한다. */
 	void SetInputLayout(ID3D11InputLayout* layout);

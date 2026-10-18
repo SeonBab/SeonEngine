@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Math/Matrix4.h"
-#include "Math/Quat.h"
-#include "Math/Vector3.h"
+#include "Core/Math/Matrix4.h"
+#include "Core/Math/Quat.h"
+#include "Core/Math/Vector3.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 위치·회전·크기를 묶어 보관한다. 기본값은 위치 0·회전 없음·크기 1배다.

@@ -1,35 +1,11 @@
 #pragma once
 
-#include "Containers/Array.h"
-#include "CoreTypes.h"
-#include "Math/Matrix4.h"
-#include "Math/Vector2.h"
-#include "Math/Vector3.h"
+#include "Core/Containers/Array.h"
+#include "Core/CoreTypes.h"
+#include "Core/Math/Matrix4.h"
+#include "Renderer/StaticMeshData.h"
 
 #include <filesystem>
-
-////////////////////////////////////////////////////////////////////////////////
-// 모델 메시의 로컬 위치·법선·UV를 보관한다. 기본값은 모두 0이다.
-// 파일 해석과 좌표 변환, 누락된 법선 처리는 로더가 담당한다.
-////////////////////////////////////////////////////////////////////////////////
-struct FModelVertex
-{
-	FVector3 position{};
-	FVector3 normal{};
-	FVector2 uv{};
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// 개별 메시의 CPU 배열을 소유한다. indices는 이 메시의 vertices를 참조하며
-// 삼각형마다 3개를 사용한다. materialIndex는 FModelData::materials의 번호,
-// -1은 재질 없음이다. 범위나 삼각형 유효성을 자동 검사하지 않는다.
-////////////////////////////////////////////////////////////////////////////////
-struct FModelMeshData
-{
-	TArray<FModelVertex> vertices;
-	TArray<uint32> indices;
-	int32 materialIndex = -1;
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 // 기본 색상과 색상 텍스처 경로를 소유한다. 기본값은 불투명한 흰색·빈 경로다.
@@ -68,7 +44,7 @@ struct FModelNodeData
 ////////////////////////////////////////////////////////////////////////////////
 struct FModelData
 {
-	TArray<FModelMeshData> meshes;
+	TArray<FStaticMeshData> meshes;
 	TArray<FModelMaterialData> materials;
 	TArray<FModelNodeData> nodes;
 };

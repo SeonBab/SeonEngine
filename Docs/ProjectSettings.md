@@ -1,16 +1,156 @@
 # Project Settings
 
+## 메시 텍스처 그리기 접근 전환·전체 빌드 복구 — 2026-10-18
+
+Renderer.cpp의 DrawMesh는 mesh.baseColorTexture.textureView를 const 참조로 읽어 바인딩하며 비어 있으면 기존 whiteTextureView를 사용한다. 옛 baseColorTextureView 소스 참조는 제거됐다. 메시 보관 타입·공통 생성 호출·그리기 접근의 연결 후 격리 출력 Debug/Release x64 전체 제품 빌드가 각각 종료0이다. 아래 이전 단계의 컴파일 불가 상태는 해소됐다. 실제 제품 화면/GPU 실행은 미확인이다. 프로젝트 등록이나 기본 체크/흰색 텍스처 초기화는 이번에 바꾸지 않았다.
+
+## 메시 텍스처 생성 호출 전환 — 2026-10-18
+
+Renderer.cpp의 이미지 입력 CreateMesh는 메시 버퍼 준비 후 CreateTexture2D(baseColorImage, newMesh.baseColorTexture)를 호출한다. 직접 텍스처/SRV 생성과 양수 크기 중복 검사는 제거했다. 모두 성공한 뒤에만 출력 교체를 유지한다. DrawMesh의 옛 멤버 참조가 남아 전체 제품은 아직 컴파일 불가능하며, 이번 검증은 서식·공백·함수 외 원본 보존/호출 관계 정적 확인이다. 다음 그리기 접근 전환 후 전체 빌드를 수행한다.
+
+## 메시 텍스처 보관 타입 단독 전환 — 2026-10-18
+
+StaticMeshRenderData.h에 Renderer/Texture2D.h include를 추가하고 baseColorTextureView(SRV)를 FTexture2D baseColorTexture로 교체했다. 헤더 자체 C++20 /W4 /WX 컴파일과 서식 검사는 통과했다. Renderer.cpp의 CreateMesh/DrawMesh는 아직 옛 멤버를 참조하므로 전체 제품은 현재 컴파일 불가능한 전환 중 상태이며, 아래 이전 전체 빌드 성공은 이번 변경 전 결과다. 프로젝트 등록 변경은 없다. 생성 호출과 그리기 접근을 각각 후속 단계에서 전환한 뒤 전체 빌드를 확인한다.
+
+## Renderer 독립 텍스처 생성 API 추가 — 2026-10-18
+
+Renderer.h/.cpp에 [[nodiscard]] bool CreateTexture2D(const FImage&, FTexture2D&)를 추가했다. FTexture2D는 헤더에서 전방 선언하고 구현에서 직접 include한다. 초기화 후 같은 스레드에서 양수 크기 RGBA8 이미지를 단일 밉의 변경 불가 GPU 텍스처/SRV로 복사하며 둘 다 성공한 뒤 출력을 이동 교체한다. 실패 시 기존 출력 유지, 성공 후 CPU 입력 해제 가능, 장치 변경 시 재생성 계약이다. 크기 상한/픽셀 바이트 수는 기존 D3D11 함수가 검사한다. 프로젝트 등록·메시 보관/생성·기본 텍스처 초기화·그리기·종료는 이번에 변경하지 않았다. 서식/범위 검사와 격리 출력 Debug/Release x64 제품 빌드 종료0을 확인했으며 새 함수 실제 호출·GPU 생성·화면 실행은 미확인이다.
+
+## FTexture2D 최소 GPU 자원 타입 등록 — 2026-10-18
+
+Engine/Source/Renderer/Texture2D.h를 SampleGame 프로젝트 ClInclude와 기존 Engine\Source\Renderer 필터에 각 한 번 등록했다. FTexture2D는 private ComPtr<ID3D11ShaderResourceView>와 FRenderer friend 접근을 가지며 복사는 금지하고 기본 생성/이동을 허용한다. 기본 상태는 빈 뷰이며 생성/조회/그리기 API와 별도 cpp는 없다. WindowsHWrapper를 거쳐 SDK를 포함한다. C++20 /W4 /WX 헤더 컴파일·서식·XML 등록 검사를 통과했으며 전체 제품 빌드/실행·GPU 자원 생성은 이번에 수행하지 않았다.
+
+2026-10-18 텍스처 객체 전환 정정: 위 FTexture2D를 UTexture2D : public UObject로 변경했다. Texture2D.h 파일명·경로와 SRV 멤버/Renderer friend는 유지하며 생성자·복사 금지·이동 허용 선언도 새 이름으로 맞췄다. Renderer의 전방 선언·출력 인수·임시 객체와 StaticMeshRenderData의 값 멤버도 함께 변경했다. 기존 GPU 생성/출력 보존·값 보관·이동 코드는 유지한다. UObject는 가상 소멸자의 최소 기반이므로 GC·리플렉션·자원 공유·관리자·스트리밍이 생긴 것은 아니다. UI의 텍스처 소유/참조 연결은 후속이다.
+
+## UImageWidget 최소 기반 등록 — 2026-10-18
+
+Engine/Source/UI/ImageWidget.h의 UImageWidget은 UWidget을 public 상속하는 빈 이미지 UI 기반이다. 기존 CPU 이미지 타입 FImage와 Image/Image.h는 유지한다. SampleGame 프로젝트 ClInclude와 기존 Engine\Source\UI 필터에 새 헤더를 한 번 등록했다. 픽셀/텍스처·위치/크기·설정/그리기 함수·별도 cpp는 없다. 헤더 C++20 /W4 /WX 컴파일·서식·XML 등록 검사를 통과했으며 전체 제품 빌드/실행은 이번에 수행하지 않았다.
+
+2026-10-18 텍스처 독점 소유 추가: UImageWidget에 TUniquePtr<UTexture2D> texture와 SetTexture(TUniquePtr<UTexture2D>&)를 추가했다. 성공하면 입력을 비우고 기존 객체를 즉시 파괴하며 빈 입력은 false로 기존 소유를 유지한다. 비어 있지 않은 객체의 소유권 전달만 검사하며 GPU 준비 여부는 검사하지 않는다. Texture2D.h를 직접 포함해 소유 타입을 완성하고 별도 cpp를 SampleGame ClCompile과 기존 Engine\Source\UI 필터에 각 한 번 등록했다. 독립 C++20 /W4 /WX 검사에서 전달·빈 입력 거부·교체·위젯 파괴·루트 교체·호스트 파괴의 객체 수명을 확인했고 Debug/Release x64 전체 제품 빌드를 통과했다. 게임의 이미지 로딩·GPU 생성·위젯 전달 연결과 UI 그리기는 아직 없다. 제품 창·렌더링 관찰은 수행하지 않았다.
+
+2026-10-18 위치·표시 크기 추가: UImageWidget은 기본값이 모두 0인 FVector2 position·size를 보관한다. SetPosition/SetSize는 값을 복사하고 GetPosition/GetSize는 복사본을 반환하며 값 검사·좌표 변환은 수행하지 않는다. 위치는 클라이언트 영역 왼쪽 위 기준 픽셀 좌표, 크기는 원본 텍스처 해상도와 별개인 픽셀 너비·높이로 사용할 데이터다. SampleGame의 ConfigureGameClient에서 (20, 20), (128, 128)을 지정했다. 변경은 ImageWidget.h/.cpp와 SampleGame.cpp 세 파일이며 프로젝트 등록·SetTexture·GPU 생성·그리기는 유지했다. Debug/Release x64 전체 제품 빌드와 서식·변경 범위 검사를 통과했다. UI 출력이 없어 실제 배치·창 크기 변경·DPI 동작은 확인하지 않았으며 이번 검증은 빌드/정적 확인이다.
+
+## GetRootWidget 읽기 접근 — 2026-10-18
+
+UI/UserWidget.h의 const UWidget* GetRootWidget() const는 내부 루트를 읽기 전용 비소유 포인터로 반환한다. 없으면 nullptr이고 루트 교체/파괴 또는 UserWidget 파괴 뒤 반환 포인터를 사용할 수 없다. getter에는 nodiscard를 붙이지 않는 기존 규칙을 따른다. cpp/프로젝트 등록 변경은 없다. 독립 C++20 /W4 /WX 컴파일·링크·실행과 서식 검사를 통과했고 전체 제품 빌드/화면 실행은 이번 단계에서 수행하지 않았다.
+
+## SetRootWidget 구현과 cpp 등록 — 2026-10-18
+
+UI/UserWidget.cpp를 SampleGame 프로젝트 ClCompile과 기존 Engine\Source\UI 필터에 한 번 등록했다. UUserWidget::SetRootWidget(TUniquePtr<UWidget>&)는 빈 입력/직접 자기 자신을 false로 거부하며 기존 상태를 유지한다. 성공하면 기존 루트를 즉시 파괴하고 새 루트의 소유권을 받아 입력을 비운다. 이전 루트와 그 소유 요소의 비소유 포인터는 교체 후 사용할 수 없다. 독립 수명 검사와 격리 출력 x64 Debug/Release 전체 제품 빌드는 통과했으며 제품 화면 실행은 하지 않았다.
+
+## UUserWidget 루트 소유 멤버 — 2026-10-18
+
+UI/UserWidget.h에 Core/Templates/UniquePtr.h include와 private TUniquePtr<UWidget> rootWidget만 추가했다. 내부 루트 요소 한 개를 단독 소유할 자리이며 기본 상태는 비어 있다. 설정/조회 함수와 별도 cpp·프로젝트 항목 변경은 없다. 헤더 C++20 /W4 /WX 컴파일·서식 검사를 통과했고 전체 제품 빌드/실행은 이번 단계에서 수행하지 않았다.
+
+## UI 공통 사각형 GPU 자원 — 2026-10-18
+
+Renderer.h의 FStaticMeshRenderData imageQuad를 모든 이미지 그리기에 재사용할 내부 자원으로 추가했다. Initialize 마지막에 (0,0)~(1,1)의 흰색 FVertex 4개·전체 UV·인덱스 6개를 가진 지역 FStaticMeshData를 기존 CreateMesh로 생성한다. 별도 텍스처를 만들지 않으며 CPU 데이터는 초기화 후 보관하지 않는다. 공용 생성 함수의 초기화 검사를 만족하도록 기존 장치·스왑 체인 준비/상태 설정 뒤 호출하며 실패 시 Shutdown 후 false다. Shutdown은 바인딩 해제 뒤 imageQuad를 빈 값으로 교체해 GPU 참조를 정리하고 장치를 종료한다. Renderer.h/.cpp 두 파일만 변경했으며 기존 생성·프레임·그리기 함수와 게임·UI 호출부·프로젝트는 유지한다. TODO(seon)로 UI 배칭·전용 정점 도입 시 보관 형식 재검토를 표시했다. Debug/Release x64 전체 제품 빌드와 별도 실제 D3D11 장치/Renderer의 초기화·중복 초기화 거부·종료 반복·재초기화 및 기존 월드 픽셀 유지 검사를 통과했다. imageQuad는 아직 private 준비 자원이며 직접 그리기·버퍼 내용 readback·제품 창·실제 DXGI Present·UI 출력은 확인하지 않았다.
+
+## UI 변환 상수 버퍼 — 2026-10-18
+
+Renderer.h에 월드용 transformConstantBuffer와 별도인 ComPtr<ID3D11Buffer> imageTransformConstantBuffer를 추가했다. Initialize는 기존 D3D11 CreateConstantBuffer/UpdateConstantBuffer로 FMatrix4 크기 64바이트 버퍼를 만들고 항등행렬을 업로드하며 실패 시 Shutdown 후 false다. Shutdown은 VS b0 연결 해제 뒤 두 버퍼를 각각 정리한다. 이미지마다 만들지 않고 Renderer가 하나를 소유하는 UI용 버퍼이며 픽셀 위치·크기 변환 계산·셰이더 바인딩·DrawImage는 아직 없다. Renderer.h/.cpp 두 파일만 바꾸고 기존 월드 변환·프레임·그리기·UI·게임·셰이더·프로젝트는 유지했다. Debug x64 전체 빌드는 종료0이며 Release 최초 빌드는 소스 진단 없이 CL.exe -1073741819로 종료했다. Renderer 소스 해시를 유지한 재시도 빌드는 종료0이다. 별도 오프스크린 검사에서 실제 장치·Renderer 초기화의 생성/업로드 성공 경로, 종료 반복·재초기화와 기존 월드 픽셀 유지를 확인했다. private UI 버퍼의 직접 내용 readback·바인딩·UI 픽셀·제품 창·실제 DXGI Present는 확인하지 않았다.
+
+## ImageWidget 그리기 연결 — 2026-10-18
+
+UImageWidget::Draw는 텍스처가 없으면 그리기를 건너뛰고 true를 반환한다. 있으면 저장된 texture·position·size를 Renderer::DrawImage로 전달하고 결과를 그대로 반환한다. Renderer는 보관하지 않으며 GPU/위치/크기 검사는 기존 Renderer 계약을 따른다. 실행부 → Subsystem → UserWidget → ImageWidget → Renderer 연결을 완료했다. 첫 이미지 표시에는 알파 합성을 요구하지 않으며 투명도 처리는 보류한다. 제품 창 표시는 별도 확인한다.
+
+## 화면 이미지 DrawImage — 2026-10-18
+
+Renderer.h/.cpp에 [[nodiscard]] bool DrawImage(const UTexture2D&, FVector2 position, FVector2 size)를 추가했다. 활성 프레임·현재 장치의 유효한 텍스처·유한한 위치/양수 크기와 생성 행렬의 유한 성분을 검사한다. 왼쪽 위 기준 픽셀 위치/크기와 현재 출력 크기로 행 벡터용 imageToClip을 만들고 imageTransformConstantBuffer에 업로드한다. 기존 VS/PS/입력 레이아웃/샘플러와 imageQuad를 바인딩해 DrawIndexed를 요청한다. 음수 위치는 허용하고 출력 밖은 GPU가 자른다. 월드 행렬/버퍼 데이터는 변경하지 않으며 UI 바인딩을 남긴다. 이후 DrawMesh는 자기 월드 버퍼를 다시 바인딩한다. 알파 합성·ImageWidget override·셰이더/프로젝트 변경은 없다. Debug/Release x64 전체 제품 빌드와 실제 장치의 오프스크린 픽셀 검사에서 위치/크기·네 방향 UV·텍스처 색·여러 이미지 누적·창 크기 변경·카메라 독립·별도 VS 상수 버퍼와 월드/UI/월드 변환 유지를 확인했다. 빈/다른 장치 텍스처·비유한/잘못된 크기·행렬 범위 초과는 그리기 전 거부한다. 제품 창·실제 DXGI Present·위젯 경유 이미지 출력은 아직 관찰하지 않았다.
+
+## 위젯 그리기 요청 전달 — 2026-10-18
+
+UI/Widget.h에 FRenderer 전방 선언과 [[nodiscard]] virtual bool Draw(FRenderer&)를 추가했다. 기본 구현은 Renderer를 사용하지 않고 true를 반환하며 미사용 인수를 [[maybe_unused]]로 표시한다. UUserWidget은 override하여 루트가 없으면 true, 있으면 rootWidget->Draw(renderer) 결과를 그대로 반환한다. Renderer를 멤버로 보관하거나 소유하지 않는다. 세 코드 파일만 변경하고 기본 구현을 헤더에 두어 cpp/프로젝트 등록은 추가하지 않았다. Debug/Release x64 전체 제품 빌드와 독립 C++20 /W4 /WX 검사에서 기반 참조를 통한 가상 호출·동일 Renderer 전달·중첩 루트 성공/실패 전달·루트 교체 후 호출 대상과 소유 수명 유지를 확인했다. Subsystem/실행부 연결과 UImageWidget의 실제 Draw override는 없으며 기본 함수를 상속한 이미지는 아직 그리지 않는다. GPU·제품 창·UI 출력 관찰은 수행하지 않았다.
+
+2026-10-18 Subsystem 순회 추가: GameWidgetSubsystem.h/.cpp에 [[nodiscard]] bool Draw(FRenderer&)를 추가했다. 등록 순서대로 UserWidget::Draw를 호출하며 첫 false에서 즉시 중단하고 빈 목록은 true다. Renderer를 호출 동안만 빌리고 기본 GPU 명령은 추가하지 않는다. Draw 호출 중 등록·제거는 호출자 계약으로 금지하며 자동 감지·보류·스냅샷 순회는 구현하지 않았다. 기존 AddWidget/RemoveWidget 본문과 실행부·위젯·Renderer·프로젝트는 유지했다. Debug/Release x64 전체 제품 빌드와 독립 C++20 /W4 /WX 검사에서 루트까지의 등록 순서·동일 Renderer 전달·첫 실패 뒤 호출 중단·제거 제외·추가 등록 순서·소유 수명 유지를 확인했다. 실행부 호출과 실제 이미지 GPU 그리기·제품 화면 관찰은 아직 없다.
+
+2026-10-18 실행부 UI 요청 연결: EngineMain.cpp의 기존 프레임 실패 조건식에서 Scene.Draw 뒤·EndFrame 앞에 gameClient.GetWidgetSubsystem().Draw(renderer)를 추가했다. UI 요청이 false이면 EndFrame을 건너뛰고 기존 exitCode=1·반복 중단·종료 경로를 사용한다. 실제 ImageWidget은 기본 Draw를 상속해 현재는 요청만 받고 아무것도 그리지 않는다. 다른 소스·프로젝트 변경 없이 Debug/Release x64 전체 제품 빌드 종료0과 실제 조건식을 추출한 별도 오프스크린 검사에서 기본 이미지의 월드 픽셀 유지, 테스트용 루트까지 월드 뒤·Present 앞 호출, UI 실패 시 EndFrame/Present 생략을 확인했다. 테스트용 루트의 메시 픽셀로 순서를 확인한 것이며 제품 ImageWidget의 GPU 그리기나 제품 창·메시지 반복·실제 DXGI Present를 관찰한 것은 아니다.
+
+## SampleGame 기본 사용자 위젯 등록 — 2026-10-18
+
+SampleGame.cpp의 ConfigureGameClient는 MakeUnique<UUserWidget>()로 위젯 하나를 만든다. 2026-10-18 후속으로 MakeUnique<UImageWidget>()을 TUniquePtr<UWidget>에 담아 SetRootWidget에 전달하고 성공한 뒤 gameClient.GetWidgetSubsystem().AddWidget(widget)의 결과를 반환하도록 연결했다. 실패 시 false로 반환하며 소유 중인 지역 위젯/루트는 자동 정리된다. ImageWidget.h와 Widget.h를 직접 포함한다. 소유 방향은 Client → Subsystem → UserWidget → ImageWidget이며 이미지 데이터나 GPU 연결을 추가한 것은 아니다. GameClient.h와 UI/UserWidget.h를 직접 포함하고 실제 인수를 사용하므로 maybe_unused를 제거했다. 기존 World 구성과 프로젝트 항목은 유지한다. 내부 ImageWidget 루트는 있지만 UI GPU 자원·그리기는 없어 화면에는 표시하지 않는다. 격리 출력 x64 Debug/Release 전체 제품 빌드는 종료0이며 실제 제품 실행은 하지 않았다. 아래 빈 성공 구현 상태는 이 절로 정정한다.
+
+2026-10-18 UI 텍스처 준비 연결: ConfigureGameClient는 실행 파일 기준 Content/Textures/Checker.png를 지역 FImage로 읽고 MakeUnique<UTexture2D>()와 빌린 Renderer의 CreateTexture2D로 GPU 자원을 준비한다. 성공하면 UImageWidget::SetTexture로 소유권을 전달하고 기존 UserWidget 루트/등록 경로에 연결한다. 월드와 같은 파일을 사용하지만 별도 로딩·GPU 텍스처이며 공유하지 않는다. 경로·디코딩·GPU 생성 실패는 등록 전에 false로 종료하며 지역 소유 객체는 정리된다. 직접 사용하는 Renderer.h·Texture2D.h를 포함하고 Renderer 인수의 maybe_unused를 제거했다. 다른 함수·엔진 소스·프로젝트·콘텐츠는 변경하지 않았다. Debug/Release x64 빌드 종료0과 제품 D3D11 장치/Renderer·실제 ConfigureGameClient를 사용하는 오프스크린 검사에서 성공, 파일 없음/손상·미초기화 Renderer 실패, 기존 등록 유지와 GPU 텍스처 객체 소유 전달·파괴를 확인했다. UI 텍스처 조회나 UI 픽셀 검사·제품 창·실제 DXGI Present 관찰은 없으며 위치/크기·그리기 연결은 미구현이다.
+
+## Client 게임 구성 함수 연결 — 2026-10-18
+
+Launch/GameEntry.h에 ConfigureGameClient(FGameClient&)를 선언하고 SampleGame.cpp가 게임별 구현을 제공한다. 실행부는 ConfigureGameWorld → ConfigureGameClient → World.CreateRenderStates 순서로 성공 여부를 확인한다. 현재 Client 구성 구현은 maybe_unused 참조 인수와 return true만 있으며 UI를 생성하지 않는다. 파일/프로젝트 항목 추가는 없다. 격리 출력 x64 Debug/Release 전체 제품 빌드 종료0을 확인했으며 실제 제품 실행은 하지 않았다.
+
+2026-10-18 Renderer 참조 연결: 위 초기 진입 형태를 ConfigureGameClient(FGameClient&, FRenderer&)로 변경했다. GameEntry.h에 FRenderer를 전방 선언하고 초기화된 Renderer를 빌린다는 계약을 명시했다. EngineMain은 소유 중인 Renderer를 전달하고 SampleGame 구현은 아직 사용하지 않는 인수에 [[maybe_unused]]를 붙였다. 함수 본문과 World 구성·위젯 생성/등록·실패/종료 흐름은 유지하며 텍스처 생성이나 SetTexture 호출은 추가하지 않았다. 파일/프로젝트 등록 변경 없이 세 코드 파일만 수정했고 Debug/Release x64 전체 제품 빌드와 서식/범위 검사를 통과했다. 제품 창·GPU/UI 출력은 관찰하지 않았다.
+
+## Launch 헤더 include 경로 정정 — 2026-10-18
+
+실제 파일은 Engine/Source/Launch/EngineMain.cpp와 GameEntry.h다. SampleGame.cpp의 include는 Launch/GameEntry.h로 정정했고 두 파일은 프로젝트/필터에 등록돼 있다. 같은 Launch 폴더의 EngineMain.cpp는 기존 GameEntry.h 표기를 유지한다. include 검색 경로와 실행 로직은 바꾸지 않았다. 아래 이전 include 오류에 따른 전체 빌드 실패 상태는 이번 정정 후 격리 출력 Debug/Release x64 제품 빌드 성공으로 갱신한다. 제품 화면 실행은 확인하지 않았다.
+
+## 실행부의 FGameClient 생성 — 2026-10-18
+
+Launch/EngineMain.cpp가 GameClient.h를 포함하고 Renderer 초기화 성공 후 기존 World 범위 안에서 UWorld 다음에 FGameClient 지역 객체를 생성한다. 범위 종료 시 Client/소유 위젯 → World → 기존 Renderer.Shutdown 순서로 정리한다. 게임 구성 함수는 여전히 World만 받으며 UI는 아직 생성하지 않는다. Debug/Release 모두 EngineMain.obj 생성은 확인했으나 전체 빌드는 SampleGame.cpp의 이전 GameEntry.h include 오류로 실패했다. 제품 빌드/실행 성공으로 해석하지 않는다.
+
+## Client의 위젯 Subsystem 접근 — 2026-10-18
+
+FGameClient::GetWidgetSubsystem()은 소유 멤버의 비상수 참조를 반환하는 인라인 getter다. 소유권을 넘기지 않으며 Client가 파괴되면 반환 참조도 사용할 수 없다. getter에는 nodiscard를 붙이지 않는 코드 규칙을 따른다. 파일/프로젝트 등록 변경은 없다. Client를 통한 등록·제거·종료 정리를 독립 콘솔 실행으로 확인했으며 전체 제품 빌드와 실행부 연결은 아직 수행하지 않았다. 아래 접근 함수 없음 기록은 이 절로 정정한다.
+
+## FGameClient 최소 기반 등록 — 2026-10-18
+
+Engine/Source/GameClient.h를 SampleGame 프로젝트 ClInclude와 기존 Engine\Source 필터에 각 한 번 등록했다. UI/GameWidgetSubsystem.h를 포함하고 private FGameWidgetSubsystem widgetSubsystem을 직접 멤버로 소유한다. 별도 cpp·include 경로·실행부 연결은 없다. Subsystem 접근 함수와 입력 기능도 아직 없다. 헤더 컴파일·서식·XML 등록 검사를 통과했으며 전체 제품 빌드/실행은 수행하지 않았다.
+
+## 위젯 제거 계약 반영 — 2026-10-18
+
+FGameWidgetSubsystem::RemoveWidget(UUserWidget*)를 기존 UI/GameWidgetSubsystem.h/.cpp에 추가했다. 등록 객체는 즉시 파괴 후 true, nullptr 또는 미등록 생존 객체는 false로 목록을 유지한다. 실제 파괴 뒤 포인터를 재사용하면 안 된다. 파일/프로젝트 등록 변경은 없다. 독립 콘솔 수명 검사는 통과했고 전체 제품 빌드/화면 실행은 하지 않았다. 아래 제거 미구현 내용은 이 절로 정정한다.
+
+## 위젯 등록 함수 빌드 등록 — 2026-10-18
+
+Engine/Source/UI/GameWidgetSubsystem.cpp를 SampleGame 프로젝트 ClCompile과 기존 Engine\Source\UI 필터에 각 한 번 등록했다. FGameWidgetSubsystem::AddWidget(TUniquePtr<UUserWidget>&)는 빈 입력을 false로 거부하고 유효 입력을 소유 목록 끝으로 이동한다. 성공 시 입력 포인터는 비워진다. 메모리 할당 실패의 false 복구는 제공하지 않는다. 제거·조회·실행부 연결은 아직 없다. 실제 cpp의 독립 C++20 /W4 /WX 컴파일·링크·콘솔 수명 검사는 통과했고 전체 제품 빌드/제품 창 실행은 수행하지 않았다.
+
+## FGameWidgetSubsystem 소유 목록 등록 — 2026-10-18
+
+Engine/Source/UI/GameWidgetSubsystem.h를 SampleGame 프로젝트 ClInclude와 기존 Engine\Source\UI 필터에 한 번 등록했다. Core/Containers/Array.h, Core/Templates/UniquePtr.h, 같은 UI 폴더의 UserWidget.h를 포함한다. 현재 private TArray<TUniquePtr<UUserWidget>> widgets만 보관하며 등록·제거·조회·그리기 API와 별도 cpp는 없다. 헤더 컴파일과 서식·XML 등록 검사를 통과했다. 전체 제품 빌드·실행 연결은 수행하지 않았다.
+
+## UUserWidget 최소 기반 등록 — 2026-10-18
+
+Engine/Source/UI/UserWidget.h를 SampleGame 프로젝트의 ClInclude와 Engine\Source\UI 필터에 한 번 등록했다. 같은 UI 폴더의 Widget.h를 포함하고 UWidget을 public 상속한다. 별도 cpp·컴파일 항목·include 검색 경로는 추가하지 않는다. 현재 구성/동작을 정의할 타입 기반만 있으며 내부 루트·등록·그리기는 없다. 기존 UWidget 등록과 Object.h 위치는 유지한다. 헤더 컴파일과 서식·XML 등록 검사는 통과했고 전체 제품 빌드/화면 실행은 수행하지 않았다.
+
+## UI 최소 기반 등록 — 2026-10-18
+
+UWidget은 Engine/Source/UI/Widget.h에 둔다. Engine/Source를 기준으로 UI/Widget.h를 include하며 UObject 기반의 Object.h는 기존 Source 루트에 유지한다. SampleGame 프로젝트에는 ClInclude로 한 번 등록하고 필터는 Engine\Source\UI를 사용한다. 별도 cpp·컴파일 항목·include 검색 경로는 추가하지 않는다. 현재 UWidget은 UObject를 public 상속하는 빈 기반이며 위치·크기·렌더링 기능은 없다. 헤더 C++20 /W4 /WX 컴파일과 서식·XML 등록 검사를 통과했다. 제품 전체 빌드와 화면 실행은 이번 단계에서 수행하지 않았다.
+
+## Components 디렉토리 정리 — 2026-10-18
+
+ActorComponent・TransformComponent・StaticMeshComponent・CameraComponent・InputComponent의 .h/.cpp 총10개 파일은 실제 `Engine/Source/Components/`에 둔다. Key.h와 InputState.h/.cpp는 `Engine/Source/Input/`에 유지하며 Object.h도 기존 위치에 둔다. 컴포넌트 외부에서는 `Components/ActorComponent.h`, `Components/InputComponent.h`처럼 include한다. 동일 폴더 내 헤더를 파일명으로 포함하는 기존 표기는 유지한다.
+
+사용자가 실제 이동과 프로젝트/필터 등록을 수행했고 후속 작업에서 남은 외부 include13곳(6개 파일)을 정리했다. 생성기나 include 검색 경로를 추가로 바꾸지 않았다. 상속·소유·실행 계약은 유지하며 아래 이전 컴포넌트 파일 위치는 이 절에서 정정한다. 전체 소스/필터 등록과 include 경로·서식·함수 본문 동일성 검사, 격리 출력 Debug/Release x64 빌드를 통과했다. 제품 화면 실행은 확인하지 않았다.
+
+## Core 디렉토리 정리 — 2026-10-18
+
+실제 소스 파일 20개를 `Engine/Source/Core/` 아래로 이동했다. `CoreTypes.h`와 `Containers/`, `Templates/`, `Math/`, `Logging/`, `Misc/`, `Time/`가 대상이다. `Object.h`는 `Engine/Source/Object.h`에 유지한다. Core는 폴더 분류이며 별도 프로젝트·라이브러리·Public/Private 계층은 추가하지 않는다.
+
+include 검색 기준은 기존 `$(SERootDir)Engine/Source` 하나를 유지한다. 이동한 헤더는 `Core/CoreTypes.h`, `Core/Math/Matrix4.h`처럼 실제 경로로 포함한다. 같은 폴더의 구현 파일이 자기 헤더를 포함하는 `#include "Matrix4.h"` 같은 방식은 유지한다. Core를 별도 include 검색 경로로 추가하거나 이전 위치에 호환 헤더를 두지 않는다.
+
+`GenerateProjectFiles.bat`은 다시 사용할 수 있다. 생성기는 `SampleGame/Source` 프로젝트에 한해 게임 소스 외에 `Engine/Source`와 `Engine/Shaders`를 함께 검색한다. 다른 도구 프로젝트에는 엔진 소스를 자동 추가하지 않는다. 소스·필터 목록을 생성하며 기존 FxCompile 설정, Content 등록과 나머지 프로젝트 설정은 보존한다. Content는 필터에도 유지한다. 아래 이전 기록의 Core 경로와 생성기 미사용 방침은 이 절에서 정정하며, 별도 Engine.lib·모듈 구성 설명은 과거 상태다.
+
+프레임 시간 측정 분리(2026-10-18): Engine/Source/Core/Time/FrameTimer.h·.cpp의 FFrameTimer가 steady_clock 기준 시각과 경과 초 계산을 담당한다. main의 지역 객체로 생성하며 생성 시 기준을 잡고 Tick()마다 직전 측정부터 경과한 float 초를 반환하고 기준을 갱신한다. EngineMain은 최소화 검사 앞에서 측정하고 기존 UWorld::Tick(deltaSeconds, input)에 전달한다. 게임 시간 누적·배속·일시정지·고정 갱신·시간 상한·프레임 대기는 추가하지 않는다. SampleGame/Source/SampleGame.vcxproj에 cpp/h를 각 한 번 등록하고 .filters에서는 기존 Engine\Source 분류를 사용한다.
+
+World 입력 전달(2026-10-18): EngineMain은 UWorld::Tick(deltaSeconds, input)에 입력 상태를 const 참조로 전달한다. 각 액터의 BeginPlay 완료 확인→입력 컴포넌트 처리→직접 제거 요청 확인→Actor::Tick 순서이며 입력 콜백도 기존 Tick의 실제 제거 보류 범위 안에서 실행한다. 자기 제거 요청 시 현재 ProcessInput은 완료하고 남은 입력 컴포넌트와 Tick은 생략한다. 액터별 입력 목록은 처리 시 수집하고 그 목록을 처리하는 중 추가한 컴포넌트는 다음 Tick부터 반영한다. World는 입력을 저장하거나 소유하지 않는다. SampleGame의 실제 바인딩 사용은 아직 없다.
+
+입력 컴포넌트 등록(2026-10-18): SampleGame/Source/SampleGame.vcxproj에 Engine/Source/Input/InputComponent.cpp를 ClCompile, InputComponent.h를 ClInclude로 등록하고 .vcxproj.filters에서는 기존 Engine\Source 분류에 표시한다. 입력 상태 조회·바인딩·호출 경로와 게임 액터 부착은 아직 없다.
+
+입력 소스 등록(2026-10-17): SampleGame/Source/SampleGame.vcxproj에 Input/InputState.cpp와 Windows/WindowsInput.cpp를 ClCompile로, Input/Key.h·Input/InputState.h·Windows/WindowsInput.h를 ClInclude로 등록한다. 경로 기준은 Engine/Source이며 .vcxproj.filters에서는 기존 Engine\Source 분류에 표시한다. 입력 상태의 소유자·Windows 메시지·게임 조회 연결은 아직 없다.
+
+카메라 소스 등록(2026-10-17): SampleGame/Source/SampleGame.vcxproj에 Engine/Source/CameraComponent.cpp를 ClCompile, CameraComponent.h를 ClInclude로 등록한다. .vcxproj.filters에서는 기존 Engine\Source 분류에 표시한다. 게임과 공통 엔진을 함께 빌드하는 현재 구성을 유지하며 카메라의 게임 배치나 뷰/투영 연결을 추가하지 않는다.
+
 외부 고지 원문 보존(2026-10-17): .gitattributes의 기존 텍스트/바이너리 규칙을 유지하고 Engine/ThirdParty/Assimp/Licenses/*.txt에 -text 예외를 둔다. Git 줄바꿈 변환으로 배포 고지 원문의 바이트와 index.json의 SHA-256이 달라지지 않게 한다. 원문 공백은 수정하지 않으며 해당 파일은 일반 코드의 공백 검사와 구분해 원문 해시로 확인한다.
 
 현재 Scene 이미지 등록/교체(2026-10-17): FScene::AddStaticMesh(renderer, FModelMeshData, FImage, matrix, outId)와 SetMeshData(id, renderer, FModelMeshData, FImage)가 Renderer의 이미지 포함 CreateMesh를 사용한다. CPU 입력은 호출 뒤 보관할 필요가 없고 파일 읽기/재질 해석은 호출자 책임이다. Add 실패는 기존 목록·출력 ID를 유지하며 ID를 소비하지 않는다. Set은 ID·행렬·순서를 유지하고 실패하면 기존 버퍼와 텍스처를 보존한다. 기존 모델 흰색/FVertex 오버로드와 같은 스레드의 프레임 사이 호출 계약을 유지한다. 텍스처 공유·컴포넌트/게임 이미지 매핑은 추가하지 않았다. 아래 Scene 이미지 미연결 내용은 이전 단계 이력이다.
 
-현재 모델 색상 텍스처(2026-10-17): FRenderer::CreateMesh(FModelMeshData, FImage, outMesh)는 모델 버퍼와 양수 크기의 단일 밉 RGBA8_UNORM 변경 불가 텍스처/SRV를 준비하고 성공 후만 출력을 교체한다. 실패는 이전 메시/텍스처를 보존하고 성공 후 CPU 입력은 해제할 수 있다. FStaticMeshRenderData의 SRV가 텍스처 수명을 유지하며 같은 이미지의 반복 업로드는 공유하지 않는다. 모델 입력 레이아웃/셰이더가 위치와 UV를 사용하고 DrawMesh가 매번 해당 SRV 또는 초기화한1×1 흰색 SRV와 기존 point/clamp 샘플러를 바인딩한다. 기존 체크 텍스처 경로와 셰이더 파일명/프로젝트 항목은 유지한다. 재질색·조명·색상 공간/알파 블렌딩/깊이·Scene/게임 연결은 추가하지 않는다.
+모델 색상 텍스처 도입 당시(2026-10-17): FRenderer::CreateMesh(FModelMeshData, FImage, outMesh)는 모델 버퍼와 양수 크기의 단일 밉 RGBA8_UNORM 변경 불가 텍스처/SRV를 준비하고 성공 후만 출력을 교체한다. 실패는 이전 메시/텍스처를 보존하고 성공 후 CPU 입력은 해제할 수 있다. FStaticMeshRenderData의 SRV가 텍스처 수명을 유지하며 같은 이미지의 반복 업로드는 공유하지 않는다. 모델 입력 레이아웃/셰이더가 위치와 UV를 사용하고 DrawMesh가 매번 해당 SRV 또는 초기화한1×1 흰색 SRV와 기존 point/clamp 샘플러를 바인딩한다. 기존 체크 텍스처 경로와 셰이더 파일명/프로젝트 항목은 유지한다. 재질색·조명·색상 공간/알파 블렌딩/깊이·Scene/게임 연결은 추가하지 않는다.
 
 현재 DDS 이미지 읽기(2026-10-17): FImageUtils::LoadImageFile은 PNG 단일 프레임과 단일2D BC1/BC2/BC3 UNORM DDS를 지원한다. 확장자 대신 WIC 컨테이너로 판별하며 DDS는 IWICDdsDecoder로 ArraySize1/Depth1/밉1개이상과 형식을 확인한 뒤 GetFrame(0,0,0)을 기존 FImage의 RGBA8로 변환한다. 하위 밉·압축 형식·색상 공간은 보관하지 않는다. 배열·큐브·3D/다른 DDS 형식은 거부하며 실패는 이전 출력을 유지한다. Windows8.1 이상 WIC DDS 코덱 범위에 의존하고 새 라이브러리/프로젝트 항목은 추가하지 않는다. 모델별 GPU 텍스처 연결과 TriWorld 반영은 후속이다.
 
-현재 Scene 모델 메시 연결(2026-10-17): FScene::AddStaticMesh/SetMeshData는 기존 FStaticMeshData와 FModelMeshData 오버로드를 제공한다. 모델 입력도 기존 GPU 자원/행렬/ID 목록을 사용한다. Add는 자원 생성 성공 후만 등록하고 출력 ID를 바꾼다. Set은 ID·행렬·등록 순서를 유지하며 모델/기존 정점 형식 간 교체를 허용한다. 실패 시 기존 자원과 형식을 유지한다. CPU 입력은 호출 후 보관할 필요가 없고 컴포넌트/모델 노드/재질/게임 배치는 아직 연결하지 않았다.
+Scene 모델 메시 연결 도입 당시(2026-10-17): FScene::AddStaticMesh/SetMeshData는 FStaticMeshData와 FModelMeshData 오버로드를 제공했다. 2026-10-18 모델 로딩 결과를 FStaticMeshData로 전환한 뒤, 사용되지 않는 이미지 없는 FModelMeshData용 AddStaticMesh 선언·설명·구현만 Scene.h/.cpp에서 제거했다. 이미지 없는 모델 등록 함수를 제거한 당시에는 공통 등록·이미지 입력 모델 등록·모델 교체 오버로드를 유지했다. 같은 날 다음 단계에서 FModelMeshData+FImage용 AddStaticMesh 선언·설명·구현도 제거했다. Scene 등록은 선택적 이미지 포인터를 받는 공통 FStaticMeshData 함수 하나다. 다음 승인 단계에서 이미지 없는 FModelMeshData용 SetMeshData 선언·설명·구현만 제거했다. 이미지 없는 모델 교체 제거 당시에는 공통 교체와 이미지 입력 모델 교체·Renderer 오버로드를 유지했다. 다음 승인 단계에서 FModelMeshData+FImage용 SetMeshData 선언·설명·구현과 불필요해진 전방 선언도 제거했다. Scene 등록·교체는 FStaticMeshData와 선택적 이미지 포인터를 받는 공통 함수만 남았으며 Renderer 전용 오버로드는 유지한다. 모델 입력도 기존 GPU 자원/행렬/ID 목록을 사용한다. Add는 자원 생성 성공 후만 등록하고 출력 ID를 바꾼다. Set은 ID·행렬·등록 순서를 유지하며 모델/기존 정점 형식 간 교체를 허용한다. 실패 시 기존 자원과 형식을 유지한다. CPU 입력은 호출 후 보관할 필요가 없고 컴포넌트/모델 노드/재질/게임 배치는 아직 연결하지 않았다.
 
-현재 모델 GPU 기반(2026-10-17): FRenderer::CreateMesh(FModelMeshData, outMesh)는 위치·법선·UV 정점 배열을 32바이트 간격의 변경 불가 버퍼에 직접 복사한다. 정점/삼각형 인덱스 검사와 성공 후 출력 교체 계약은 기존 CreateMesh와 같다. GPU 메시가 형식을 보관해 DrawMesh가 기존 FVertex 체크 텍스처/모델 흰색 셰이더를 선택한다. 모델 입력은 위치만 사용하며 법선·UV·materialIndex는 외관에 반영하지 않는다. ModelVertexShader/ModelPixelShader.hlsl도 Main/Shader Model5.0으로 빌드해 OutDir/Shaders에 cso를 생성하며 Renderer 초기화에는 기존 두 개와 모델 두 개가 모두 필요하다. 노드·재질·깊이·모델 컴포넌트/게임 배치는 후속이다.
+2026-10-18 모델 이미지 생성 API 정리: Scene과 로딩 결과가 공통 형식으로 전환되어 호출되지 않는 FRenderer::CreateMesh(FModelMeshData,FImage,outMesh)의 선언·설명·구현만 Renderer.h/.cpp에서 제거했다. 이미지가 필요한 모델도 CreateMesh(FStaticMeshData,outMesh,&image)를 사용한다. 이미지 입력 모델 생성 함수를 제거한 당시에는 공통 생성과 이미지 없는 모델 전용 생성 함수·공개 CreateTexture2D를 유지했다. 다음 승인 단계에서 이미지 없는 FModelMeshData용 CreateMesh와 전방 선언·ModelData.h include도 Renderer.h/.cpp에서 제거했다. CreateMesh는 이제 FStaticMeshData와 선택적 이미지 포인터를 받는 공통 함수 하나다. 공통 생성·CreateTexture2D·DrawMesh 구현은 유지했다. 다음 승인 단계에서 ModelData.h의 미사용 FModelMeshData 정의·설명과 직접 Vertex.h include만 제거해 이전 메시 타입 정리도 완료했다. FModelData의 공통 메시 배열·재질·노드는 그대로다.
+
+현재 모델 GPU 기반(2026-10-17): 당시 FRenderer::CreateMesh(FModelMeshData, outMesh)는 모델 전용 정점 배열을32바이트 간격으로 복사했다. 2026-10-18 정점 공통화로 FModelVertex를 제거하고 FModelMeshData가 FVertex 배열을 보관하도록 전환했다. 로더는 위치·법선·UV를 기존처럼 채우고 정점 색상은 흰색이다. 모델 전용 CreateVertexBuffer 오버로드를 제거해 기존 공통 업로드를 사용하며 모델 입력은 offsetof(FVertex,position/uv), 그리기 간격은 공통 sizeof(FVertex)=48을 사용한다. 색상·법선은 모델 셰이더에 전달하지 않는다. 정점 통일 당시에는 FModelMeshData와 기존 셰이더/텍스처 선택을 유지했다. 2026-10-18 후속으로 DrawMesh 함수의 모델 분기만 제거해 두 메시가 일반 메시용 셰이더·입력 레이아웃을 공통 사용한다. 모델 정점 색상도 텍스처에 곱하며 로더의 기본 흰색은 기존 텍스처 색상을 유지한다. DrawMesh 공통화 당시에는 모델 전용 자원 초기화/해제·네 바이트코드 의존·EVertexFormat·생성 오버로드를 남겼다. 같은 날 다음 승인 단계에서 미사용 EVertexFormat·vertexFormat 멤버와 모델 생성 시 대입을 제거했다. 그리기·정점 버퍼 배치는 그대로이며 모델 전용 자원과 생성 오버로드 정리는 아직 남아 있다. 정점/삼각형 인덱스 검사와 성공 후 출력 교체 계약은 기존 CreateMesh와 같다. 당시 GPU 메시의 형식 구분으로 체크/모델 셰이더를 선택했으며, 이 구분은 위의 공통화와 미사용 값 제거로 대체되었다. 당시 모델 입력은 위치만 사용했고 이후 UV 텍스처 연결·공통 색상 곱 경로로 확장했다. 법선·materialIndex는 현재도 그리기에 사용하지 않는다. 모델 GPU 기반 도입 당시에는 ModelVertexShader/ModelPixelShader.hlsl도 Main/Shader Model5.0으로 빌드하고 네 바이트코드가 초기화에 필요했다. 2026-10-18 후속으로 Renderer의 모델 전용 셰이더/입력 레이아웃 읽기·생성·멤버·해제를 제거해 초기화에는 TriangleVertexShader/TrianglePixelShader.cso 두 파일만 요구한다. Renderer 정리 당시에는 모델 셰이더 원본/빌드 등록과 D3D11 전용 입력 레이아웃 함수가 남았다. 같은 날 다음 단계에서 호출되지 않는 CreateModelInputLayout의 선언·설명과 구현을 제거했다. 공통 CreateInputLayout은 그대로 사용한다. 2026-10-18 다음 단계에서 ModelVertexShader.hlsl과 SampleGame.vcxproj/.filters의 해당 FxCompile 등록을 제거했다. 정점 셰이더 제거 당시에는 ModelPixelShader.hlsl과 그 등록을 남겼고, 같은 날 다음 승인 단계에서 이 픽셀 셰이더 파일과 프로젝트/필터 등록도 제거했다. 이제 공통 TriangleVertexShader/TrianglePixelShader만 빌드하며 그리기 코드는 변경하지 않았다. 노드·재질·깊이·모델 컴포넌트/게임 배치는 후속이다.
 
 현재 Renderer 메시 책임(2026-10-17): 기본 사각형/defaultMesh와 SetMesh·인수 없는 DrawMesh·Renderer.RenderFrame을 제거했다. 초기 행렬은 항등값이며 GPU 메시는 호출자/Scene이 소유하고 명시 DrawMesh(data)로 전달한다. 게임 회전 경로는 유지한다. 아래 기본 메시 경로 설명은 이전 단계 이력이다.
 
@@ -24,7 +164,7 @@
 
 현재 초기 렌더 준비(2026-10-17): World::CreateRenderStates를 구현하고 게임 구성 직후 한 번 호출한다. 기존 상태는 건너뛰고 미생성 메시만 준비한다. 실행 중 추가된 컴포넌트는 자동 등록되지 않는다. 등록 수명 통합 때 초기 함수/호출의 존치를 재검토한다. 아래 코드 미구현 설명은 이전 단계 이력이다.
 
-현재 모델 CPU 데이터(2026-10-17): Engine/Source/Renderer/ModelData.h의 FModelData가 FModelMeshData/FModelMaterialData/FModelNodeData 목록을 값으로 소유한다. FModelVertex는 위치·법선·UV이고 기본값0이다. 메시의 uint32 indices는 자체 vertices 참조/삼각형3개이며 int32 materialIndex는 materials 번호/-1 없음이다. 재질은 기본 흰색 RGBA와 std::filesystem::path를 소유하며 빈 경로는 없음, 값이 있으면 로더가 원본 모델 기준 참조를 해석한 절대경로다. 노드는 부모 기준 행 벡터 localTransform(루트는 모델 기준), nodes 번호인 int32 parentIndex(-1 루트), meshes 번호인 uint32 meshIndices를 보관한다. 생성자는 SetIdentity로 변환을 초기화하고 목록은 기본 비어 있다. 계층/범위/파일 검증·파싱·GPU 생성은 수행하지 않는다. 기존 FVertex/FStaticMeshData는 유지한다. 공통 데이터를 바로 사용할 방향이며 별도 CPU 런타임 표현을 필수로 추가하지 않는다. 제품 Assimp 연결·모델 표시·자체 저장/재로드는 미구현이다. 선택·대가·변경 이력은 루트 Docs/ModelImportDecisions.md를 따른다.
+모델 CPU 데이터 도입 당시(2026-10-17): Engine/Source/Renderer/ModelData.h의 FModelData가 FModelMeshData/FModelMaterialData/FModelNodeData 목록을 값으로 소유했다. 2026-10-18 FModelData::meshes와 ModelLoader::ImportMeshes의 출력 배열/지역 타입을 FStaticMeshData로 전환했다. 위치·색상·법선·UV·인덱스·재질 번호와 재질 목록·노드·기존 로딩 검사는 유지한다. 로더 전환 당시에는 FModelMeshData 정의와 이전 Scene/Renderer 오버로드를 유지했다. 이후 각 API와 정의를 차례로 제거했으며 현재는 공통 FStaticMeshData만 사용한다. 당시 FModelVertex는 위치·법선·UV와 기본값0을 제공했다. 2026-10-18 이 타입을 제거하고 FModelMeshData::vertices를 TArray<FVertex>로 변경했다. FVertex는 위치·색상·법선·UV이며 색상 기본값은 흰색이다. 메시의 uint32 indices는 자체 vertices 참조/삼각형3개이며 int32 materialIndex는 materials 번호/-1 없음이다. 재질은 기본 흰색 RGBA와 std::filesystem::path를 소유하며 빈 경로는 없음, 값이 있으면 로더가 원본 모델 기준 참조를 해석한 절대경로다. 노드는 부모 기준 행 벡터 localTransform(루트는 모델 기준), nodes 번호인 int32 parentIndex(-1 루트), meshes 번호인 uint32 meshIndices를 보관한다. 생성자는 SetIdentity로 변환을 초기화하고 목록은 기본 비어 있다. 계층/범위/파일 검증·파싱·GPU 생성은 수행하지 않는다. 기존 FVertex/FStaticMeshData는 유지한다. 공통 데이터를 바로 사용할 방향이며 별도 CPU 런타임 표현을 필수로 추가하지 않는다. 제품 Assimp 연결·모델 표시·자체 저장/재로드는 미구현이다. 선택·대가·변경 이력은 루트 Docs/ModelImportDecisions.md를 따른다.
 
 초기 렌더 준비 설계 정리(2026-10-16, 코드 미구현): 게임 연결 계약과 렌더 상태 준비 시점은 별개다. 제안한 World::CreateRenderStates는 초기 일괄 호출 방식이며 등록 수명 통합 시 제거/유지 여부를 재검토한다. 구체 범위·실패 계약·이행 조건은 문서 말미의 같은 제목 절을 따른다.
 
@@ -168,7 +308,7 @@ FTransformComponent::GetTransform() const는 저장된 부모 기준 로컬 값�
 | 소스 | Engine/Source/EngineMain.cpp, Engine/Source/D3D11/D3D11Device.h/.cpp, Engine/Source/Object.h·World.h/.cpp, Engine/Source/Windows/WindowsApplication.h/.cpp·WindowsHWrapper.h, Engine/Source/Actor.h/.cpp·ActorComponent.h/.cpp·TransformComponent.h/.cpp, Containers/Array.h·Templates/UniquePtr.h·Math/Matrix4.h/.cpp·Math/Quat.h/.cpp·Math/Rotator.h/.cpp·Math/Transform.h/.cpp·Math/Vector3.h·CoreTypes.h |
 | 진입점 | main → 장치·창·스왑 체인 준비 → 메시지 처리·대기 → 역순 정리. 생성·조회·표시 → 메시지 펌프·대기 → 창·클래스 정리. 정상 종료 코드는 WM_QUIT에서 받고 API 실패는 1 |
 | 엔진 include | $(SERootDir)Engine/Source를 등록하고 기존 include 경로를 상속. EngineMain.cpp는 Windows/WindowsApplication.h를 포함 |
-| 파일 등록 | 엔진 EngineMain.cpp와 WindowsApplication·World·Actor·ActorComponent·TransformComponent의 cpp/header 및 WindowsHWrapper.h·Containers/Array.h·Templates/UniquePtr.h·Math/Matrix4.h/.cpp·Math/Quat.h/.cpp·Math/Rotator.h/.cpp·Math/Transform.h/.cpp·Math/Vector3.h·CoreTypes.h를 명시 등록. 엔진 파일은 ../../Engine/Source 기준. filters는 표시 폴더만 관리. 자동 생성 스크립트는 게임 영역만 검색하므로 실행하지 않음 |
+| 파일 등록 | 엔진 EngineMain.cpp와 WindowsApplication·World·Actor·ActorComponent·TransformComponent의 cpp/header 및 WindowsHWrapper.h·Containers/Array.h·Templates/UniquePtr.h·Math/Matrix4.h/.cpp·Math/Quat.h/.cpp·Math/Rotator.h/.cpp·Math/Transform.h/.cpp·Math/Vector3.h·CoreTypes.h를 명시 등록. 엔진 파일은 ../../Engine/Source 기준. filters는 표시 폴더만 관리. 2026-10-18부터 생성기가 게임·엔진 소스와 엔진 셰이더를 검색해 목록/필터를 생성함 |
 | 엔진·게임 경계 | 같은 프로젝트에 빌드하되 게임 → 엔진 방향. 엔진에서 구체 게임 코드를 참조하지 않음 |
 | 공통 설정 | Directory.Build.props/targets를 유지. 별도의 SeonEngine.props는 가져오지 않음 |
 | Windows·D3D11 링크 | 실행 프로젝트의 AdditionalDependencies에 dxgi.lib·d3d11.lib·user32.lib, 기존 링크 의존성 상속 |
@@ -366,7 +506,7 @@ SeonEngine/
 
 - **준비물**: .NET 10 이상의 SDK. Visual Studio의 C++ 워크로드만으로는 설치되지 않는다. 설치 관리자에서 ".NET 데스크톱 개발" 워크로드를 추가하거나 SDK를 따로 설치한다.
 - **스크립트**: 본체는 `Engine/Build/BatchFiles/GenerateProjectFiles.cs`이고, bat이 `dotnet run`으로 실행한다. 빌드 결과는 `Intermediate/DotNET/`에 생긴다.
-- **대상**: 저장소 안의 모든 `.vcxproj`(`Binaries`, `Intermediate`, `ThirdParty` 제외). `.vcxproj`가 있는 폴더 아래의 `.h` / `.cpp`를 모은다. 필터 이름은 `.vcxproj` 기준 상대 폴더 경로다.
+- **대상**: 저장소 안의 모든 `.vcxproj`(`Binaries`, `Intermediate`, `ThirdParty` 제외). 기본은 프로젝트 폴더 아래의 `.h` / `.cpp`를 모은다. 현재 `SampleGame/Source` 프로젝트에는 `Engine/Source`와 `Engine/Shaders`를 함께 포함한다. 필터 이름은 프로젝트 기준 상대 경로에서 앞의 `..`를 제거한 폴더 경로다.
 - **셰이더**: `.vcxproj`가 `Source/`에 있으면 옆의 `Shaders/` 아래 `.hlsl` / `.hlsli`도 `None` 항목으로 넣는다(예: `Engine/Shaders` → Engine 프로젝트의 `Shaders\Private` 필터). 명시적인 FxCompile 등록이 없는 파일의 기본값은 편집용 None이다. FxCompile 전용 ItemGroup은 손으로 관리하며 생성기가 메타데이터를 보존하고 None 중복을 제거한다. .filters도 해당 파일을 FxCompile로 표시한다. 등록은 검색 범위에 있는 단일 .hlsl 상대 경로만 허용하고 중복 / 변수 / 와일드카드 경로는 오류로 처리한다.
 - **`.vcxproj`의 소스 목록은 직접 고치지 않는다**. 다음 실행 때 폴더 내용으로 덮어쓴다. VS의 "새 항목 추가"로 만든 파일도 실행하면 필터가 폴더에 맞춰진다. 목록 밖의 설정은 그대로 둔다.
 - **자동 생성 목록에 파일별 설정은 쓸 수 없다**: 소스 목록 `ItemGroup`에 파일별 설정(메타데이터), `Condition`, 다른 항목이 있으면 오류를 내고 아무 파일도 바꾸지 않는다.
@@ -670,7 +810,7 @@ main·Renderer·정점·제품 셰이더·프로젝트/공통 설정은 유지�
 
 ## UV와 체크 텍스처 샘플링 연결 — 2026-10-16
 
-이전 정점 색상 전용 단계를 확장했다. Math/Vector2.h의 FVector2는 float x/y와 기본값0만 제공한다. FVertex는 position·color·uv를 저장하며 기본 UV는(0,0)이다. 현재 MSVC 배치는 위치0·색상12·UV28·총36바이트다. Device의 입력 레이아웃은 POSITION0 float3·COLOR0 float4·TEXCOORD0 float2이며 모두 슬롯0/정점별 입력이다. 오프셋은 offsetof, 정점 버퍼 크기와 stride는 sizeof(FVertex)로 계산한다. Vector2.h만 프로젝트와 기존 Math 필터에 추가했다.
+이전 정점 색상 전용 단계를 확장했다. Math/Vector2.h의 FVector2는 float x/y와 기본값0만 제공한다. 당시 FVertex는 position·color·uv를 저장했고 기본 UV는(0,0), 배치는 위치0·색상12·UV28·총36바이트였다. 2026-10-18 공통 정점 준비로 끝에 FVector3 normal{}을 추가했다. 기존 초기화·오프셋은 유지하고 normal36·총48바이트이며 기본0은 유효한 표면 방향이 아니다. 같은 날 읽기 순서를 우선해 position·color·normal·uv로 정정하고 SampleGame의 네 정점 초기화도 함께 맞췄다. 현재 배치는 위치0·색상12·법선28·UV40·총48바이트다. 이전 끝 배치는 당시 호환성 선택이며 현재 순서는 구현 순서나 GPU 필수 규칙을 뜻하지 않는다. 법선은 아직 입력 레이아웃/셰이더에 전달하지 않는다. Device의 입력 레이아웃은 POSITION0 float3·COLOR0 float4·TEXCOORD0 float2이며 모두 슬롯0/정점별 입력이다. 오프셋은 offsetof, 정점 버퍼 크기와 stride는 sizeof(FVertex)로 계산한다. Vector2.h만 프로젝트와 기존 Math 필터에 추가했다.
 
 FRenderer가 2×2 RGBA8_UNORM 단일 밉 불변 텍스처·기본 SRV·Point/Clamp 샘플러를 ComPtr로 소유한다. CPU 데이터는 위쪽 행부터 흰색255/회색64, 아래쪽은 회색64/흰색255이며 알파는 모두255다. 좌하·좌상·우상·우하 정점 UV는(0,1)·(0,0)·(1,0)·(1,1)이다. VS는 변환한 위치와 보간할 색상/UV를 출력한다. PSInput도 SV_POSITION·COLOR0·TEXCOORD0 순서를 맞추고 BaseTexture(t0).Sample(BaseSampler(s0),input.uv)*input.color를 반환한다.
 
@@ -699,9 +839,11 @@ Image/ImageUtils.h/.cpp의 FImageUtils::LoadImageFile(const std::filesystem::pat
 
 SampleGame.vcxproj는 Content 항목으로 원본 PNG를 등록하고 SECopyEngineTexture(AfterTargets=Build)의 Copy로 $(OutDir)Content/Textures에 복사한다. 프로젝트 필터에는 Engine/Content/Textures로 표시한다. 복사 대상은 이 PNG 하나이며 전체 Content 검색/패키징 계층은 추가하지 않았다. 빌드가 실제 실행되면 원본 누락은 Copy 오류로 실패하며 디렉터리는 Copy가 만든다. SkipUnchangedFiles=true는 크기와 마지막 수정 시각이 같은 파일을 건너뛴다. 해시 동기화가 아니며 같은 크기/시각을 의도적으로 유지한 내용 변경 감지나 제거된 파일 정리는 보장하지 않는다. Visual Studio의 최신 상태 판정으로 MSBuild 자체를 생략한 경우까지 이 target 실행을 보장하지 않는다. 첫 실행은 재빌드로 갱신한다.
 
-FRenderer::Initialize는 FPaths::BaseDir로 얻은 실행 파일 부모에 Content/Textures/Checker.png를 합친 명시적 std::filesystem::path를 FImageUtils::LoadImageFile에 전달한다. 정상 FImage의 sizeX/sizeY를 uint32로 명시 변환하고 rawData와 함께 기존 Device::CreateTexture2D에 전달한다. 디코더의 정상 결과가 양수 int32라는 전제와 Device의1~16384 검사·정확한 바이트 수 계약을 재사용한다. 로드 실패는 Shutdown/false이며 코드 생성 체크무늬로 자동 대체하지 않는다. 호출자는 기존대로 초기화 실패 시 종료한다.
+당시 FRenderer::Initialize는 FPaths::BaseDir로 얻은 실행 파일 부모에 Content/Textures/Checker.png를 합친 명시적 std::filesystem::path를 FImageUtils::LoadImageFile에 전달한다. 정상 FImage의 sizeX/sizeY를 uint32로 명시 변환하고 rawData와 함께 기존 Device::CreateTexture2D에 전달한다. 디코더의 정상 결과가 양수 int32라는 전제와 Device의1~16384 검사·정확한 바이트 수 계약을 재사용한다. 로드 실패는 Shutdown/false이며 코드 생성 체크무늬로 자동 대체하지 않는다. 호출자는 기존대로 초기화 실패 시 종료한다.
 
-CPU image는 초기화의 지역 값이고 성공 후 사라져도 GPU 텍스처/SRV는 Renderer의 ComPtr가 소유한다. FImage를 프레임마다 읽거나 보관하지 않는다. 다른 PNG를 표시하려면 출력 파일을 바꾼 뒤 초기화/재실행해야 하며 실시간 재로딩은 없다. 셰이더 경로와 마찬가지로 실행 파일 기준이라 현재 작업 폴더에 의존하지 않는다. 코드 컨벤션3.5에 따라 같은 함수의 baseDir는 std::optional<std::filesystem::path>, shaderDir/texturePath는 std::filesystem::path로 명시했다. 해당 경로 변수는 auto 허용 예외가 아니다.
+당시 CPU image는 초기화의 지역 값이고 성공 후 사라져도 GPU 텍스처/SRV는 Renderer의 ComPtr가 소유했다. FImage를 프레임마다 읽거나 보관하지 않는다. 다른 PNG를 표시하려면 출력 파일을 바꾼 뒤 초기화/재실행해야 하며 실시간 재로딩은 없다. 셰이더 경로와 마찬가지로 실행 파일 기준이라 현재 작업 폴더에 의존하지 않는다. 코드 컨벤션3.5에 따라 같은 함수의 baseDir는 std::optional<std::filesystem::path>, shaderDir/texturePath는 std::filesystem::path로 명시했다. 해당 경로 변수는 auto 허용 예외가 아니다.
+
+2026-10-18 책임/연결 정정: 체크 파일 선택·로딩은 SampleGame::ConfigureGameWorld로 이동했다. UStaticMeshComponent::SetBaseColorImage는 optional<FImage>에 CPU 복사본을 보관하고 dirty를 표시한다. 생성/갱신은 Scene을 거쳐 FRenderer::CreateMesh(meshData,outMesh,const FImage* baseColorImage=nullptr)에 호출 중 포인터를 전달한다. 새 오버로드는 추가하지 않았다. 지정 이미지까지 생성한 뒤 출력 GPU 메시를 교체하고 실패 시 기존 GPU 자원을 유지한다. nullptr면 기본 흰색이며 잘못 지정한 이미지는 실패다. Renderer의 전역 체크 텍스처/뷰와 파일 읽기는 제거했고 메시별 FTexture2D 또는 흰색을 연결해 정점 색상과 곱한다. Component는 재생성을 위해 CPU 이미지를 유지하며 실패 시 CPU 설정과 dirty도 유지한다. 이미지 제거 API·공유 캐시·부분 갱신은 추가하지 않았다. 기존 Content 복사 설정과 모델 경로·셰이더는 유지한다.
 
 ## FMeshData와 실제 인덱스 개수 — 2026-10-16
 
@@ -726,7 +868,7 @@ Initialize의 기본 사각형 생성은 유지했고 새 API를 제품 main/게
 
 ## FStaticMeshData로 이름 변경 — 2026-10-16
 
-이전→이후: Renderer/MeshData.h의 FMeshData를 Renderer/StaticMeshData.h의 FStaticMeshData로 변경했다. 정점/인덱스의 구성·기본값·소유·메모리 표현은 유지한다. FRenderer의 전방 선언·기본 사각형 지역 타입·SetMesh 인수 타입·include와 프로젝트/필터의 헤더 경로를 새 이름으로 맞췄다. 함수 이름 SetMesh와 매개변수 이름 meshData, 버퍼 생성/검증/교체/그리기/정리 로직은 유지했다. 과거 이름의 별칭이나 중복 헤더는 남기지 않았으며 호출자는 새 타입/헤더를 사용한다.
+이전→이후: Renderer/MeshData.h의 FMeshData를 Renderer/StaticMeshData.h의 FStaticMeshData로 변경했다. 정점/인덱스의 구성·기본값·소유·메모리 표현은 유지한다. FRenderer의 전방 선언·기본 사각형 지역 타입·SetMesh 인수 타입·include와 프로젝트/필터의 헤더 경로를 새 이름으로 맞췄다. 함수 이름 SetMesh와 매개변수 이름 meshData, 버퍼 생성/검증/교체/그리기/정리 로직은 유지했다. 2026-10-18 공통 형상 준비로 FStaticMeshData에 int32 materialIndex=-1을 추가했다. 함께 사용하는 재질 목록의 번호 하나이며 -1은 미지정이다. 기존 두 배열 초기화는 유지되고 생략한 번호는 -1이다. 현재 Renderer는 이 번호를 읽지 않으며 모델의 FModelMeshData/FModelVertex 제거와 재질 선택 연결은 후속 작업이다. 과거 이름의 별칭이나 중복 헤더는 남기지 않았으며 호출자는 새 타입/헤더를 사용한다.
 
 Static은 정적 형상용 CPU 정점·인덱스 묶음이라는 용도다. const 강제·메시 교체 금지·Actor 이동/회전/크기 변경 금지를 뜻하지 않는다. SetMesh로 데이터를 교체하는 기존 계약은 그대로다. 현재는 GPU 자원/애니메이션/스키닝/파일 자산 정보를 보관하지 않는다. FStaticMeshData는 UObject나 Unreal UStaticMesh 자산을 재현한 타입이 아니다.
 
@@ -827,6 +969,8 @@ ID는 Scene 인스턴스 안에서만 유효한 uint64 값이다. 1부터 발급
 SetLocalToWorld(id,matrix)는 등록 목록을 선형 검색해 행렬만 복사한다. GPU 버퍼를 생성하거나 즉시 갱신하지 않는다. RemoveStaticMesh(id)는 해당 항목을 찾아 erase하고 소유 GPU 참조를 해제한다. 배열이 이동해도 다른 항목 ID와 등록 순서는 유지한다. 두 함수는 없는 ID/0이면 false이며 기존 항목은 유지한다. 컨텍스트의 이전 바인딩이 버퍼 참조를 보유할 수 있으므로 제거 반환이 GPU 메모리의 즉시 최종 해제를 의미하지 않는다.
 
 RenderFrame(renderer,width,height)는 BeginFrame 성공 뒤 등록 순서대로 SetLocalToWorld(entry.matrix)와 DrawMesh(entry.renderData)를 호출하고 EndFrame 결과를 반환한다. 빈 Scene은 clear 후 Present하며 렌더러의 내부 기본 메시를 대신 그리지 않는다. WorldToClip·텍스처·기타 공통 설정은 호출자가 준비한 렌더러 값을 사용한다. 마지막 LocalToWorld/바인딩은 렌더러에 남기며 이전 값을 복원하지 않는다.
+
+2026-10-18 프레임 조율 분리 정정: 위 FScene::RenderFrame을 Draw(FRenderer&)로 변경하고 크기 인수와 BeginFrame/EndFrame 호출을 제거했다. Scene은 활성 프레임 안에서 같은 메시 순서·행렬 설정·DrawMesh만 수행하며 빈 Scene은 true로 아무것도 하지 않는다. EngineMain이 기존 갱신 처리 뒤 BeginFrame(width,height) → Scene.Draw(renderer) → EndFrame()을 호출한다. 같은 실패 조건식의 단락 평가로 실패 이후 단계는 실행하지 않고 기존 반복 중단·종료 경로를 사용한다. Scene·Renderer는 진행 프레임을 자동 복구하지 않는다. 전체 실행 경로의 빈 월드도 실행부의 BeginFrame이 화면을 지우고 EndFrame이 표시를 요청한다. 세 코드 파일만 바꿨으며 Debug/Release x64 전체 빌드와 별도 오프스크린 장치/픽셀 검사에서 기존 월드 색·빈 Draw의 무변경·호출자가 EndFrame할 때만 Present 요청·실패 전달을 확인했다. 제품 창·실제 DXGI Present·UI 출력은 관찰하지 않았다. UI 요청 전달과 GPU 그리기는 후속 별도 범위다.
 
 BeginFrame 거부 시 기존 활성 프레임을 닫지 않는다. 행렬/그리기 도중 실패하면 추가 그리기와 EndFrame/Present 없이 false다. 이때 프레임은 활성 상태로 남을 수 있으므로 기존 렌더러 실패 계약대로 반복을 중단하고 호출자가 Renderer::Shutdown해야 한다. EndFrame의 Present 실패도 false로 전파하지만 이 경우 Present는 이미 시도했고 활성 상태는 닫혔다. Scene이 빌린 렌더러의 종료/오류 복구를 자동으로 맡지 않는다.
 
