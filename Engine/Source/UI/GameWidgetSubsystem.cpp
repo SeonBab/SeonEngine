@@ -1,15 +1,20 @@
 #include "GameWidgetSubsystem.h"
 
+#include "Renderer/Renderer.h"
+#include "UI/UIDrawElementList.h"
+
 #include <utility>
 
 bool FGameWidgetSubsystem::Draw(FRenderer& renderer)
 {
+	FUIDrawElementList elements;
+
 	for (const TUniquePtr<UUserWidget>& widget : widgets)
 	{
-		if (!widget->Draw(renderer)) { return false; }
+		if (!widget->CollectDrawElements(elements)) { return false; }
 	}
 
-	return true;
+	return renderer.DrawUI(elements);
 }
 
 bool FGameWidgetSubsystem::AddWidget(TUniquePtr<UUserWidget>& widget)

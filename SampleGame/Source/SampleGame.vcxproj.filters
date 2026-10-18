@@ -59,7 +59,7 @@
       <UniqueIdentifier>{3DD56110-A9F9-35E9-A9F4-FF041D235E55}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Source\UI">
-      <UniqueIdentifier>{B4AB2EC2-00C6-4E52-824D-36B02168CF2B}</UniqueIdentifier>
+      <UniqueIdentifier>{15BC3F41-338E-3222-9CFD-CD9FCA1FE857}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Source\Windows">
       <UniqueIdentifier>{1D509D59-91BD-3DCC-826B-CD1C751DCB39}</UniqueIdentifier>
@@ -181,6 +181,12 @@
       <Filter>Engine\Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\UI\ImageWidget.h">
+      <Filter>Engine\Source\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\UI\UIDrawElementList.h">
+      <Filter>Engine\Source\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\UI\UIImageDrawElement.h">
       <Filter>Engine\Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\UI\UserWidget.h">

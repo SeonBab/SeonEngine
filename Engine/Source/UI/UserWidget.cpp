@@ -2,11 +2,11 @@
 
 #include <utility>
 
-bool UUserWidget::Draw(FRenderer& renderer)
+bool UUserWidget::CollectDrawElements(FUIDrawElementList& elements)
 {
 	if (!rootWidget) { return true; }
 
-	return rootWidget->Draw(renderer);
+	return rootWidget->CollectDrawElements(elements);
 }
 
 bool UUserWidget::SetRootWidget(TUniquePtr<UWidget>& widget)

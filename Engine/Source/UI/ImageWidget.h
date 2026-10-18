@@ -9,8 +9,8 @@
 class UImageWidget : public UWidget
 {
 public:
-	/** 텍스처가 없으면 true이며, 있으면 보관 중인 텍스처·위치·크기로 Renderer에 그리기를 요청하고 결과를 전달한다. */
-	[[nodiscard]] bool Draw(FRenderer& renderer) override;
+	/** 텍스처가 있으면 현재 텍스처·위치·크기의 요소를 추가한다. GPU 검증·그리기 없이 true를 반환한다. */
+	[[nodiscard]] bool CollectDrawElements(FUIDrawElementList& elements) override;
 
 	/**
 	 * 새 텍스처의 소유권을 받고 기존 텍스처 객체를 즉시 파괴한다. 성공하면 입력 포인터를 비운다.

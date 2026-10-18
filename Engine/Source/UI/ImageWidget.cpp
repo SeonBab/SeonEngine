@@ -1,14 +1,17 @@
 #include "ImageWidget.h"
 
-#include "Renderer/Renderer.h"
+#include "UI/UIDrawElementList.h"
 
 #include <utility>
 
-bool UImageWidget::Draw(FRenderer& renderer)
+bool UImageWidget::CollectDrawElements(FUIDrawElementList& elements)
 {
-	if (!texture) { return true; }
+	if (texture)
+	{
+		elements.AddImage({texture.get(), position, size});
+	}
 
-	return renderer.DrawImage(*texture, position, size);
+	return true;
 }
 
 bool UImageWidget::SetTexture(TUniquePtr<UTexture2D>& newTexture)

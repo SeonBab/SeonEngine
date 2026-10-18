@@ -2,7 +2,6 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/Math/Matrix4.h"
-#include "Core/Math/Vector2.h"
 #include "D3D11/D3D11Device.h"
 #include "D3D11/D3D11SwapChain.h"
 #include "Renderer/StaticMeshRenderData.h"
@@ -13,6 +12,8 @@
 
 struct FStaticMeshData;
 struct FImage;
+struct FUIImageDrawElement;
+class FUIDrawElementList;
 class UTexture2D;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,13 +69,8 @@ public:
 	/** 활성 프레임에서 현재 장치의 GPU 메시를 그린다. 행렬은 현재 설정을 사용하고 기존 정점은 체크 텍스처, 모델은 메시 텍스처/기본 흰색을 사용한다. */
 	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh);
 
-	/**
-	 * 활성 프레임에서 현재 장치의 텍스처를 클라이언트 영역 왼쪽 위 기준 픽셀 위치·크기로 그린다.
-	 * 위치·크기는 유한하고 크기는 양수여야 하며 행렬 성분의 유한 범위를 넘는 변환은 false다. 음수 위치는 허용하고 화면 밖은 GPU가 자른다.
-	 * 월드 변환 데이터는 유지하며 셰이더/버퍼 바인딩은 변경한다. 현재 알파 합성은 지원하지 않는다.
-	 * true는 그리기 요청 성공이며 GPU 작업 완료나 화면 표시를 뜻하지 않는다.
-	 */
-	[[nodiscard]] bool DrawImage(const UTexture2D& texture, FVector2 position, FVector2 size);
+	/** 목록의 이미지 요소를 순서대로 그린다. 빈 목록은 true이며 첫 실패에서 중단한다. 목록과 텍스처는 보관하지 않는다. */
+	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements);
 
 	/** 시작한 프레임을 닫고 Present한다. 그리기 없는 프레임도 허용하며 Present 실패 시 false를 반환한다. */
 	[[nodiscard]] bool EndFrame();
@@ -83,6 +79,15 @@ public:
 	void Shutdown();
 
 private:
+	/**
+	 * 활성 프레임에서 현재 장치의 텍스처를 클라이언트 영역 왼쪽 위 기준 픽셀 위치·크기로 그린다.
+	 * 위치·크기는 유한하고 크기는 양수여야 하며 행렬 성분의 유한 범위를 넘는 변환은 false다. 음수 위치는 허용하고 화면 밖은 GPU가 자른다.
+	 * 월드 변환 데이터는 유지하며 셰이더/버퍼 바인딩은 변경한다. 현재 알파 합성은 지원하지 않는다.
+	 * true는 그리기 요청 성공이며 GPU 작업 완료나 화면 표시를 뜻하지 않는다.
+	 * 요소의 텍스처 포인터가 비어 있으면 false다. 요소와 텍스처는 호출 동안만 빌린다.
+	 */
+	[[nodiscard]] bool DrawImage(const FUIImageDrawElement& element);
+
 	FD3D11Device graphics;
 	FD3D11SwapChain swapChain;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;

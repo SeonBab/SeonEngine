@@ -9,6 +9,8 @@
 #include "Image/Image.h"
 #include "Renderer/StaticMeshData.h"
 #include "Renderer/Texture2D.h"
+#include "UI/UIDrawElementList.h"
+#include "UI/UIImageDrawElement.h"
 
 #include <cmath>
 #include <cstddef>
@@ -314,21 +316,31 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 	return true;
 }
 
-bool FRenderer::DrawImage(const UTexture2D& texture, FVector2 position, FVector2 size)
+bool FRenderer::DrawUI(const FUIDrawElementList& elements)
+{
+	for (const FUIImageDrawElement& element : elements.GetImageElements())
+	{
+		if (!DrawImage(element)) { return false; }
+	}
+
+	return true;
+}
+
+bool FRenderer::DrawImage(const FUIImageDrawElement& element)
 {
 	if (!bFrameActive)
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires an active frame.");
 		return false;
 	}
-	if (!texture.textureView || !std::isfinite(position.x) || !std::isfinite(position.y) ||
-		!std::isfinite(size.x) || !std::isfinite(size.y) || size.x <= 0.0f || size.y <= 0.0f)
+	if (!element.texture || !element.texture->textureView || !std::isfinite(element.position.x) || !std::isfinite(element.position.y) ||
+		!std::isfinite(element.size.x) || !std::isfinite(element.size.y) || element.size.x <= 0.0f || element.size.y <= 0.0f)
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture, finite position and positive finite size.");
 		return false;
 	}
 	Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
-	texture.textureView->GetDevice(textureDevice.GetAddressOf());
+	element.texture->textureView->GetDevice(textureDevice.GetAddressOf());
 	if (textureDevice.Get() != graphics.GetDevice())
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture from the current renderer device.");
@@ -338,11 +350,11 @@ bool FRenderer::DrawImage(const UTexture2D& texture, FVector2 position, FVector2
 	const float width = static_cast<float>(bufferWidth);
 	const float height = static_cast<float>(bufferHeight);
 	FMatrix4 imageToClip{};
-	imageToClip.m[0][0] = 2.0f * (size.x / width);
-	imageToClip.m[1][1] = -2.0f * (size.y / height);
+	imageToClip.m[0][0] = 2.0f * (element.size.x / width);
+	imageToClip.m[1][1] = -2.0f * (element.size.y / height);
 	imageToClip.m[2][2] = 1.0f;
-	imageToClip.m[3][0] = 2.0f * (position.x / width) - 1.0f;
-	imageToClip.m[3][1] = 1.0f - 2.0f * (position.y / height);
+	imageToClip.m[3][0] = 2.0f * (element.position.x / width) - 1.0f;
+	imageToClip.m[3][1] = 1.0f - 2.0f * (element.position.y / height);
 	imageToClip.m[3][3] = 1.0f;
 	if (!std::isfinite(imageToClip.m[0][0]) || !std::isfinite(imageToClip.m[1][1]) ||
 		!std::isfinite(imageToClip.m[3][0]) || !std::isfinite(imageToClip.m[3][1]))
@@ -356,7 +368,7 @@ bool FRenderer::DrawImage(const UTexture2D& texture, FVector2 position, FVector2
 	graphics.SetPixelShader(pixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
 	graphics.SetVertexBuffer(imageQuad.vertexBuffer.Get());
-	graphics.SetPixelShaderResourceView(texture.textureView.Get());
+	graphics.SetPixelShaderResourceView(element.texture->textureView.Get());
 	graphics.SetPixelShaderSamplerState(baseSampler.Get());
 	graphics.SetVertexShaderConstantBuffer(imageTransformConstantBuffer.Get());
 	graphics.SetIndexBuffer(imageQuad.indexBuffer.Get());

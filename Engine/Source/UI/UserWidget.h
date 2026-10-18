@@ -7,8 +7,8 @@
 class UUserWidget : public UWidget
 {
 public:
-	/** 내부 루트에 그리기를 요청하고 결과를 전달한다. 루트가 없으면 true이며 Renderer는 보관하지 않는다. */
-	[[nodiscard]] bool Draw(FRenderer& renderer) override;
+	/** 내부 루트에 같은 목록을 전달하고 결과를 반환한다. 루트가 없으면 true다. */
+	[[nodiscard]] bool CollectDrawElements(FUIDrawElementList& elements) override;
 
 	/**
 	 * 새 루트의 소유권을 받고 기존 루트를 즉시 파괴한다. 성공하면 입력 포인터를 비운다.

@@ -2,14 +2,14 @@
 
 #include "Object.h"
 
-class FRenderer;
+class FUIDrawElementList;
 
 /** 모든 UI 위젯의 공통 기반이다. */
 class UWidget : public UObject
 {
 public:
-	/** 호출 동안 Renderer를 빌려 그리기를 요청한다. 그릴 내용이 없는 기본 구현은 true를 반환한다. */
-	[[nodiscard]] virtual bool Draw([[maybe_unused]] FRenderer& renderer)
+	/** 목록에 그리기 요소를 추가한다. 기본 구현은 목록을 변경하지 않고 true를 반환한다. */
+	[[nodiscard]] virtual bool CollectDrawElements([[maybe_unused]] FUIDrawElementList& elements)
 	{
 		return true;
 	}

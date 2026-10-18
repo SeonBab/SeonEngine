@@ -99,6 +99,8 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h" />
     <ClInclude Include="..\..\Engine\Source\UI\GameWidgetSubsystem.h" />
     <ClInclude Include="..\..\Engine\Source\UI\ImageWidget.h" />
+    <ClInclude Include="..\..\Engine\Source\UI\UIDrawElementList.h" />
+    <ClInclude Include="..\..\Engine\Source\UI\UIImageDrawElement.h" />
     <ClInclude Include="..\..\Engine\Source\UI\UserWidget.h" />
     <ClInclude Include="..\..\Engine\Source\UI\Widget.h" />
     <ClInclude Include="..\..\Engine\Source\Windows\WindowsApplication.h" />
