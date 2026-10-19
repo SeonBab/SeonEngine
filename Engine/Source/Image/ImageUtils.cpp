@@ -299,3 +299,36 @@ bool FImageUtils::LoadImageFile(const std::filesystem::path& path, FImage& outIm
 
 	return loaded;
 }
+
+bool FImageUtils::ApplyColorKey(FImage& image, uint8 red, uint8 green, uint8 blue, uint8 tolerance)
+{
+	if (image.sizeX <= 0 || image.sizeY <= 0)
+	{
+		WriteLog("Image", ELogLevel::Error, "Applying a color key requires positive image dimensions.");
+		return false;
+	}
+	const uint64 byteCount = static_cast<uint64>(image.sizeX) * static_cast<uint64>(image.sizeY) * 4;
+	if (byteCount != image.rawData.size())
+	{
+		WriteLog("Image", ELogLevel::Error, "Applying a color key requires a complete RGBA8 image buffer.");
+		return false;
+	}
+
+	for (size_t offset = 0; offset < image.rawData.size(); offset += 4)
+	{
+		const int32 redDifference = static_cast<int32>(image.rawData[offset]) - red;
+		const int32 greenDifference = static_cast<int32>(image.rawData[offset + 1]) - green;
+		const int32 blueDifference = static_cast<int32>(image.rawData[offset + 2]) - blue;
+		if (redDifference >= -static_cast<int32>(tolerance) && redDifference <= tolerance &&
+			greenDifference >= -static_cast<int32>(tolerance) && greenDifference <= tolerance &&
+			blueDifference >= -static_cast<int32>(tolerance) && blueDifference <= tolerance)
+		{
+			image.rawData[offset] = 0;
+			image.rawData[offset + 1] = 0;
+			image.rawData[offset + 2] = 0;
+			image.rawData[offset + 3] = 0;
+		}
+	}
+
+	return true;
+}
