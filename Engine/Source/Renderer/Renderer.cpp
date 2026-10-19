@@ -116,21 +116,43 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 		return false;
 	}
 
-	D3D11_SAMPLER_DESC samplerDescription{};
-	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.MaxAnisotropy = 1;
-	samplerDescription.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
-	if (!graphics.CreateSamplerState(samplerDescription, baseSampler))
+	D3D11_BLEND_DESC blendDescription{};
+	D3D11_RENDER_TARGET_BLEND_DESC& target = blendDescription.RenderTarget[0];
+	target.BlendEnable = TRUE;
+	target.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	target.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	target.BlendOp = D3D11_BLEND_OP_ADD;
+	target.SrcBlendAlpha = D3D11_BLEND_ONE;
+	target.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	target.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	target.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	if (!graphics.CreateBlendState(blendDescription, uiBlendState))
 	{
 		Shutdown();
 		return false;
 	}
 
-	WriteLog("D3D11", ELogLevel::Info, "Point/clamp sampler created.");
+	D3D11_SAMPLER_DESC samplerDescription{};
+	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDescription.MaxAnisotropy = 1;
+	samplerDescription.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
+	for (size_t u = 0; u < samplerStates.size(); ++u)
+	{
+		for (size_t v = 0; v < samplerStates[u].size(); ++v)
+		{
+			samplerDescription.AddressU = u == 0 ? D3D11_TEXTURE_ADDRESS_CLAMP : D3D11_TEXTURE_ADDRESS_WRAP;
+			samplerDescription.AddressV = v == 0 ? D3D11_TEXTURE_ADDRESS_CLAMP : D3D11_TEXTURE_ADDRESS_WRAP;
+			if (!graphics.CreateSamplerState(samplerDescription, samplerStates[u][v]))
+			{
+				Shutdown();
+				return false;
+			}
+		}
+	}
+
+	WriteLog("D3D11", ELogLevel::Info, "Four point samplers for U/V clamp and wrap created.");
 	const TArray<uint8> whitePixel{255, 255, 255, 255};
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> whiteTexture;
 	if (!graphics.CreateTexture2D(1, 1, whitePixel, whiteTexture) ||
@@ -187,6 +209,8 @@ bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderDat
 
 	// 버퍼와 지정한 이미지가 모두 준비된 뒤에만 기존 메시를 교체한다.
 	newMesh.indexCount = static_cast<uint32>(meshData.indices.size());
+	newMesh.addressU = meshData.addressU;
+	newMesh.addressV = meshData.addressV;
 	outMesh = std::move(newMesh);
 
 	return true;
@@ -307,7 +331,9 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 	graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
 	const auto& textureView = mesh.baseColorTexture.textureView;
 	graphics.SetPixelShaderResourceView(textureView ? textureView.Get() : whiteTextureView.Get());
-	graphics.SetPixelShaderSamplerState(baseSampler.Get());
+	const size_t addressU = mesh.addressU == ETextureAddressMode::Wrap ? 1 : 0;
+	const size_t addressV = mesh.addressV == ETextureAddressMode::Wrap ? 1 : 0;
+	graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get());
 	graphics.SetVertexShaderConstantBuffer(transformConstantBuffer.Get());
 	graphics.SetIndexBuffer(mesh.indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -318,10 +344,23 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 
 bool FRenderer::DrawUI(const FUIDrawElementList& elements)
 {
+	if (elements.GetImageElements().empty()) { return true; }
+	if (!bFrameActive)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing UI requires an active frame.");
+		return false;
+	}
+
+	graphics.SetBlendState(uiBlendState.Get());
 	for (const FUIImageDrawElement& element : elements.GetImageElements())
 	{
-		if (!DrawImage(element)) { return false; }
+		if (!DrawImage(element))
+		{
+			graphics.SetBlendState(nullptr);
+			return false;
+		}
 	}
+	graphics.SetBlendState(nullptr);
 
 	return true;
 }
@@ -369,7 +408,7 @@ bool FRenderer::DrawImage(const FUIImageDrawElement& element)
 	graphics.SetInputLayout(inputLayout.Get());
 	graphics.SetVertexBuffer(imageQuad.vertexBuffer.Get());
 	graphics.SetPixelShaderResourceView(element.texture->textureView.Get());
-	graphics.SetPixelShaderSamplerState(baseSampler.Get());
+	graphics.SetPixelShaderSamplerState(samplerStates[0][0].Get());
 	graphics.SetVertexShaderConstantBuffer(imageTransformConstantBuffer.Get());
 	graphics.SetIndexBuffer(imageQuad.indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -394,6 +433,7 @@ void FRenderer::Shutdown()
 {
 	if (graphics.GetContext())
 	{
+		graphics.SetBlendState(nullptr);
 		graphics.SetPixelShaderResourceView(nullptr);
 		graphics.SetPixelShaderSamplerState(nullptr);
 		graphics.SetIndexBuffer(nullptr);
@@ -406,8 +446,15 @@ void FRenderer::Shutdown()
 	}
 	swapChain.Shutdown();
 	imageQuad = FStaticMeshRenderData{};
-	baseSampler.Reset();
+	for (auto& samplersForU : samplerStates)
+	{
+		for (auto& sampler : samplersForU)
+		{
+			sampler.Reset();
+		}
+	}
 	whiteTextureView.Reset();
+	uiBlendState.Reset();
 	transformConstantBuffer.Reset();
 	imageTransformConstantBuffer.Reset();
 	inputLayout.Reset();

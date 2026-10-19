@@ -171,6 +171,9 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\TextureAddressMode.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>

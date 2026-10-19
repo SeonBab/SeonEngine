@@ -104,6 +104,12 @@ public:
 	/** 준비된 컨텍스트의 PS s0에 같은 장치의 샘플러를 연결한다. nullptr면 명시적 상태를 해제해 D3D11 기본 샘플러를 사용한다. */
 	void SetPixelShaderSamplerState(ID3D11SamplerState* sampler);
 
+	/** 호출자가 지정한 설정으로 블렌드 상태를 만든다. 장치 미준비·API 실패 시 로그/false이며 기존 출력은 유지한다. */
+	[[nodiscard]] bool CreateBlendState(const D3D11_BLEND_DESC& description, Microsoft::WRL::ComPtr<ID3D11BlendState>& outState);
+
+	/** 준비된 컨텍스트에 같은 장치의 블렌드 상태를 연결한다. nullptr면 불투명 기본 상태로 복원한다. */
+	void SetBlendState(ID3D11BlendState* state);
+
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;

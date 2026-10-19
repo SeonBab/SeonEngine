@@ -450,3 +450,29 @@ void FD3D11Device::SetPixelShaderSamplerState(ID3D11SamplerState* sampler)
 {
 	context->PSSetSamplers(0, 1, &sampler);
 }
+
+bool FD3D11Device::CreateBlendState(const D3D11_BLEND_DESC& description, Microsoft::WRL::ComPtr<ID3D11BlendState>& outState)
+{
+	if (!device)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating a blend state requires an initialized device.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11BlendState> createdState;
+	const HRESULT result = device->CreateBlendState(&description, createdState.GetAddressOf());
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "CreateBlendState failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	outState = std::move(createdState);
+
+	return true;
+}
+
+void FD3D11Device::SetBlendState(ID3D11BlendState* state)
+{
+	context->OMSetBlendState(state, nullptr, 0xffffffff);
+}

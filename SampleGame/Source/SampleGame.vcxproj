@@ -95,6 +95,7 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\Scene.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshData.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\TextureAddressMode.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h" />
     <ClInclude Include="..\..\Engine\Source\UI\GameWidgetSubsystem.h" />
