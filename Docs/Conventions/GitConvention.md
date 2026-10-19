@@ -3,7 +3,7 @@
 ## 관련 문서
 
 - [Code Convention](CodeConvention.md)
-- [Project Settings](../ProjectSettings.md)
+- [빌드·개발 설정](../BuildSetup.md)
 
 ---
 
@@ -56,7 +56,7 @@ build: 경고 레벨을 /W4로 변경
 
 ### 2.3 범위
 
-- 바뀐 모듈이나 폴더 이름을 소문자로 쓴다(`core`, `engine`, `game`, `platform`, `renderer` 등). 모듈 구성과 경로는 [Project Settings의 폴더 구조](../ProjectSettings.md#폴더-구조)를 참고한다.
+- 바뀐 모듈이나 폴더 이름을 소문자로 쓴다(`core`, `engine`, `game`, `platform`, `renderer` 등). 모듈 구성과 경로는 [빌드·개발 설정의 폴더 구조](../BuildSetup.md#폴더-구조)를 참고한다.
 - 여러 모듈에 걸친 변경이나 `docs`, `build`, `chore`처럼 모듈과 관계없는 변경은 범위를 생략한다.
 
 ### 2.4 커밋 단위
@@ -89,7 +89,6 @@ git commit
 
 ### 3.2 커밋 전 확인
 
-- 변경 내용과 스테이징한 내용(`git diff`, `git diff --cached`)을 훑어본다. 디버그 코드나 관계없는 파일이 섞이지 않았는지 확인한다.
 - 코드나 빌드 설정을 변경했다면 Debug / Release 빌드가 경고 없이 성공한다(Code Convention 6.1). 문서만 바꾼 경우에는 내용과 링크를 확인한다.
 - 바뀐 C++ 파일에 clang-format을 적용했다(Code Convention 6.2).
 - 컨벤션이나 설정을 바꿨다면 관련 문서도 함께 고쳤다.

@@ -2,7 +2,7 @@
 
 ## 관련 문서
 
-- [Project Settings](../ProjectSettings.md) — 프로젝트에 적용한 설정
+- [빌드·개발 설정](../BuildSetup.md) — 프로젝트에 적용한 설정
 - [Git Convention](GitConvention.md) — 브랜치, 커밋, 병합
 - Asset / Resource Naming Convention — 별도 문서 (예정)
 
@@ -57,7 +57,7 @@
 
 ### 1.1 Formatting `필수`
 
-이 절의 규칙은 대부분 `.clang-format`이 자동으로 적용한다(6.2 자동화 도구 참고). 도구가 구분하지 못하는 규칙(한 줄 early exit의 범위, 반환 전 빈 줄)만 직접 지킨다.
+이 절의 규칙은 대부분 `.clang-format`이 자동으로 적용한다(6.2 자동화 도구 참고). 도구가 구분하지 못하는 규칙(한 줄 early exit의 범위, 함수 내부의 논리 단위 구분, 반환 전 빈 줄)만 직접 지킨다.
 
 - **들여쓰기** — Tab 사용, 표시 폭 4
 - **한 줄 최대 길이** — 제한 없음
@@ -106,8 +106,26 @@
     WS_OVERLAPPEDWINDOW, // 스타일
     ...);
   ```
-- **인코딩 / 줄바꿈** — UTF-8 (BOM 없음), CRLF. 파일은 newline으로 끝낸다. 관련 프로젝트 설정은 [Project Settings](../ProjectSettings.md) 참고.
+- **인코딩 / 줄바꿈** — UTF-8 (BOM 없음), CRLF. 파일은 newline으로 끝낸다. 관련 프로젝트 설정은 [빌드·개발 설정](../BuildSetup.md) 참고.
 - **빈 줄** — 함수 정의 사이, 함수 안의 논리 단위 사이, `#pragma once` / include 묶음 / 선언 사이에 1개를 둔다. 2개 이상 연속으로 쓰지 않고, 여는 `{` 바로 뒤와 닫는 `}` 바로 앞에는 두지 않는다.
+
+  - **함수 내부의 논리 단위** — 하나의 결과를 만드는 연속된 계산·대입은 붙여 쓴다. 준비·계산, 유효성 검사·실패 처리, 실제 처리처럼 목적이 달라지는 지점에는 빈 줄 1개를 둔다. 독립된 검사 블록끼리도 빈 줄로 구분한다. 모든 문장이나 모든 `if` 앞뒤에 기계적으로 넣지는 않는다.
+
+  ```cpp
+  const auto currentTime = std::chrono::steady_clock::now();
+  const float deltaSeconds = std::chrono::duration<float>(currentTime - previousTime).count();
+  previousTime = currentTime;
+
+  if (!application.GetClientSize(width, height))
+  {
+    exitCode = 1;
+    break;
+  }
+
+  if (width == 0 || height == 0) { continue; }
+
+  world.Tick(deltaSeconds, input);
+  ```
 
 - **반환 전 빈 줄** — 함수 마지막의 `return` 앞에 다른 코드가 있으면 빈 줄 1개를 둔다. 본문이 `return` 한 문장뿐인 함수와 한 줄 early exit에는 적용하지 않는다.
 
@@ -347,7 +365,7 @@
   SampleGame/Source/SampleGame/       # 게임 전용 소스, 현재 비어 있음
   ```
 
-- **이전 규칙의 적용 범위** — 엔진 모듈마다 Public/Private를 필수로 두던 규칙은 재시작 후 적용하지 않는다. 향후 공개·내부 경계가 필요해지면 별도 검토한다. 현재 프로젝트 배치는 [Project Settings](../ProjectSettings.md)의 현재 구성을 따른다.
+- **이전 규칙의 적용 범위** — 엔진 모듈마다 Public/Private를 필수로 두던 규칙은 재시작 후 적용하지 않는다. 향후 공개·내부 경계가 필요해지면 별도 검토한다. 현재 프로젝트 배치는 [빌드·개발 설정](../BuildSetup.md)의 현재 구성을 따른다.
 - **종료 코드 타입** — 표준 main의 종료 코드는 int를 쓴다. 기존 RunWindowsApplication은 실행 순서를 main으로 옮기며 제거했다(2026-10-16). 현재 실행 경계를 위한 선택이며 일반 엔진 데이터의 정수 타입 규칙을 일괄 변경하지 않는다.
 
 ### 2.2 Header 규칙 `필수`
@@ -990,15 +1008,16 @@ WriteLog("Windows", ELogLevel::Error, "CreateWindowExW failed (error {})", error
   C4458(매개변수가 멤버 이름을 가림, 1.2 Naming)은 `/W4`에 포함되어 있다.
 - **외부 헤더** — `<>`로 include한 헤더(표준 라이브러리, Windows SDK, 서드파티)는 외부 헤더로 취급해 경고를 끈다. 엔진 헤더는 `""`로 include하므로(2.2 Header 규칙) 경고 대상에 남는다.
 - **예외 / RTTI** — 예외는 컴파일러 옵션으로 끄고 RTTI는 켠다(`/GR`). 예외 사용 경고(C4530)는 에러로 처리되며 RTTI 사용은 허용한다(3.1 C++ 표준 및 기능 정책 참고).
-- **빌드 매크로** — 구성마다 프로젝트 전처리기 정의로 `SE_PLATFORM_*`, `SE_BUILD_*`를 `0` / `1`로 정의한다(3.9 Macro 참고). 구성별 값은 [Project Settings](../ProjectSettings.md)에 있다.
+- **빌드 매크로** — 구성마다 프로젝트 전처리기 정의로 `SE_PLATFORM_*`, `SE_BUILD_*`를 `0` / `1`로 정의한다(3.9 Macro 참고). 구성별 값은 [빌드·개발 설정](../BuildSetup.md)에 있다.
 
 ### 6.2 자동화 도구 `자동화`
 
-- **`.editorconfig`** — 인코딩, 줄바꿈, 들여쓰기를 에디터에 적용한다([Project Settings](../ProjectSettings.md) 참고).
+- **`.editorconfig`** — 인코딩, 줄바꿈, 들여쓰기를 에디터에 적용한다([빌드·개발 설정](../BuildSetup.md) 참고).
 - **`.clang-format`** — 1.1 Formatting 규칙을 자동으로 적용한다. Visual Studio에 내장된 clang-format은 파일에서 가장 가까운 폴더의 `.clang-format`을 읽는다. 커밋 전에 문서 서식(Ctrl+K, Ctrl+D)을 실행한다.
   - 저장소 루트 `.clang-format`: 엔진 코드의 서식이고, 게임 코드의 권장 기본값이다.
   - `Engine/ThirdParty/.clang-format`: 서드파티의 서식을 끈다.
   - 표현하지 못하는 규칙: "한 줄 표기는 early exit만"은 clang-format이 본문 종류를 구분하지 못한다. 대신 줄 길이 제한이 없어(`ColumnLimit: 0`) 작성한 줄바꿈을 그대로 두므로, 한 줄로 쓴 early exit와 여러 줄로 쓴 블록이 모두 유지된다. 규칙은 코드 리뷰로 확인한다.
+  - 함수 내부의 논리 단위 구분과 반환 전 빈 줄(1.1)은 코드의 의미를 기준으로 직접 배치하고 리뷰한다. `MaxEmptyLinesToKeep: 1`은 연속 빈 줄의 최대 개수만 제한하며, 논리 단위 사이에 필요한 빈 줄을 자동으로 추가하지 않는다.
   - include 순서(2.2 Header 규칙)도 자동으로 정렬한다.
 
 ### 6.3 예외 조항
