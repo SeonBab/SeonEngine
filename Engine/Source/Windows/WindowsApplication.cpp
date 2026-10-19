@@ -148,6 +148,8 @@ bool FWindowsApplication::Initialize(const FWindowDescription& description)
 
 bool FWindowsApplication::PumpMessages(int& outExitCode)
 {
+	inputState.ResetFrameState();
+
 	MSG message{};
 	while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
 	{
@@ -161,11 +163,13 @@ bool FWindowsApplication::PumpMessages(int& outExitCode)
 		{
 			if (message.message == WM_KEYDOWN)
 			{
-				inputState.SetKeyDown(TranslateWindowsKey(message.wParam), true);
+				const bool bIsRepeat = (message.lParam & (static_cast<LPARAM>(1) << 30)) != 0;
+				const EKeyEventType type = bIsRepeat ? EKeyEventType::Repeat : EKeyEventType::Pressed;
+				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), type});
 			}
 			else if (message.message == WM_KEYUP)
 			{
-				inputState.SetKeyDown(TranslateWindowsKey(message.wParam), false);
+				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), EKeyEventType::Released});
 			}
 		}
 

@@ -89,6 +89,7 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input)
 			continue;
 		}
 
+		// TODO(seon): 입력 우선순위·소비·플레이어별 대상이 필요해지면 입력 처리 계층으로 배분 책임을 옮긴다.
 		actor->GetComponents(inputComponents);
 		for (UInputComponent* component : inputComponents)
 		{

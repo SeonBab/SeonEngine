@@ -19,6 +19,9 @@ namespace
 			{'A', EKey::A},
 			{'S', EKey::S},
 			{'D', EKey::D},
+			{VK_PRIOR, EKey::PageUp},
+			{VK_NEXT, EKey::PageDown},
+			{VK_OEM_3, EKey::Backtick},
 	};
 }
 
