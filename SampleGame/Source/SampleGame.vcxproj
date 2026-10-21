@@ -61,6 +61,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Engine\Source\Actor.h" />
+    <ClInclude Include="..\..\Engine\Source\Camera\CameraViewInfo.h" />
     <ClInclude Include="..\..\Engine\Source\Components\ActorComponent.h" />
     <ClInclude Include="..\..\Engine\Source\Components\CameraComponent.h" />
     <ClInclude Include="..\..\Engine\Source\Components\InputComponent.h" />
@@ -113,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Engine\Source\Actor.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Camera\CameraViewInfo.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\ActorComponent.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\CameraComponent.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\InputComponent.cpp" />

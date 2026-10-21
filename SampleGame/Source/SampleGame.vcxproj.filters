@@ -19,6 +19,9 @@
     <Filter Include="Engine\Source">
       <UniqueIdentifier>{8EAA24CC-9E37-3C97-AFCF-D3E74D3B54BE}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Camera">
+      <UniqueIdentifier>{CADCBEDF-9E89-331D-A66E-F8CD2C7710E4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Components">
       <UniqueIdentifier>{C17B89AD-5CEA-3FAF-9511-65EC4508454D}</UniqueIdentifier>
     </Filter>
@@ -68,6 +71,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\Engine\Source\Actor.h">
       <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Camera\CameraViewInfo.h">
+      <Filter>Engine\Source\Camera</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Components\ActorComponent.h">
       <Filter>Engine\Source\Components</Filter>
@@ -218,6 +224,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\Engine\Source\Actor.cpp">
       <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Camera\CameraViewInfo.cpp">
+      <Filter>Engine\Source\Camera</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Components\ActorComponent.cpp">
       <Filter>Engine\Source\Components</Filter>

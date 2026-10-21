@@ -70,7 +70,8 @@ int main()
 				if (const UCameraComponent* camera = world.GetActiveCamera())
 				{
 					const float aspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
-					worldToClip = camera->GetWorldToClipMatrix(aspectRatio);
+					const FCameraViewInfo view = camera->GetCameraView();
+					worldToClip = view.GetWorldToClipMatrix(aspectRatio);
 				}
 
 				if (!renderer.SetWorldToClip(worldToClip) || !world.SendAllEndOfFrameUpdates(renderer) || !renderer.BeginFrame(clientWidth, clientHeight) || !world.GetScene().Draw(renderer) || !gameClient.GetWidgetSubsystem().Draw(renderer) || !renderer.EndFrame())

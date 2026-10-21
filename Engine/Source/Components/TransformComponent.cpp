@@ -22,6 +22,14 @@ FTransform UTransformComponent::GetComponentTransform() const
 	return transform * parentTransform->GetComponentTransform();
 }
 
+FVector3 UTransformComponent::GetForwardVector() const
+{
+	// 행 벡터 규칙에서 세 번째 행은 월드 회전으로 변환한 로컬 +Z축이다.
+	const FMatrix4 matrix = GetComponentTransform().ToMatrixNoScale();
+
+	return {matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]};
+}
+
 void UTransformComponent::SetTransform(const FTransform& newTransform)
 {
 	transform = newTransform;

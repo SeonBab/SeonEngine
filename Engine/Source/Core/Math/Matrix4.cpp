@@ -84,3 +84,17 @@ FMatrix4 FMatrix4::Inverse() const
 
 	return result;
 }
+
+FMatrix4 FMatrix4::Transpose() const
+{
+	FMatrix4 result;
+	for (int row = 0; row < 4; ++row)
+	{
+		for (int column = 0; column < 4; ++column)
+		{
+			result.m[row][column] = m[column][row];
+		}
+	}
+
+	return result;
+}
