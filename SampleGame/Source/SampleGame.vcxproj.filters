@@ -183,6 +183,9 @@
     <ClInclude Include="..\..\Engine\Source\Input\PlayerInput.h">
       <Filter>Engine\Source\Input</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Launch\EngineLoop.h">
+      <Filter>Engine\Source\Launch</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h">
       <Filter>Engine\Source\Launch</Filter>
     </ClInclude>
@@ -323,6 +326,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Input\PlayerInput.cpp">
       <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Launch\EngineLoop.cpp">
+      <Filter>Engine\Source\Launch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp">
       <Filter>Engine\Source\Launch</Filter>

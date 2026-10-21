@@ -98,6 +98,7 @@
     <ClInclude Include="..\..\Engine\Source\Input\InputState.h" />
     <ClInclude Include="..\..\Engine\Source\Input\Key.h" />
     <ClInclude Include="..\..\Engine\Source\Input\PlayerInput.h" />
+    <ClInclude Include="..\..\Engine\Source\Launch\EngineLoop.h" />
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
     <ClInclude Include="..\..\Engine\Source\Object.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightData.h" />
@@ -147,6 +148,7 @@
     <ClCompile Include="..\..\Engine\Source\Input\InputMappingContext.cpp" />
     <ClCompile Include="..\..\Engine\Source\Input\InputState.cpp" />
     <ClCompile Include="..\..\Engine\Source\Input\PlayerInput.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Launch\EngineLoop.cpp" />
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp" />
