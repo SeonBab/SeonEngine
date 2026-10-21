@@ -13,6 +13,11 @@ enum class EKey : uint8
 	PageUp,
 	PageDown,
 	Backtick,
+	Insert,
+	Delete,
+	Home,
+	End,
+	Backspace,
 	Count
 };
 

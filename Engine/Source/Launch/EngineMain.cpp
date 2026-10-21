@@ -4,6 +4,7 @@
 #include "GameClient.h"
 #include "GameEntry.h"
 #include "Input/InputState.h"
+#include "Input/PlayerInput.h"
 #include "Renderer/Renderer.h"
 #include "Windows/WindowsApplication.h"
 #include "World.h"
@@ -63,7 +64,14 @@ int main()
 				{
 					continue;
 				}
-				world.Tick(deltaSeconds, input);
+				UPlayerInput& playerInput = gameClient.GetPlayerInput();
+				if (!playerInput.EvaluateInputActions(gameClient.GetInputMappingContext(), input))
+				{
+					exitCode = 1;
+					break;
+				}
+
+				world.Tick(deltaSeconds, input, playerInput);
 
 				FMatrix4 worldToClip;
 				worldToClip.SetIdentity();

@@ -123,6 +123,9 @@
     <ClInclude Include="..\..\Engine\Source\Core\Misc\Paths.h">
       <Filter>Engine\Source\Core\Misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Core\Templates\SharedPtr.h">
+      <Filter>Engine\Source\Core\Templates</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Core\Templates\UniquePtr.h">
       <Filter>Engine\Source\Core\Templates</Filter>
     </ClInclude>
@@ -147,13 +150,34 @@
     <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h">
       <Filter>Engine\Source\Image</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputAction.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionEvaluator.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionInstance.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionKeyMapping.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionTypes.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Input\InputActionValue.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputMappingContext.h">
       <Filter>Engine\Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Input\InputState.h">
       <Filter>Engine\Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Input\Key.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\PlayerInput.h">
       <Filter>Engine\Source\Input</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h">
@@ -276,7 +300,19 @@
     <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp">
       <Filter>Engine\Source\Image</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Input\InputActionEvaluator.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Input\InputActionInstance.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Input\InputMappingContext.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Input\InputState.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Input\PlayerInput.cpp">
       <Filter>Engine\Source\Input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp">

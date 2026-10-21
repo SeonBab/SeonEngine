@@ -5,6 +5,7 @@
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TransformComponent.h"
+#include "Input/PlayerInput.h"
 
 #include <algorithm>
 
@@ -66,7 +67,7 @@ void UWorld::GetActors(TArray<AActor*>& outActors) const
 	}
 }
 
-void UWorld::Tick(float deltaSeconds, const FInputState& input)
+void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& playerInput)
 {
 	if (bIsTicking) { return; }
 
@@ -89,11 +90,17 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input)
 			continue;
 		}
 
-		// TODO(seon): 입력 우선순위·소비·플레이어별 대상이 필요해지면 입력 처리 계층으로 배분 책임을 옮긴다.
+		// TODO(seon): 입력 우선순위, 소비, 플레이어별 대상이 필요해지면 입력 처리 계층으로 배분 책임을 옮긴다.
 		actor->GetComponents(inputComponents);
 		for (UInputComponent* component : inputComponents)
 		{
 			component->ProcessInput(input, deltaSeconds);
+			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			{
+				break;
+			}
+
+			playerInput.DispatchActionEvents(*component, deltaSeconds);
 			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
 			{
 				break;
@@ -121,6 +128,7 @@ bool UWorld::CreateRenderStates(FRenderer& renderer)
 			if (component->IsRenderStateCreated()) { continue; }
 			if (!component->CreateRenderState(renderer)) { return false; }
 		}
+
 	}
 
 	return true;
@@ -137,6 +145,7 @@ bool UWorld::SendAllEndOfFrameUpdates(FRenderer& renderer)
 			if (!component->IsRenderStateCreated()) { continue; }
 			if (!component->UpdateRenderState(renderer) || !component->SendRenderTransform()) { return false; }
 		}
+
 	}
 
 	return true;

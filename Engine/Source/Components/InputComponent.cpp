@@ -25,6 +25,34 @@ bool UInputComponent::BindKey(EKey key, EInputTrigger trigger, FInputCallback ca
 	return true;
 }
 
+bool UInputComponent::BindAction(TSharedPtr<const UInputAction> action, EInputActionEvent event, FInputActionCallback callback)
+{
+	if (bProcessingInput || !action || !callback) { return false; }
+	if (event != EInputActionEvent::Started && event != EInputActionEvent::Triggered && event != EInputActionEvent::Completed) { return false; }
+
+	actionBindings.push_back({std::move(action), event, std::move(callback)});
+
+	return true;
+}
+
+void UInputComponent::DispatchActionEvent(const UInputAction& action, EInputActionEvent event, const FInputActionValue& value, float deltaSeconds)
+{
+	if (bProcessingInput) { return; }
+	if (event != EInputActionEvent::Started && event != EInputActionEvent::Triggered && event != EInputActionEvent::Completed) { return; }
+
+	bProcessingInput = true;
+
+	for (const FInputActionBinding& binding : actionBindings)
+	{
+		if (binding.action.get() == &action && binding.event == event)
+		{
+			binding.callback(value, deltaSeconds);
+		}
+	}
+
+	bProcessingInput = false;
+}
+
 void UInputComponent::ProcessInput(const FInputState& input, float deltaSeconds)
 {
 	if (bProcessingInput) { return; }

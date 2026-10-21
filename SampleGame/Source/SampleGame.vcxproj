@@ -78,6 +78,7 @@
     <ClInclude Include="..\..\Engine\Source\Core\Math\Vector2.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Math\Vector3.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Misc\Paths.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\Templates\SharedPtr.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Templates\UniquePtr.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Time\FrameTimer.h" />
     <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h" />
@@ -86,9 +87,16 @@
     <ClInclude Include="..\..\Engine\Source\GameClient.h" />
     <ClInclude Include="..\..\Engine\Source\Image\Image.h" />
     <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputAction.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionEvaluator.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionInstance.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionKeyMapping.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionTypes.h" />
     <ClInclude Include="..\..\Engine\Source\Input\InputActionValue.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputMappingContext.h" />
     <ClInclude Include="..\..\Engine\Source\Input\InputState.h" />
     <ClInclude Include="..\..\Engine\Source\Input\Key.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\PlayerInput.h" />
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
     <ClInclude Include="..\..\Engine\Source\Object.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h" />
@@ -131,7 +139,11 @@
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Shader.cpp" />
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11SwapChain.cpp" />
     <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Input\InputActionEvaluator.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Input\InputActionInstance.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Input\InputMappingContext.cpp" />
     <ClCompile Include="..\..\Engine\Source\Input\InputState.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Input\PlayerInput.cpp" />
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp" />
