@@ -43,6 +43,11 @@ void FD3D11Device::ClearRenderTargetView(ID3D11RenderTargetView* renderTargetVie
 	context->ClearRenderTargetView(renderTargetView, color);
 }
 
+void FD3D11Device::ClearDepthStencilView(ID3D11DepthStencilView* depthStencilView, float depth)
+{
+	context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, depth, 0);
+}
+
 bool FD3D11Device::CreateVertexShader(const TArray<uint8>& bytecode, Microsoft::WRL::ComPtr<ID3D11VertexShader>& outShader)
 {
 	if (!device || bytecode.empty())
@@ -95,7 +100,7 @@ void FD3D11Device::SetPixelShader(ID3D11PixelShader* shader)
 	context->PSSetShader(shader, nullptr, 0);
 }
 
-void FD3D11Device::SetRenderTarget(ID3D11RenderTargetView* renderTargetView)
+void FD3D11Device::SetRenderTarget(ID3D11RenderTargetView* renderTargetView, ID3D11DepthStencilView* depthStencilView)
 {
 	if (renderTargetView == nullptr)
 	{
@@ -103,7 +108,7 @@ void FD3D11Device::SetRenderTarget(ID3D11RenderTargetView* renderTargetView)
 		return;
 	}
 
-	context->OMSetRenderTargets(1, &renderTargetView, nullptr);
+	context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 }
 
 void FD3D11Device::SetViewport(int width, int height)
@@ -379,6 +384,48 @@ bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uin
 	}
 
 	outTexture = std::move(createdTexture);
+
+	return true;
+}
+
+bool FD3D11Device::CreateDepthStencilBuffer(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView)
+{
+	if (!device || width == 0 || height == 0)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Depth stencil buffer creation requires a device and positive dimensions.");
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC description{};
+	description.Width = width;
+	description.Height = height;
+	description.MipLevels = 1;
+	description.ArraySize = 1;
+	description.Format = DXGI_FORMAT_D32_FLOAT;
+	description.SampleDesc.Count = 1;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdTexture;
+	const HRESULT result = device->CreateTexture2D(&description, nullptr, createdTexture.GetAddressOf());
+
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Depth texture creation failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> createdView;
+	const HRESULT viewResult = device->CreateDepthStencilView(createdTexture.Get(), nullptr, createdView.GetAddressOf());
+
+	if (FAILED(viewResult))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "CreateDepthStencilView failed (HRESULT 0x{:08X})", static_cast<unsigned long>(viewResult));
+		return false;
+	}
+
+	outTexture = std::move(createdTexture);
+	outView = std::move(createdView);
 
 	return true;
 }

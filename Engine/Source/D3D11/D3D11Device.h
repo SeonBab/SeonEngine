@@ -32,6 +32,9 @@ public:
 	/** 준비된 장치의 즉시 컨텍스트로 같은 장치의 유효한 RTV를 지운다. RGBA float 4개가 필요하다. */
 	void ClearRenderTargetView(ID3D11RenderTargetView* renderTargetView, const float color[4]);
 
+	/** 준비된 컨텍스트로 같은 장치의 유효한 DSV 깊이를 지운다. depth는 0~1 범위여야 한다. */
+	void ClearDepthStencilView(ID3D11DepthStencilView* depthStencilView, float depth);
+
 	/** 바이트코드로 정점 셰이더를 만든다. 장치 미준비, 빈 입력, API 실패는 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateVertexShader(const TArray<uint8>& bytecode, Microsoft::WRL::ComPtr<ID3D11VertexShader>& outShader);
 
@@ -44,8 +47,8 @@ public:
 	/** 준비된 컨텍스트에 같은 장치의 픽셀 셰이더를 연결한다. nullptr면 연결을 해제한다. */
 	void SetPixelShader(ID3D11PixelShader* shader);
 
-	/** 준비된 컨텍스트에 같은 장치의 RTV 하나를 연결한다. 깊이 버퍼는 사용하지 않으며 nullptr면 연결을 해제한다. */
-	void SetRenderTarget(ID3D11RenderTargetView* renderTargetView);
+	/** 준비된 컨텍스트에 같은 장치의 RTV와 선택적 DSV를 연결한다. RTV가 nullptr면 두 출력 모두 해제한다. */
+	void SetRenderTarget(ID3D11RenderTargetView* renderTargetView, ID3D11DepthStencilView* depthStencilView = nullptr);
 
 	/** 준비된 컨텍스트에 원점 (0, 0), 깊이 0~1의 뷰포트 하나를 설정한다. 크기는 양수이며 장치 지원 범위여야 한다. */
 	void SetViewport(int width, int height);
@@ -94,6 +97,9 @@ public:
 
 	/** 행 패딩 없는 RGBA8 배열로 단일 밉의 변경 불가 텍스처를 만든다. 장치, 크기, 데이터 검사나 API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture);
+
+	/** D32_FLOAT 깊이 텍스처와 DSV를 만든다. 장치 미준비, 잘못된 크기, API 실패 시 로그/false이며 기존 출력은 유지한다. */
+	[[nodiscard]] bool CreateDepthStencilBuffer(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView);
 
 	/** 같은 장치 텍스처의 기본 SRV를 만든다. 장치 미준비, null, 소속 불일치, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outView);
