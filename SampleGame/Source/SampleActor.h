@@ -12,6 +12,9 @@ public:
 	/** 월드를 연결하고 기반 액터의 기본 Transform을 준비한다. */
 	explicit ASampleActor(UWorld& world);
 
-	/** 초 단위 경과 시간에 맞춰 로컬 Z축 회전을 초당 45도 증가시킨다. */
+	/** 경과 시간에 따라 로컬 Y축을 좌우 65도 범위에서 왕복 회전한다. */
 	void Tick(float deltaSeconds) override;
+
+private:
+	float elapsedSeconds = 0.0f;
 };

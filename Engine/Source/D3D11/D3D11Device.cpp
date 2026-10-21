@@ -206,22 +206,15 @@ bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, 
 	}
 
 	static_assert(std::is_standard_layout_v<FVertex> && std::is_trivially_copyable_v<FVertex>);
-	D3D11_INPUT_ELEMENT_DESC elements[3]{};
-	elements[0].SemanticName = "POSITION";
-	elements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	elements[0].AlignedByteOffset = static_cast<UINT>(offsetof(FVertex, position));
-	elements[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	elements[1].SemanticName = "COLOR";
-	elements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	elements[1].AlignedByteOffset = static_cast<UINT>(offsetof(FVertex, color));
-	elements[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	elements[2].SemanticName = "TEXCOORD";
-	elements[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	elements[2].AlignedByteOffset = static_cast<UINT>(offsetof(FVertex, uv));
-	elements[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	D3D11_INPUT_ELEMENT_DESC elements[] =
+		{
+			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<UINT>(offsetof(FVertex, position)), D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<UINT>(offsetof(FVertex, color)), D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<UINT>(offsetof(FVertex, normal)), D3D11_INPUT_PER_VERTEX_DATA, 0},
+			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<UINT>(offsetof(FVertex, uv)), D3D11_INPUT_PER_VERTEX_DATA, 0}};
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> createdLayout;
-	const HRESULT result = device->CreateInputLayout(elements, 3, vertexShaderBytecode.data(), vertexShaderBytecode.size(), createdLayout.GetAddressOf());
+	const HRESULT result = device->CreateInputLayout(elements, 4, vertexShaderBytecode.data(), vertexShaderBytecode.size(), createdLayout.GetAddressOf());
 	if (FAILED(result))
 	{
 		WriteLog("D3D11", ELogLevel::Error, "CreateInputLayout failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
@@ -332,9 +325,14 @@ bool FD3D11Device::UpdateConstantBuffer(ID3D11Buffer* buffer, const void* data, 
 	return true;
 }
 
-void FD3D11Device::SetVertexShaderConstantBuffer(ID3D11Buffer* buffer)
+void FD3D11Device::SetVertexShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffer)
 {
-	context->VSSetConstantBuffers(0, 1, &buffer);
+	context->VSSetConstantBuffers(slot, 1, &buffer);
+}
+
+void FD3D11Device::SetPixelShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffer)
+{
+	context->PSSetConstantBuffers(slot, 1, &buffer);
 }
 
 bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture)

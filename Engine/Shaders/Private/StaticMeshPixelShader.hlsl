@@ -1,16 +1,17 @@
+// 정적 메시의 텍스처와 정점 색상을 곱한다. 조명 계산은 아직 없다.
 // VS 출력과 필드 순서를 맞춰 같은 입력 레지스터에서 색상과 UV를 읽는다.
 struct PSInput
 {
 	float4 position : SV_POSITION;
 	float4 color : COLOR0;
+	float3 normal : NORMAL0;
 	float2 uv : TEXCOORD0;
 };
 
 Texture2D BaseTexture : register(t0);
 SamplerState BaseSampler : register(s0);
 
-float4 Main(PSInput input)
-	: SV_Target
+float4 Main(PSInput input) : SV_Target
 {
 	return BaseTexture.Sample(BaseSampler, input.uv) * input.color;
 }

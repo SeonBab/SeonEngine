@@ -64,6 +64,7 @@
     <ClInclude Include="..\..\Engine\Source\Camera\CameraViewInfo.h" />
     <ClInclude Include="..\..\Engine\Source\Components\ActorComponent.h" />
     <ClInclude Include="..\..\Engine\Source\Components\CameraComponent.h" />
+    <ClInclude Include="..\..\Engine\Source\Components\DirectionalLightComponent.h" />
     <ClInclude Include="..\..\Engine\Source\Components\InputComponent.h" />
     <ClInclude Include="..\..\Engine\Source\Components\StaticMeshComponent.h" />
     <ClInclude Include="..\..\Engine\Source\Components\TransformComponent.h" />
@@ -99,6 +100,7 @@
     <ClInclude Include="..\..\Engine\Source\Input\PlayerInput.h" />
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
     <ClInclude Include="..\..\Engine\Source\Object.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightData.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelLoader.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Renderer.h" />
@@ -125,6 +127,7 @@
     <ClCompile Include="..\..\Engine\Source\Camera\CameraViewInfo.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\ActorComponent.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\CameraComponent.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Components\DirectionalLightComponent.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\InputComponent.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\StaticMeshComponent.cpp" />
     <ClCompile Include="..\..\Engine\Source\Components\TransformComponent.cpp" />
@@ -158,18 +161,32 @@
     <ClCompile Include="SampleGame.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\..\Engine\Shaders\Private\TriangleVertexShader.hlsl">
+    <FxCompile Include="..\..\Engine\Shaders\Private\StaticMeshVertexShader.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\TriangleVertexShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\StaticMeshVertexShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
-    <FxCompile Include="..\..\Engine\Shaders\Private\TrianglePixelShader.hlsl">
+    <FxCompile Include="..\..\Engine\Shaders\Private\ImageVertexShader.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\ImageVertexShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\StaticMeshPixelShader.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\TrianglePixelShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\StaticMeshPixelShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\ImagePixelShader.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\ImagePixelShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
   </ItemGroup>

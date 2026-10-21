@@ -112,7 +112,7 @@ SampleGame 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 
 ## 셰이더와 콘텐츠 출력
 
-`SampleGame.vcxproj`의 FxCompile은 `TriangleVertexShader.hlsl`과 `TrianglePixelShader.hlsl`을 각각 Vertex·Pixel, Shader Model 5.0, 진입점 Main으로 컴파일한다. 경고는 오류로 처리하며 출력은 `$(OutDir)Shaders/`의 같은 이름 `.cso`다. 프로젝트가 컴파일 전 해당 디렉터리를 만든다.
+`SampleGame.vcxproj`의 FxCompile은 `StaticMeshVertexShader.hlsl`과 `ImageVertexShader.hlsl`을 Vertex로, `StaticMeshPixelShader.hlsl`과 `ImagePixelShader.hlsl`을 Pixel로 등록한다. 모두 Shader Model 5.0, 진입점 Main으로 컴파일한다. 경고는 오류로 처리하며 출력은 `$(OutDir)Shaders/`의 같은 이름 `.cso`다. 프로젝트가 컴파일 전 해당 디렉터리를 만든다.
 
 빌드 후 `Engine/Content/Textures/Checker.png`를 `$(OutDir)Content/Textures/`에 복사한다. 런타임 셰이더를 준비할 때는 실행 파일과 Shaders 출력을 함께 둔다.
 

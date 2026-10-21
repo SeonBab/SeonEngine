@@ -81,6 +81,9 @@
     <ClInclude Include="..\..\Engine\Source\Components\CameraComponent.h">
       <Filter>Engine\Source\Components</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Components\DirectionalLightComponent.h">
+      <Filter>Engine\Source\Components</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Components\InputComponent.h">
       <Filter>Engine\Source\Components</Filter>
     </ClInclude>
@@ -186,6 +189,9 @@
     <ClInclude Include="..\..\Engine\Source\Object.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
@@ -256,6 +262,9 @@
       <Filter>Engine\Source\Components</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Components\CameraComponent.cpp">
+      <Filter>Engine\Source\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Components\DirectionalLightComponent.cpp">
       <Filter>Engine\Source\Components</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Components\InputComponent.cpp">

@@ -3,6 +3,8 @@
 #include "Components/TransformComponent.h"
 #include "Core/Math/Rotator.h"
 
+#include <cmath>
+
 ASampleActor::ASampleActor(UWorld& world)
 	: AActor(world)
 {
@@ -10,8 +12,10 @@ ASampleActor::ASampleActor(UWorld& world)
 
 void ASampleActor::Tick(float deltaSeconds)
 {
+	elapsedSeconds += deltaSeconds;
+
 	UTransformComponent* transform = GetComponent<UTransformComponent>();
 	FRotator rotation = transform->GetRotation();
-	rotation.roll += 45.0f * deltaSeconds;
+	rotation.yaw = 65.0f * std::sin(elapsedSeconds);
 	transform->SetRotation(rotation);
 }

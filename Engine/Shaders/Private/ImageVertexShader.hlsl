@@ -2,20 +2,24 @@
 cbuffer TransformConstantBuffer : register(b0)
 {
 	row_major float4x4 LocalToClip;
+	row_major float4x4 NormalToWorld;
 };
 
 struct VSOutput
 {
 	float4 position : SV_POSITION;
 	float4 color : COLOR0;
+	float3 normal : NORMAL0;
 	float2 uv : TEXCOORD0;
 };
 
-VSOutput Main(float3 position : POSITION, float4 color : COLOR0, float2 uv : TEXCOORD0)
+VSOutput Main(float3 position : POSITION, float4 color : COLOR0, float3 normal : NORMAL0, float2 uv : TEXCOORD0)
 {
 	VSOutput output;
 	output.position = mul(float4(position, 1.0f), LocalToClip);
 	output.color = color;
+	output.normal = mul(normal, (float3x3)NormalToWorld);
 	output.uv = uv;
+
 	return output;
 }

@@ -59,8 +59,55 @@ bool FScene::RemoveStaticMesh(uint64 meshId)
 	return true;
 }
 
+bool FScene::AddDirectionalLight(const FDirectionalLightData& data, uint64& outLightId)
+{
+	if (directionalLight || nextDirectionalLightId == 0) { return false; }
+
+	directionalLight = FDirectionalLightEntry{nextDirectionalLightId, data};
+	outLightId = nextDirectionalLightId;
+	++nextDirectionalLightId;
+
+	return true;
+}
+
+bool FScene::SetDirectionalLight(uint64 lightId, const FDirectionalLightData& data)
+{
+	if (!directionalLight || directionalLight->lightId != lightId) { return false; }
+
+	directionalLight->data = data;
+
+	return true;
+}
+
+bool FScene::RemoveDirectionalLight(uint64 lightId)
+{
+	if (!directionalLight || directionalLight->lightId != lightId) { return false; }
+
+	directionalLight.reset();
+
+	return true;
+}
+
+const FDirectionalLightData* FScene::GetDirectionalLight() const
+{
+	return directionalLight ? &directionalLight->data : nullptr;
+}
+
 bool FScene::Draw(FRenderer& renderer)
 {
+	FDirectionalLightData lightData{};
+	lightData.intensity = 0.0f;
+
+	if (directionalLight)
+	{
+		lightData = directionalLight->data;
+	}
+
+	if (!renderer.SetDirectionalLight(lightData))
+	{
+		return false;
+	}
+
 	for (const FStaticMeshEntry& entry : staticMeshes)
 	{
 		if (!renderer.SetLocalToWorld(entry.localToWorld) || !renderer.DrawMesh(entry.renderData))

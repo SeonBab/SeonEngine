@@ -2,6 +2,7 @@
 
 #include "Actor.h"
 #include "Components/CameraComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TransformComponent.h"
@@ -120,6 +121,7 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 bool UWorld::CreateRenderStates(FRenderer& renderer)
 {
 	TArray<UStaticMeshComponent*> meshComponents;
+	TArray<UDirectionalLightComponent*> lightComponents;
 	for (const TUniquePtr<AActor>& actor : actors)
 	{
 		actor->GetComponents(meshComponents);
@@ -129,6 +131,12 @@ bool UWorld::CreateRenderStates(FRenderer& renderer)
 			if (!component->CreateRenderState(renderer)) { return false; }
 		}
 
+		actor->GetComponents(lightComponents);
+		for (UDirectionalLightComponent* component : lightComponents)
+		{
+			if (component->IsRenderStateCreated()) { continue; }
+			if (!component->CreateRenderState()) { return false; }
+		}
 	}
 
 	return true;
@@ -137,6 +145,7 @@ bool UWorld::CreateRenderStates(FRenderer& renderer)
 bool UWorld::SendAllEndOfFrameUpdates(FRenderer& renderer)
 {
 	TArray<UStaticMeshComponent*> meshComponents;
+	TArray<UDirectionalLightComponent*> lightComponents;
 	for (const TUniquePtr<AActor>& actor : actors)
 	{
 		actor->GetComponents(meshComponents);
@@ -146,6 +155,12 @@ bool UWorld::SendAllEndOfFrameUpdates(FRenderer& renderer)
 			if (!component->UpdateRenderState(renderer) || !component->SendRenderTransform()) { return false; }
 		}
 
+		actor->GetComponents(lightComponents);
+		for (UDirectionalLightComponent* component : lightComponents)
+		{
+			if (!component->IsRenderStateCreated()) { continue; }
+			if (!component->UpdateRenderState()) { return false; }
+		}
 	}
 
 	return true;

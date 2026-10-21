@@ -7,6 +7,7 @@
 #include "Core/Misc/Paths.h"
 #include "D3D11/D3D11Shader.h"
 #include "Image/Image.h"
+#include "Renderer/DirectionalLightData.h"
 #include "Renderer/StaticMeshData.h"
 #include "Renderer/Texture2D.h"
 #include "UI/UIDrawElementList.h"
@@ -20,9 +21,28 @@
 
 namespace
 {
+	struct FTransformConstants
+	{
+		FMatrix4 localToClip;
+		FMatrix4 normalToWorld;
+	};
+
+	static_assert(sizeof(FTransformConstants) == 128);
+
+	struct FDirectionalLightConstants
+	{
+		FVector3 direction;
+		float directionPadding = 0.0f;
+		FVector3 color; // 색에 세기를 곱한 RGB
+		float colorPadding = 0.0f;
+	};
+
+	static_assert(sizeof(FDirectionalLightConstants) == 32);
+	static_assert(offsetof(FDirectionalLightConstants, color) == 16);
+
 	bool ValidateTriangleMesh(size_t vertexCount, const TArray<uint32>& indices)
 	{
-		// TODO(seon): 인덱스 없는 삼각형 목록 지원 시 정점 개수 검증과 GPU 생성·Draw 경로를 함께 추가한다.
+		// TODO(seon): 인덱스 없는 삼각형 목록 지원 시 정점 개수 검증과 GPU 생성과 Draw 경로를 함께 추가한다.
 		if (vertexCount == 0 || indices.empty() || indices.size() % 3 != 0)
 		{
 			WriteLog("Renderer", ELogLevel::Error, "A mesh requires vertices and a nonempty triangle-list index array.");
@@ -61,29 +81,36 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 	}
 
 	const std::filesystem::path shaderDir = *baseDir / L"Shaders";
-	TArray<uint8> vertexShaderBytecode;
-	TArray<uint8> pixelShaderBytecode;
-	if (!ReadShaderBytecode(shaderDir / L"TriangleVertexShader.cso", vertexShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"TrianglePixelShader.cso", pixelShaderBytecode))
+	TArray<uint8> staticMeshVertexShaderBytecode;
+	TArray<uint8> staticMeshPixelShaderBytecode;
+	TArray<uint8> imageVertexShaderBytecode;
+	TArray<uint8> imagePixelShaderBytecode;
+	if (!ReadShaderBytecode(shaderDir / L"StaticMeshVertexShader.cso", staticMeshVertexShaderBytecode) ||
+		!ReadShaderBytecode(shaderDir / L"StaticMeshPixelShader.cso", staticMeshPixelShaderBytecode) ||
+		!ReadShaderBytecode(shaderDir / L"ImageVertexShader.cso", imageVertexShaderBytecode) ||
+		!ReadShaderBytecode(shaderDir / L"ImagePixelShader.cso", imagePixelShaderBytecode))
 	{
 		return false;
 	}
 
-	WriteLog("D3D11", ELogLevel::Info, "Vertex shader bytecode loaded ({} bytes).", vertexShaderBytecode.size());
-	WriteLog("D3D11", ELogLevel::Info, "Pixel shader bytecode loaded ({} bytes).", pixelShaderBytecode.size());
+	WriteLog("D3D11", ELogLevel::Info, "Vertex shader bytecode loaded ({} bytes).", staticMeshVertexShaderBytecode.size());
+	WriteLog("D3D11", ELogLevel::Info, "Static mesh pixel shader bytecode loaded ({} bytes).", staticMeshPixelShaderBytecode.size());
+	WriteLog("D3D11", ELogLevel::Info, "Image pixel shader bytecode loaded ({} bytes).", imagePixelShaderBytecode.size());
 	if (!graphics.Initialize())
 	{
 		return false;
 	}
-	if (!graphics.CreateVertexShader(vertexShaderBytecode, vertexShader) ||
-		!graphics.CreatePixelShader(pixelShaderBytecode, pixelShader))
+	if (!graphics.CreateVertexShader(staticMeshVertexShaderBytecode, staticMeshVertexShader) ||
+		!graphics.CreateVertexShader(imageVertexShaderBytecode, imageVertexShader) ||
+		!graphics.CreatePixelShader(staticMeshPixelShaderBytecode, staticMeshPixelShader) ||
+		!graphics.CreatePixelShader(imagePixelShaderBytecode, imagePixelShader))
 	{
 		Shutdown();
 		return false;
 	}
 
 	WriteLog("D3D11", ELogLevel::Info, "Vertex and pixel shaders created.");
-	if (!graphics.CreateInputLayout(vertexShaderBytecode, inputLayout))
+	if (!graphics.CreateInputLayout(staticMeshVertexShaderBytecode, inputLayout))
 	{
 		Shutdown();
 		return false;
@@ -92,14 +119,17 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 	WriteLog("D3D11", ELogLevel::Info, "Vertex input layout created.");
 
 	static_assert(sizeof(FMatrix4) == 64);
-	constexpr uint32 TransformBufferByteSize = static_cast<uint32>(sizeof(FMatrix4));
+	constexpr uint32 TransformBufferByteSize = static_cast<uint32>(sizeof(FTransformConstants));
 	FMatrix4 initialLocalToWorld;
 	initialLocalToWorld.SetIdentity();
 	FMatrix4 initialWorldToClip;
 	initialWorldToClip.SetIdentity();
-	const FMatrix4 localToClip = initialLocalToWorld * initialWorldToClip;
+	FMatrix4 identity;
+	identity.SetIdentity();
+
+	const FTransformConstants initialWorldConstants{initialLocalToWorld * initialWorldToClip, identity};
 	if (!graphics.CreateConstantBuffer(TransformBufferByteSize, transformConstantBuffer) ||
-		!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &localToClip, TransformBufferByteSize))
+		!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &initialWorldConstants, TransformBufferByteSize))
 	{
 		Shutdown();
 		return false;
@@ -107,10 +137,20 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 
 	WriteLog("D3D11", ELogLevel::Info, "Transform constant buffer initialized.");
 
-	FMatrix4 initialImageTransform;
-	initialImageTransform.SetIdentity();
+	constexpr uint32 DirectionalLightBufferByteSize = static_cast<uint32>(sizeof(FDirectionalLightConstants));
+
+	const FDirectionalLightConstants initialLightConstants{};
+
+	if (!graphics.CreateConstantBuffer(DirectionalLightBufferByteSize, directionalLightConstantBuffer) ||
+		!graphics.UpdateConstantBuffer(directionalLightConstantBuffer.Get(), &initialLightConstants, DirectionalLightBufferByteSize))
+	{
+		Shutdown();
+		return false;
+	}
+
+	const FTransformConstants initialImageConstants{identity, identity};
 	if (!graphics.CreateConstantBuffer(TransformBufferByteSize, imageTransformConstantBuffer) ||
-		!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &initialImageTransform, TransformBufferByteSize))
+		!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &initialImageConstants, TransformBufferByteSize))
 	{
 		Shutdown();
 		return false;
@@ -247,8 +287,9 @@ bool FRenderer::SetLocalToWorld(const FMatrix4& matrix)
 		return false;
 	}
 
-	const FMatrix4 localToClip = matrix * worldToClip;
-	if (!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &localToClip, static_cast<uint32>(sizeof(localToClip))))
+	const FTransformConstants constants{matrix * worldToClip, matrix.Inverse().Transpose()};
+
+	if (!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants))))
 	{
 		return false;
 	}
@@ -265,14 +306,27 @@ bool FRenderer::SetWorldToClip(const FMatrix4& matrix)
 		return false;
 	}
 
-	const FMatrix4 localToClip = localToWorld * matrix;
-	if (!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &localToClip, static_cast<uint32>(sizeof(localToClip))))
+	const FTransformConstants constants{localToWorld * matrix, localToWorld.Inverse().Transpose()};
+	if (!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(FTransformConstants))))
 	{
 		return false;
 	}
 	worldToClip = matrix;
 
 	return true;
+}
+
+bool FRenderer::SetDirectionalLight(const FDirectionalLightData& data)
+{
+	if (!bInitialized)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Setting a directional light requires an initialized renderer.");
+		return false;
+	}
+
+	const FDirectionalLightConstants constants{.direction = data.direction, .color = data.lightColor * data.intensity};
+
+	return graphics.UpdateConstantBuffer(directionalLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
 }
 
 bool FRenderer::BeginFrame(int width, int height)
@@ -325,8 +379,8 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 		return false;
 	}
 
-	graphics.SetVertexShader(vertexShader.Get());
-	graphics.SetPixelShader(pixelShader.Get());
+	graphics.SetVertexShader(staticMeshVertexShader.Get());
+	graphics.SetPixelShader(staticMeshPixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
 	graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
 	const auto& textureView = mesh.baseColorTexture.textureView;
@@ -334,7 +388,8 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 	const size_t addressU = mesh.addressU == ETextureAddressMode::Wrap ? 1 : 0;
 	const size_t addressV = mesh.addressV == ETextureAddressMode::Wrap ? 1 : 0;
 	graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get());
-	graphics.SetVertexShaderConstantBuffer(transformConstantBuffer.Get());
+	graphics.SetVertexShaderConstantBuffer(0, transformConstantBuffer.Get());
+	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
 	graphics.SetIndexBuffer(mesh.indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(mesh.indexCount, 0, 0);
@@ -401,15 +456,20 @@ bool FRenderer::DrawImage(const FUIImageDrawElement& element)
 		WriteLog("Renderer", ELogLevel::Error, "Image transform exceeds the finite matrix range.");
 		return false;
 	}
-	if (!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &imageToClip, static_cast<uint32>(sizeof(imageToClip)))) { return false; }
 
-	graphics.SetVertexShader(vertexShader.Get());
-	graphics.SetPixelShader(pixelShader.Get());
+	FMatrix4 identity;
+	identity.SetIdentity();
+
+	const FTransformConstants constants{imageToClip, identity};
+	if (!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(FTransformConstants)))) { return false; }
+
+	graphics.SetVertexShader(imageVertexShader.Get());
+	graphics.SetPixelShader(imagePixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
 	graphics.SetVertexBuffer(imageQuad.vertexBuffer.Get());
 	graphics.SetPixelShaderResourceView(element.texture->textureView.Get());
 	graphics.SetPixelShaderSamplerState(samplerStates[0][0].Get());
-	graphics.SetVertexShaderConstantBuffer(imageTransformConstantBuffer.Get());
+	graphics.SetVertexShaderConstantBuffer(0, imageTransformConstantBuffer.Get());
 	graphics.SetIndexBuffer(imageQuad.indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(imageQuad.indexCount, 0, 0);
@@ -437,7 +497,8 @@ void FRenderer::Shutdown()
 		graphics.SetPixelShaderResourceView(nullptr);
 		graphics.SetPixelShaderSamplerState(nullptr);
 		graphics.SetIndexBuffer(nullptr);
-		graphics.SetVertexShaderConstantBuffer(nullptr);
+		graphics.SetVertexShaderConstantBuffer(0, nullptr);
+		graphics.SetVertexShaderConstantBuffer(1, nullptr);
 		graphics.SetVertexBuffer(nullptr);
 		graphics.SetInputLayout(nullptr);
 		graphics.SetRenderTarget(nullptr);
@@ -456,10 +517,13 @@ void FRenderer::Shutdown()
 	whiteTextureView.Reset();
 	uiBlendState.Reset();
 	transformConstantBuffer.Reset();
+	directionalLightConstantBuffer.Reset();
 	imageTransformConstantBuffer.Reset();
 	inputLayout.Reset();
-	pixelShader.Reset();
-	vertexShader.Reset();
+	staticMeshPixelShader.Reset();
+	imagePixelShader.Reset();
+	staticMeshVertexShader.Reset();
+	imageVertexShader.Reset();
 	graphics.Shutdown();
 	localToWorld = FMatrix4{};
 	worldToClip = FMatrix4{};
