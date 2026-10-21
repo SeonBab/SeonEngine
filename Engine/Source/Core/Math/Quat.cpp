@@ -20,7 +20,7 @@ FRotator FQuat::ToRotator() const
 	const double qz = z;
 	const double qw = w;
 
-	// 고정 축 Z→X→Y 행 벡터 회전의 성분이다. 대각 성분도 제곱합으로 계산해 상쇄 오차를 줄인다.
+	// 고정 축 Z, X, Y 순서로 적용하는 행 벡터 회전의 성분이다. 대각 성분도 제곱합으로 계산해 상쇄 오차를 줄인다.
 	const double m11 = qw * qw + qx * qx - qy * qy - qz * qz;
 	const double m12 = 2.0 * (qx * qy + qw * qz);
 	const double m13 = 2.0 * (qx * qz - qw * qy);
@@ -42,7 +42,7 @@ FRotator FQuat::ToRotator() const
 	}
 	else
 	{
-		// pitch ±90도에서 겹치는 yaw·roll은 roll 0인 표현으로 선택한다.
+		// pitch ±90도에서 겹치는 yaw와 roll은 roll 0인 표현으로 선택한다.
 		yawRadians = std::atan2(-m13, m11);
 		rollRadians = 0.0;
 	}

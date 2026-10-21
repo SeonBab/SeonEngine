@@ -61,7 +61,7 @@ public:
 	[[nodiscard]] int32 GetChildCount() const;
 
 	/**
-	 * 직접 연결된 자식을 반환하며 음수·범위 밖 인덱스는 nullptr다.
+	 * 직접 연결된 자식을 반환하며 음수, 범위 밖 인덱스는 nullptr다.
 	 * 반환 포인터는 비소유이며 자식 파괴 시 무효다. const 액터에서도 자식을 수정할 수 있다.
 	 */
 	[[nodiscard]] AActor* GetChild(int32 index) const;
@@ -87,7 +87,7 @@ public:
 
 	/**
 	 * 소속이 자신인 컴포넌트의 소유권을 받는다. 성공 시 입력 포인터는 비워진다.
-	 * 빈 포인터·다른 소속·복수 불허인 같은 실제 타입의 중복이면 false이며 입력과 기존 목록을 유지한다.
+	 * 빈 포인터, 다른 소속, 복수 불허인 같은 실제 타입의 중복이면 false이며 입력과 기존 목록을 유지한다.
 	 * 복수 허용 정책은 실제 객체에서 조회한다. 서로 다른 파생 타입은 별개로 취급한다.
 	 * 메모리 부족은 false 반환으로 복구하지 않는다. 이벤트 호출은 없다.
 	 */
@@ -135,7 +135,7 @@ private:
 	/** World가 등록된 액터의 첫 Tick 전에 호출한다. 시작 전일 때만 진입하며 완료 상태는 기반 BeginPlay가 설정한다. */
 	void DispatchBeginPlay();
 
-	/** World가 관계·등록 정리 뒤 파괴 전에 호출한다. 시작 완료 상태인 경우에만 가상 종료 처리를 실행한다. */
+	/** World가 관계와 등록을 정리한 뒤 파괴 전에 호출한다. 시작 완료 상태인 경우에만 가상 종료 처리를 실행한다. */
 	void RouteEndPlay(EEndPlayReason reason);
 
 	UWorld* const world;

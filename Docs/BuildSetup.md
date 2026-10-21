@@ -114,5 +114,6 @@ SampleGame 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 
 - `.editorconfig`: UTF-8 BOM 없음, CRLF, 파일 끝 newline. C++·HLSL·C#의 들여쓰기는 Tab, 폭 4다.
 - `.clang-format`: 공통 코드 서식. 엔진 코드는 [코드 컨벤션](Conventions/CodeConvention.md)을 따른다. `Engine/ThirdParty/.clang-format`은 서드파티 서식·include 정렬을 끈다.
+- 루트 `.clang-format`은 `Language`를 지정하지 않은 공통 기본 설정이며 `Standard: c++20`을 사용한다.
 - `WhitespaceSensitiveMacros`에는 기본 다섯 이름과 `SE_STRINGIZE`를 함께 유지한다. 옵션은 YAML 끝 표시 `...` 앞에 두며 도구 버전을 바꾸면 `clang-format --dump-config`로 적용값을 확인한다.
 - `.gitattributes`: 일반 텍스트는 저장소 LF·작업 폴더 CRLF, `.bat`·`.cmd`는 CRLF, `.sh`는 LF다. 바이너리는 변환하지 않는다. `Engine/ThirdParty/Assimp/Licenses/*.txt`는 `-text`로 원문 바이트를 유지한다.

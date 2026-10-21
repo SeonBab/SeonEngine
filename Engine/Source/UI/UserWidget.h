@@ -16,7 +16,7 @@ public:
 	 */
 	[[nodiscard]] bool SetRootWidget(TUniquePtr<UWidget>& widget);
 
-	/** 현재 루트를 빌려 읽는다. 없으면 nullptr이며, 교체·파괴 시 반환 포인터는 무효다. */
+	/** 현재 루트를 빌려 읽는다. 없으면 nullptr이며, 교체, 파괴 시 반환 포인터는 무효다. */
 	const UWidget* GetRootWidget() const { return rootWidget.get(); }
 
 private:

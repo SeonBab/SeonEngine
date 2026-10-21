@@ -9,7 +9,7 @@
 class UImageWidget : public UWidget
 {
 public:
-	/** 텍스처가 있으면 현재 텍스처·위치·크기의 요소를 추가한다. GPU 검증·그리기 없이 true를 반환한다. */
+	/** 텍스처가 있으면 현재 텍스처와 위치, 크기를 담은 요소를 추가한다. GPU 검증이나 그리기 없이 true를 반환한다. */
 	[[nodiscard]] bool CollectDrawElements(FUIDrawElementList& elements) override;
 
 	/**
@@ -24,7 +24,7 @@ public:
 	/** 저장된 픽셀 위치의 복사본을 반환한다. */
 	FVector2 GetPosition() const;
 
-	/** 표시 너비·높이를 픽셀 단위로 복사해 저장한다. 값 검사는 수행하지 않는다. */
+	/** 표시 너비, 높이를 픽셀 단위로 복사해 저장한다. 값 검사는 수행하지 않는다. */
 	void SetSize(FVector2 newSize);
 
 	/** 저장된 표시 크기의 복사본을 반환한다. */

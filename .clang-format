@@ -1,7 +1,6 @@
 # SeonEngine Code Convention 1.1 Formatting
 # 규칙 설명은 Docs/Conventions/CodeConvention.md 참고
 ---
-Language: Cpp
 Standard: c++20
 
 # 들여쓰기: Tab, 폭 4
