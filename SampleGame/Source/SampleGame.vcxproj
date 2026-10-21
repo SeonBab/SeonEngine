@@ -19,7 +19,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>$(SEPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
@@ -85,6 +85,7 @@
     <ClInclude Include="..\..\Engine\Source\GameClient.h" />
     <ClInclude Include="..\..\Engine\Source\Image\Image.h" />
     <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h" />
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionValue.h" />
     <ClInclude Include="..\..\Engine\Source\Input\InputState.h" />
     <ClInclude Include="..\..\Engine\Source\Input\Key.h" />
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
@@ -95,8 +96,8 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\Scene.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshData.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h" />
-    <ClInclude Include="..\..\Engine\Source\Renderer\TextureAddressMode.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\TextureAddressMode.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h" />
     <ClInclude Include="..\..\Engine\Source\UI\GameWidgetSubsystem.h" />
     <ClInclude Include="..\..\Engine\Source\UI\ImageWidget.h" />

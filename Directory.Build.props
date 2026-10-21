@@ -6,9 +6,12 @@
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
     <!-- 저장소 루트. 프로젝트에서 다른 폴더를 가리킬 때 쓴다. -->
     <SERootDir>$(MSBuildThisFileDirectory)</SERootDir>
-    <OutDir>$(SERootDir)Binaries\$(Platform)\$(Configuration)\</OutDir>
+    <!-- VS 2022는 v143, VS 2026은 v145를 사용한다. 프로젝트 본문과 출력 경로가 같은 선택을 공유한다. -->
+    <SEPlatformToolset>v145</SEPlatformToolset>
+    <SEPlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</SEPlatformToolset>
+    <OutDir>$(SERootDir)Binaries\$(SEPlatformToolset)\$(Platform)\$(Configuration)\</OutDir>
     <!-- ProjectName은 이 파일이 import되는 시점에 아직 정의되지 않으므로 MSBuildProjectName을 쓴다. -->
-    <IntDir>$(SERootDir)Intermediate\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SERootDir)Intermediate\$(SEPlatformToolset)\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
 
   <!-- vcpkg: 저장소의 manifest(Engine/ThirdParty/vcpkg.json)로 외부 라이브러리를 받는다. 연결(import)은 Directory.Build.targets에서 한다. -->
@@ -19,7 +22,9 @@
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
     <VcpkgManifestRoot>$(SERootDir)Engine\ThirdParty\</VcpkgManifestRoot>
     <!-- 빌드할 때 생기는 설치 폴더는 빌드 중간물과 함께 둔다. -->
-    <VcpkgManifestInstalledBaseDir>$(SERootDir)Intermediate\vcpkg_installed\</VcpkgManifestInstalledBaseDir>
+    <VcpkgManifestInstalledBaseDir>$(SERootDir)Intermediate\vcpkg_installed\$(SEPlatformToolset)\</VcpkgManifestInstalledBaseDir>
+    <!-- VS 2022에 포함된 구형 vcpkg도 같은 설치 루트를 사용하도록 지정한다. -->
+    <VcpkgInstalledDir>$(VcpkgManifestInstalledBaseDir)</VcpkgInstalledDir>
     <!-- x64-windows-static-md: 라이브러리는 정적 링크, CRT는 엔진과 같은 /MD -->
     <VcpkgUseStatic>true</VcpkgUseStatic>
     <VcpkgUseMD>true</VcpkgUseMD>

@@ -4,11 +4,13 @@
 
 ## 개발 환경과 빌드
 
-- Windows x64, Visual Studio 2026의 C++를 사용한 데스크톱 개발 워크로드와 MSVC v145, Windows SDK 10.0 계열을 사용한다.
+- Windows x64, Visual Studio 2022 17.14 이상 또는 Visual Studio 2026의 C++를 사용한 데스크톱 개발 워크로드와 Windows SDK 10.0 계열을 사용한다. VS 2022에는 MSVC v143, VS 2026에는 MSVC v145가 필요하다.
 - 프로젝트 파일 생성에는 .NET 10 이상 SDK가 필요하다. 런타임만 설치한 환경은 사용할 수 없다.
 - Visual Studio Installer의 vcpkg 패키지 관리자 구성 요소를 설치하거나 `VCPKG_ROOT`에 별도 vcpkg 경로를 지정한다.
 
-저장소 루트에서 프로젝트 파일 목록을 생성한 뒤 `SeonEngine.slnx`를 연다. 구성은 Debug와 Release, 플랫폼은 x64다. 솔루션에는 SampleGame 실행 프로젝트 하나가 있으며 엔진 소스도 함께 컴파일한다.
+프로젝트 파일 목록을 생성한 뒤, 사용하려는 Visual Studio 버전으로 `SeonEngine.slnx`를 연다. 두 버전이 함께 설치되어 있다면 탐색기 더블클릭의 기본 연결 대신 해당 IDE의 솔루션 열기를 사용한다. VisualStudioVersion 17.0은 v143, 18.0은 v145를 선택하며, 아래 명령도 해당 버전의 개발자 명령 프롬프트에서 실행한다.
+
+구성은 Debug와 Release, 플랫폼은 x64다. 솔루션에는 SampleGame 실행 프로젝트 하나가 있으며 엔진 소스도 함께 컴파일한다.
 
 Visual Studio 개발자 명령 프롬프트에서는 다음과 같이 빌드한다.
 
@@ -50,14 +52,14 @@ SeonEngine/
 
 | 파일 | 관리하는 설정 |
 |---|---|
-| `Directory.Build.props` | `SERootDir`, 출력·중간 디렉터리, 공통 컴파일러 옵션, vcpkg manifest 설정 |
-| `Directory.Build.targets` | 프로젝트 본문 이후의 vcpkg targets import와 경로 검사 |
-| `SampleGame/Source/SampleGame.vcxproj` | 실행 프로젝트, v145, SDK, include·링크, 구성별 CRT·최적화, HLSL 컴파일·콘텐츠 복사 |
+| `Directory.Build.props` | `SERootDir`, VS 버전별 `SEPlatformToolset`, 출력·중간 디렉터리, 공통 컴파일러 옵션, vcpkg manifest 설정 |
+| `Directory.Build.targets` | 프로젝트 본문 이후의 도구별 overlay triplet 연결, vcpkg targets import와 경로 검사 |
+| `SampleGame/Source/SampleGame.vcxproj` | 실행 프로젝트, 선택한 `SEPlatformToolset`, SDK, include·링크, 구성별 CRT·최적화, HLSL 컴파일·콘텐츠 복사 |
 | `SeonEngine.slnx` | 솔루션 프로젝트와 플랫폼 |
 
-- 출력: `$(SERootDir)Binaries\$(Platform)\$(Configuration)\`
-- 중간 결과: `$(SERootDir)Intermediate\$(MSBuildProjectName)\$(Platform)\$(Configuration)\`
-- vcpkg 설치: `$(SERootDir)Intermediate\vcpkg_installed\`
+- 출력: `$(SERootDir)Binaries\$(SEPlatformToolset)\$(Platform)\$(Configuration)\`
+- 중간 결과: `$(SERootDir)Intermediate\$(SEPlatformToolset)\$(MSBuildProjectName)\$(Platform)\$(Configuration)\`
+- vcpkg 설치: `$(SERootDir)Intermediate\vcpkg_installed\$(SEPlatformToolset)\`
 
 다른 폴더를 참조할 때는 저장소 루트인 `$(SERootDir)`을 쓴다. 공통 옵션은 props/targets에서 수정하며 VS 속성 페이지에서 바꾸면 해당 프로젝트에 저장될 수 있다. 목록형 설정은 `%(PreprocessorDefinitions)`, `%(AdditionalIncludeDirectories)`, `%(AdditionalOptions)`처럼 기존 값을 이어 붙인다.
 
@@ -99,8 +101,12 @@ SampleGame 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 - 사용자 전역 classic 통합은 `VCPkgLocalAppDataDisabled=true`로 끈다.
 - `VcpkgEnableManifest=true`, manifest 루트는 `Engine/ThirdParty/`다.
 - `VcpkgUseStatic=true`와 `VcpkgUseMD=true`로 `x64-windows-static-md` 구성을 사용한다.
+- `Engine/ThirdParty/Triplets/v143/`와 `v145/`의 overlay triplet은 `VCPKG_PLATFORM_TOOLSET`을 각각 v143/v145로 고정한다. `Directory.Build.targets`가 프로젝트의 도구에 맞는 폴더를 `--overlay-triplets`로 전달한다. triplet 이름은 `x64-windows-static-md`를 유지하며 `/MD`·정적 라이브러리 연결 방식은 바꾸지 않는다.
+- `VcpkgManifestInstalledBaseDir`와 `VcpkgInstalledDir`를 같은 도구별 설치 루트로 지정한다. VS 2022의 구형 vcpkg와 신형 vcpkg 모두 이 경로를 사용하며, 그 아래에 triplet별 include/lib가 설치된다.
 - vcpkg 연결은 `VCPKG_ROOT`를 우선하고, 없으면 Visual Studio 내장 `VC/vcpkg`를 사용한다. targets를 찾지 못하면 빌드 오류로 안내한다.
-- vcpkg 명령을 직접 실행할 때는 manifest 폴더에서 실행하거나 `--x-manifest-root`로 위치를 지정한다.
+- 설치 직전 `SESelectVcpkgVisualStudio`가 `VCPKG_VISUAL_STUDIO_PATH=$(VsInstallRoot)`를 MSBuild 프로세스 환경에 설정한다. vcpkg 대상 라이브러리는 현재 빌드를 수행하는 VS 설치 안에서 지정한 v143/v145 도구를 선택한다.
+- 선택한 overlay triplet과 `Directory.Build.targets`도 vcpkg 설치 단계의 입력이다. 이 파일이 설치 완료 기록보다 새로우면 의존성을 다시 검사하며, 변경이 없으면 설치 단계를 생략한다. vcpkg 자체의 ABI 검사에 따라 필요한 패키지만 재빌드하거나 캐시에서 복원한다.
+- vcpkg 명령을 직접 실행할 때는 manifest 루트뿐 아니라 `--x-install-root`에 도구별 설치 루트, `--overlay-triplets`에 해당 v143/v145 폴더를 지정한다. 명령을 실행할 VS의 설치 경로를 `VCPKG_VISUAL_STUDIO_PATH`에도 지정한다. IDE 빌드는 경로 인자와 설치 선택을 자동으로 전달한다.
 
 배포 시의 고지 파일은 [Assimp와 의존 라이브러리 고지](../Engine/ThirdParty/Assimp/README.md)를 따른다.
 

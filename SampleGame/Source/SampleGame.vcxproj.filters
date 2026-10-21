@@ -141,6 +141,9 @@
     <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h">
       <Filter>Engine\Source\Image</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Input\InputActionValue.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Input\InputState.h">
       <Filter>Engine\Source\Input</Filter>
     </ClInclude>
@@ -171,10 +174,10 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Engine\Source\Renderer\TextureAddressMode.h">
+    <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h">
+    <ClInclude Include="..\..\Engine\Source\Renderer\TextureAddressMode.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\Vertex.h">
@@ -301,10 +304,16 @@
     <ClCompile Include="SampleGame.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\..\Engine\Shaders\Private\TrianglePixelShader.hlsl">
+    <FxCompile Include="..\..\Engine\Shaders\Private\ImagePixelShader.hlsl">
       <Filter>Engine\Shaders\Private</Filter>
     </FxCompile>
-    <FxCompile Include="..\..\Engine\Shaders\Private\TriangleVertexShader.hlsl">
+    <FxCompile Include="..\..\Engine\Shaders\Private\ImageVertexShader.hlsl">
+      <Filter>Engine\Shaders\Private</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\StaticMeshPixelShader.hlsl">
+      <Filter>Engine\Shaders\Private</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Engine\Shaders\Private\StaticMeshVertexShader.hlsl">
       <Filter>Engine\Shaders\Private</Filter>
     </FxCompile>
   </ItemGroup>
