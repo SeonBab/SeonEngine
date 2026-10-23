@@ -213,6 +213,15 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\Material.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\MaterialInterface.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\MaterialRenderProxy.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
@@ -225,10 +234,19 @@
     <ClInclude Include="..\..\Engine\Source\Renderer\Scene.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\SkyLightData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMesh.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshRenderData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Renderer\StaticMeshSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\Texture2D.h">
@@ -369,6 +387,15 @@
     <ClCompile Include="..\..\Engine\Source\Renderer\DirectionalLightSceneProxy.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\Material.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\MaterialInterface.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\MaterialRenderProxy.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
@@ -376,6 +403,12 @@
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Renderer\Scene.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\StaticMesh.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\StaticMeshSceneProxy.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\UI\GameWidgetSubsystem.cpp">

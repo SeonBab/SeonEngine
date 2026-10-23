@@ -1,0 +1,19 @@
+#pragma once
+
+#include "Core/Templates/SharedPtr.h"
+
+class UTexture2D;
+
+////////////////////////////////////////////////////////////////////////////////
+// 재질의 렌더 조회 경계를 위한 공통 Proxy 타입 선언.
+// 구체 Proxy가 색상 텍스처 조회를 구현하며 같은 스레드에서 사용한다.
+////////////////////////////////////////////////////////////////////////////////
+class FMaterialRenderProxy
+{
+public:
+	/** 기반 포인터로 소유한 구체 재질 Proxy의 소멸자까지 호출한다. */
+	virtual ~FMaterialRenderProxy();
+
+	/** 색상 텍스처의 공유 참조를 반환한다. 미지정이면 nullptr이며 반환 참조가 객체 수명을 유지한다. GPU 유효성은 검사하지 않는다. */
+	virtual TSharedPtr<UTexture2D> GetBaseColorTexture() const = 0;
+};
