@@ -102,6 +102,9 @@
     <ClInclude Include="..\..\Engine\Source\Core\CoreTypes.h">
       <Filter>Engine\Source\Core</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Core\EngineAPI.h">
+      <Filter>Engine\Source\Core</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Core\Logging\Log.h">
       <Filter>Engine\Source\Core\Logging</Filter>
     </ClInclude>
@@ -188,6 +191,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h">
       <Filter>Engine\Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\ModuleInterface.h">
+      <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Object.h">
       <Filter>Engine\Source</Filter>
@@ -332,6 +338,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp">
       <Filter>Engine\Source\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\ModuleInterface.cpp">
+      <Filter>Engine\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp">
       <Filter>Engine\Source\Renderer</Filter>

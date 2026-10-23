@@ -147,7 +147,7 @@
 | 상수 / `constexpr` | PascalCase | `MaxLightCount` |
 | 전역 변수 | `g` + PascalCase | `gEngine` |
 | static 멤버 변수 | 일반 멤버 변수와 동일 (접두사 없음) | `liveCount` |
-| Macro | `SE_` + UPPER_SNAKE_CASE | `SE_ASSERT`, `SE_PLATFORM_WINDOWS` |
+| Macro | UPPER_SNAKE_CASE. 역할·모듈 접두사는 필요에 따라 사용 | `ASSERT`, `PLATFORM_WINDOWS`, `ENGINE_API` |
 
 - **렌더러의 Unreal 대응 이름** — 직접 확인한 Unreal 코드와 역할이 대응하는 렌더러 변수 / 매개변수는 원본 이름을 우선한다. 이 범위에서는 PascalCase와 입력 매개변수의 `In` 접두사를 허용한다(예: `Direct3DDevice`, `SizeX`, `InSizeX`). 역할이 다르면 이름을 억지로 맞추지 않고 차이를 설명한다. 다른 시스템에는 위 기본 표기를 유지한다.
 
@@ -166,9 +166,10 @@
   | `I` | Interface | 순수 가상 함수로만 이루어진 class |
   | `E` | Enum | 열거형 |
   | `C` | Concept | C++20 concept (3.10 Template 참고) |
-  | `U` | UObject 계열 | 자체 객체 루트 `UObject`와 그 파생 클래스 (`UEngine`, `UGameInstance` 등). 최소 UObject·UEngine·UGameInstance 구현 완료 / 실제 실행 연결 전이며 GC·리플렉션 구현 여부를 뜻하지 않음 |
 
   Interface를 구현하는 클래스는 일반 타입이므로 `F`를 붙인다.
+
+  공통 모듈 계약 `IModuleInterface`는 예외로 기본 빈 수명 훅과 가상 소멸자를 제공하며 직접 생성할 수 있다. 모듈 구현이 필요한 훅만 재정의하도록 하는 계약이며, 이 예외를 다른 인터페이스에 일괄 적용하지 않는다.
 
   ```cpp
   class FRenderer;
@@ -249,6 +250,7 @@
 - **언어** — 주석은 한국어로 쓴다.
 - **문장과 기호** - 주석은 일반 문장과 기본 문장부호로 쓴다. 가운뎃점이나 화살표 같은 특수문자로 나열이나 흐름을 축약하거나 장식하지 않는다. 나열은 쉼표나 조사로, 순서와 좌표 변환은 말로 풀어 쓴다. 예를 들어 `위치, 회전, 크기`, `생성과 해제`, `로컬에서 월드로 변환하는 행렬`처럼 쓴다. 수식, 코드 식별자, 연산자와 주석 문법 및 기존 구분선은 필요한 경우 그대로 사용한다.
 - **원칙** — 이유, 제약, 주의사항(Why)을 우선으로 쓴다. 흐름 구분이나 복잡한 로직의 요약처럼 읽는 데 도움이 되는 설명(What)은 자유롭게 쓸 수 있다. 단, 코드 한 줄을 그대로 풀어 쓰는 주석은 쓰지 않는다.
+- **변수 주석** — 이름과 타입을 명확히 정하고, 그래도 사용에 필요한 의미가 충분히 드러나지 않으면 멤버 변수와 지역 변수에도 주석을 단다. 단위와 좌표계, 특수한 값의 의미, 수명과 소유 관계, 상태의 의미와 전환 조건, 허용 범위와 제약의 이유 등을 설명한다. 이름을 그대로 반복하거나 모든 변수에 기계적으로 주석을 붙이지 않는다. 필요한 계약은 선언이나 관련 처리 코드 옆에서 이해할 수 있게 남긴다.
 - **문서 참조 금지** — 주석에 규칙 문서나 설계 및 인계 문서의 이름, 경로, 절 제목과 번호, 기록 날짜를 근거로 남기지 않는다. 문서 구성이 바뀌면 주석이 틀어지고 저장소 외부 문서를 열어야 이해할 수 있다. 필요한 이유, 제약과 계약은 주석 자체로 이해되도록 직접 쓰며 문서 참조만 있는 주석은 두지 않는다.
 
   ```cpp
@@ -259,6 +261,10 @@
   // 권장: 이유를 설명함
   // GPU가 이전 프레임 버퍼를 아직 읽고 있을 수 있어 펜스를 기다린다
   WaitForFence(previousFrame);
+
+  // 권장: 변수의 사용 조건을 설명함
+  // 음수이면 시간 제한 없이 유지한다.
+  float remainingSeconds = -1.0f;
 
   // 허용: 흐름 구분
   // 1. 가시성 판정
@@ -285,6 +291,7 @@
   |---|---|---|
   | 클래스 / 구조체 등 큰 단위 | 구분선(`/` 80개) 사이에 `//` | 타입 선언 바로 위 |
   | 함수 | `/** */` | 헤더의 선언 바로 위 (`.cpp` 정의에는 반복하지 않는다) |
+  | 변수 | `//` | 선언 바로 위. 짧은 설명은 선언 줄 끝에도 허용 |
   | 함수 본문 안의 코드 | `//` | 설명할 코드 바로 위 |
 
   ```cpp
@@ -625,7 +632,7 @@
 
 - **`enum class`만 사용** — 일반 `enum`은 쓰지 않는다.
 - **내부 타입 명시** — 항상 내부 타입을 명시하고, 값이 들어가는 가장 작은 타입(보통 `uint8`)을 쓴다. 전방 선언할 때도 같은 타입을 쓴다(`enum class ETextureFormat : uint8;`).
-- **비트 플래그** — 이름은 `Flags`로 끝낸다. `None = 0`을 두고 값은 `1 << n`으로 쓴다. 비트 연산자는 `SE_ENUM_CLASS_FLAGS` 매크로로 정의한다.
+- **비트 플래그** — 이름은 `Flags`로 끝낸다. `None = 0`을 두고 값은 `1 << n`으로 쓴다. 비트 연산자는 `ENUM_CLASS_FLAGS` 매크로로 정의한다.
 
   ```cpp
   enum class ETextureUsageFlags : uint8
@@ -635,7 +642,7 @@
     RenderTarget = 1 << 1,
     DepthStencil = 1 << 2
   };
-  SE_ENUM_CLASS_FLAGS(ETextureUsageFlags)
+  ENUM_CLASS_FLAGS(ETextureUsageFlags)
 
   ETextureUsageFlags usage = ETextureUsageFlags::ShaderRead | ETextureUsageFlags::RenderTarget;
   ```
@@ -650,22 +657,23 @@
 
 ### 3.9 Macro `중요`
 
-- **이름** — `SE_` + UPPER_SNAKE_CASE (1.2 Naming 참고).
+- **이름** — UPPER_SNAKE_CASE를 사용하며 `SE_` 접두사를 일괄 요구하지 않는다(1.2 Naming 참고). 역할이나 소속을 구분할 때는 `PLATFORM_`, `BUILD_`, `WITH_` 또는 모듈 이름처럼 의미 있는 접두사를 사용한다. 외부 코드와 충돌하면 구체적인 역할·모듈·프로젝트 이름으로 구분한다. DLL export/import 선언용 공개 매크로는 `<모듈명>_API`로 표기한다(예: `ENGINE_API`).
+- **기존 이름** — 이 명명 규칙 변경만으로 기존 매크로를 일괄 개명하지 않는다. 실제 API나 빌드 설정을 설명할 때는 현재 이름을 사용하고, 이름을 바꾸는 작업에서는 정의·사용처·프로젝트 설정·관련 문서를 함께 갱신한다.
 - **사용 범위** — 매크로로만 할 수 있는 일에만 쓴다.
   - 플랫폼 / 빌드 구성 분기
   - 파일 이름과 줄 번호가 필요한 assert, 로그
-  - 반복 코드 생성 (`SE_ENUM_CLASS_FLAGS`, 리플렉션 등록 등)
-  - DLL export (`SE_API`)
+  - 반복 코드 생성 (`ENUM_CLASS_FLAGS`, 리플렉션 등록 등)
+  - DLL export/import (`ENGINE_API` 등 모듈 공개 표기)
 
-  상수는 `constexpr`, 함수는 inline 함수나 템플릿으로 쓴다(`#define SE_MAX_LIGHTS 16` 같은 매크로 상수는 쓰지 않는다).
+  상수는 `constexpr`, 함수는 inline 함수나 템플릿으로 쓴다(`#define MAX_LIGHTS 16` 같은 매크로 상수는 쓰지 않는다).
 
-- **분기 매크로** — 항상 `0` 또는 `1`로 정의하고 `#if`로 검사한다. 꺼진 기능도 정의를 생략하지 않고 `0`으로 둔다(`#define SE_WITH_EDITOR 0` → `#if SE_WITH_EDITOR`). `#ifdef`는 쓰지 않는다. 예외로, 헤더 경로 생성용 이름 매크로(`SE_PLATFORM_HEADER_NAME`)처럼 0 / 1이 아닌 필수 입력이 정의되었는지 확인할 때는 `#if !defined(MACRO)` → `#error`를 쓸 수 있다. 이름은 종류에 따라 접두사를 나눈다.
+- **분기 매크로** — 항상 `0` 또는 `1`로 정의하고 `#if`로 검사한다. 꺼진 기능도 정의를 생략하지 않고 `0`으로 둔다(`#define WITH_EDITOR 0` → `#if WITH_EDITOR`). `#ifdef`는 쓰지 않는다. 예외로, 현재 구현의 `SE_PLATFORM_HEADER_NAME`과 같은 헤더 경로 생성용 이름 매크로처럼 0 / 1이 아닌 필수 입력이 정의되었는지 확인할 때는 `#if !defined(MACRO)` → `#error`를 쓸 수 있다. 이름은 종류에 따라 접두사를 나눈다.
 
   | 접두사 | 용도 | 예시 |
   |---|---|---|
-  | `SE_PLATFORM_` | 플랫폼 | `SE_PLATFORM_WINDOWS` |
-  | `SE_BUILD_` | 빌드 구성 | `SE_BUILD_DEBUG`, `SE_BUILD_RELEASE` |
-  | `SE_WITH_` | 켜고 끌 수 있는 기능 | `SE_WITH_EDITOR`, `SE_WITH_PROFILER` |
+  | `PLATFORM_` | 플랫폼 | `PLATFORM_WINDOWS` |
+  | `BUILD_` | 빌드 구성 | `BUILD_DEBUG`, `BUILD_RELEASE` |
+  | `WITH_` | 켜고 끌 수 있는 기능 | `WITH_EDITOR`, `WITH_PROFILER` |
 
 - **작성 규칙**
   - 매크로 인자는 괄호로 감싼다.
@@ -673,7 +681,7 @@
   - 한 파일에서만 쓰는 매크로는 다 쓴 뒤 `#undef`한다.
 
   ```cpp
-  #define SE_ASSERT(condition) \
+  #define ASSERT(condition) \
     do \
     { \
         if (!(condition)) \
@@ -851,7 +859,7 @@
   - D3D11 장치 준비(Unreal 이름): `void InitD3DDevice()`는 Unreal 대응 이름과 역할을 사용한다. 현재 본문과 FRenderer의 직접 호출 연결을 구현했다. 창 출력은 Viewport가 준비하며 기존 Device Init은 제거했다. 정상 반환은 장치 준비 완료, 최종 생성 실패는 부분 자원 정리 후 Fatal 계약이며 다른 초기화 API의 반환형을 일반화하지 않는다.
   - 작은 보조 타입(락 가드, 타이머 등): 생성자와 소멸자로 처리한다(RAII).
   - 이름: 시작과 정리 함수 이름은 지금은 참고하는 Unreal 코드의 짝을 그대로 쓴다(예: `Init` – `Shutdown`, `StartupModule` – `ShutdownModule`). 대응하는 Unreal 이름이 없는 자체 객체는 단어가 대칭인 짝 `Initialize()` – `Deinitialize()`를 쓴다. 엔진 전체를 대칭 짝으로 맞추는 작업은 정한 시점에 한 번에 한다(DeferredTasks "초기화 / 정리 함수 이름의 대칭 짝").
-  - 엔진 실행 기반(Unreal 짝): UEngine의 virtual void Init(IEngineLoop*) / virtual void Start() / virtual void Tick(float, bool) / virtual void PreExit()는 Unreal 대응 역할의 이름을 사용한다. 현재 Init은 비소유 루프 연결, Start는 빈 실행 시작 통로, Tick은 순수 가상, PreExit는 빈 기반 구현이다. UObject 생성 / 파괴와 실행 종료를 구분하고 기반 소멸자는 PreExit를 자동 호출하지 않는다. 다른 객체의 이름 규칙을 바꾸지 않으며 UEngine 기반 자체의 상태 / 호출 순서 검사는 아직 없다. UGameEngine은 기존 세션이 있는 Init을 Fatal로 거부하고 PreExit는 준비 전 / 반복 호출을 허용한다. FEngineLoop는 int32 Init / void Exit를 사용하며 정상 Init은 0, 기존 엔진 Init은 Fatal이다. Exit는 PreExit 후 소유 엔진을 파괴하고 준비 전 / 반복 호출을 허용한다. 소멸자는 Exit를 자동 호출하지 않는다.
+  - 엔진 실행 객체: `UEngine` 계열은 공통 실행 계약을 통한 가상 호출을 사용한다. 함수 인자와 수명, 실패, 정리 계약은 [Engine.h](../../Engine/Source/Engine.h)와 구현 타입의 공개 선언을 따른다. UObject 생성과 파괴를 실행 초기화와 정리와 구분하며, 소멸자의 실행 훅 자동 호출 여부는 타입 계약에 명시한다.
   - 게임 세션 훅(Unreal 짝): `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다. 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 객체의 이름 규칙에 영향을 주지 않는다.
   - 초기화 함수 전에 다른 함수를 호출하거나, 정리 함수 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
 
@@ -910,39 +918,39 @@
 
   | 매크로 | 실패하면 | 쓰는 곳 |
   |---|---|---|
-  | `SE_ASSERT(condition)` | 중단 | 프로그래머 실수(5.1 에러 처리 참고) |
-  | `SE_ASSERTF(condition, format, ...)` | 메시지와 함께 중단 | 원인 설명이 필요한 프로그래머 실수 |
-  | `SE_VERIFY(condition)` | 중단 | 식이 반드시 실행되어야 하는 검사 |
-  | `SE_ENSURE(condition)` | 로그를 남기고 계속 진행. 결과를 `bool`로 돌려준다 | 버그지만 안전하게 빠져나갈 수 있는 경우 |
+  | `ASSERT(condition)` | 중단 | 프로그래머 실수(5.1 에러 처리 참고) |
+  | `ASSERTF(condition, format, ...)` | 메시지와 함께 중단 | 원인 설명이 필요한 프로그래머 실수 |
+  | `VERIFY(condition)` | 중단 | 식이 반드시 실행되어야 하는 검사 |
+  | `ENSURE(condition)` | 로그를 남기고 계속 진행. 결과를 `bool`로 돌려준다 | 버그지만 안전하게 빠져나갈 수 있는 경우 |
 
   ```cpp
-  SE_ASSERT(device != nullptr);
-  SE_ASSERTF(index < count, "index {} out of range", index);
+  ASSERT(device != nullptr);
+  ASSERTF(index < count, "index {} out of range", index);
 
-  SE_VERIFY(sound.Initialize());
+  VERIFY(sound.Initialize());
 
-  if (!SE_ENSURE(texture != nullptr))
+  if (!ENSURE(texture != nullptr))
   {
     return;
   }
   ```
 
-- **부작용 금지** — `SE_ASSERT` / `SE_ASSERTF`의 조건식에는 함수 호출이나 대입처럼 반드시 실행되어야 하는 코드를 넣지 않는다. Release에서는 식까지 제거된다. 실행되어야 하면서 결과도 검사해야 하면 `SE_VERIFY`를 쓴다.
+- **부작용 금지** — `ASSERT` / `ASSERTF`의 조건식에는 함수 호출이나 대입처럼 반드시 실행되어야 하는 코드를 넣지 않는다. Release에서는 식까지 제거된다. 실행되어야 하면서 결과도 검사해야 하면 `VERIFY`를 쓴다.
 
   ```cpp
   // 금지: Release에서 Initialize가 호출되지 않음
-  SE_ASSERT(sound.Initialize());
+  ASSERT(sound.Initialize());
   ```
 
 - **빌드 구성별 동작**
 
   | 매크로 | Debug | Release (배포용) |
   |---|---|---|
-  | `SE_ASSERT`, `SE_ASSERTF` | 검사 | 식까지 제거 |
-  | `SE_VERIFY` | 검사 | 식은 실행, 검사만 제거 |
-  | `SE_ENSURE` | 검사 | 식은 실행, 보고만 제거 |
+  | `ASSERT`, `ASSERTF` | 검사 | 식까지 제거 |
+  | `VERIFY` | 검사 | 식은 실행, 검사만 제거 |
+  | `ENSURE` | 검사 | 식은 실행, 보고만 제거 |
 
-- **실패 동작** — 파일 이름, 줄 번호, 조건식, 메시지를 치명 로그로 남긴다. 디버거가 연결되어 있으면 그 자리에서 멈추고(`__debugbreak`), 아니면 종료한다. `SE_ENSURE`는 로그와 디버거 중단만 하고 계속 진행하며, 같은 위치는 처음 한 번만 보고한다.
+- **실패 동작** — 파일 이름, 줄 번호, 조건식, 메시지를 치명 로그로 남긴다. 디버거가 연결되어 있으면 그 자리에서 멈추고(`__debugbreak`), 아니면 종료한다. `ENSURE`는 로그와 디버거 중단만 하고 계속 진행하며, 같은 위치는 처음 한 번만 보고한다.
 
 ### 5.3 Logging `중요`
 
@@ -988,7 +996,7 @@ WriteLog("Windows", ELogLevel::Error, "CreateWindowExW failed (error {})", error
   SE_LOG(LogRenderer, Warning, "Texture {} not found", path);
   ```
 
-- **메시지 형식** — `std::format`과 같은 `{}` 형식을 쓴다. 인자 타입을 컴파일 시간에 검사한다. `SE_ASSERTF`의 메시지도 같은 형식을 쓴다.
+- **메시지 형식** — `std::format`과 같은 `{}` 형식을 쓴다. 인자 타입을 컴파일 시간에 검사한다. `ASSERTF`의 메시지도 같은 형식을 쓴다.
 - **빌드 구성별 출력** — Debug에서는 모든 레벨을 남긴다. Release(배포용)에서는 `Error`와 `Fatal`만 남기고 나머지는 컴파일 단계에서 제거한다.
 
 ---

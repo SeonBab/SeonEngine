@@ -33,7 +33,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(SERootDir)Engine\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;BUILD_ENGINE_DLL=0;BUILD_ENGINE_DLL_CONSUMER=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>dxgi.lib;d3d11.lib;user32.lib;windowscodecs.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -71,6 +71,7 @@
     <ClInclude Include="..\..\Engine\Source\Core\Containers\Array.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Containers\SeonString.h" />
     <ClInclude Include="..\..\Engine\Source\Core\CoreTypes.h" />
+    <ClInclude Include="..\..\Engine\Source\Core\EngineAPI.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Logging\Log.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Math\Matrix4.h" />
     <ClInclude Include="..\..\Engine\Source\Core\Math\Quat.h" />
@@ -100,6 +101,7 @@
     <ClInclude Include="..\..\Engine\Source\Input\PlayerInput.h" />
     <ClInclude Include="..\..\Engine\Source\Launch\EngineLoop.h" />
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
+    <ClInclude Include="..\..\Engine\Source\ModuleInterface.h" />
     <ClInclude Include="..\..\Engine\Source\Object.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightData.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h" />
@@ -150,6 +152,7 @@
     <ClCompile Include="..\..\Engine\Source\Input\PlayerInput.cpp" />
     <ClCompile Include="..\..\Engine\Source\Launch\EngineLoop.cpp" />
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp" />
+    <ClCompile Include="..\..\Engine\Source\ModuleInterface.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\Scene.cpp" />

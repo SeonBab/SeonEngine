@@ -12,6 +12,8 @@
 
 구성은 Debug와 Release, 플랫폼은 x64다. 솔루션에는 SampleGame 실행 프로젝트 하나가 있으며 엔진 소스도 함께 컴파일한다.
 
+`Core/EngineAPI.h`를 사용하는 빌드 대상은 `BUILD_ENGINE_DLL`과 `BUILD_ENGINE_DLL_CONSUMER`를 각각0 또는1로 지정한다. 엔진 DLL 생산자는1/0, DLL 소비자는0/1, DLL을 사용하지 않는 빌드는0/0이다.두 값을 모두1로 지정하거나 각 값에0/1 이외의 정수를 지정하면 컴파일 오류다. 현재 SampleGame 프로젝트는 두 값을 모두0으로 명시하며 `ENGINE_API`가 빈 표기로 확장된다. 각 대상의 전처리 정의에서 지정하고 기존 정의 목록을 이어 붙인다.
+
 Visual Studio 개발자 명령 프롬프트에서는 다음과 같이 빌드한다.
 
 ```bat
