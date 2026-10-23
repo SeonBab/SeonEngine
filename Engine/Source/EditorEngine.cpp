@@ -3,11 +3,16 @@
 #include "Renderer/Renderer.h"
 #include "World.h"
 
+bool UEditorEngine::InitializeEditorUI(HWND windowHandle)
+{
+	return editorUI.Initialize(windowHandle);
+}
+
 bool UEditorEngine::Tick(float, const FInputState&, FRenderer& renderer, int width, int height)
 {
 	if (!world || width <= 0 || height <= 0) { return false; }
 
-	if (!world->SendAllEndOfFrameUpdates(renderer))
+	if (!world->SendAllEndOfFrameUpdates())
 	{
 		return false;
 	}
@@ -25,5 +30,6 @@ bool UEditorEngine::Tick(float, const FInputState&, FRenderer& renderer, int wid
 
 void UEditorEngine::PreExit()
 {
+	editorUI.Shutdown();
 	world.reset();
 }

@@ -5,7 +5,9 @@
 #include "Core/CoreTypes.h"
 #include "Core/Math/Transform.h"
 
-/** 카메라 컴포넌트의 선언이다. 구체적인 데이터와 동작은 후속 단계에서 추가한다. */
+////////////////////////////////////////////////////////////////////////////////
+// 카메라 투영 설정을 보관하고 소속 액터의 월드 자세와 함께 시점 사본을 제공한다.
+////////////////////////////////////////////////////////////////////////////////
 class UCameraComponent : public UActorComponent
 {
 public:
@@ -47,12 +49,6 @@ public:
 
 	/** 현재 월드 위치·회전과 투영 설정을 복사해 반환한다. */
 	[[nodiscard]] FCameraViewInfo GetCameraView() const;
-
-	/** 유효한 방식별 시야각/직교 폭, 클리핑 거리와 양수 화면 비율을 전제로 선택한 투영행렬을 반환한다. */
-	[[nodiscard]] FMatrix4 GetProjectionMatrix(float aspectRatio) const;
-
-	/** 유효한 카메라 설정과 화면 비율을 전제로 월드에서 클립 공간으로 변환하는 행렬을 반환한다. */
-	[[nodiscard]] FMatrix4 GetWorldToClipMatrix(float aspectRatio) const;
 
 private:
 	ECameraProjectionMode projectionMode = ECameraProjectionMode::Perspective;

@@ -95,7 +95,11 @@ public:
 	/** 준비된 컨텍스트의 지정된 PS 상수 버퍼 슬롯 1에 같은 장치의 버퍼를 연결한다. nullptr면 연결을 해제한다. */
 	void SetPixelShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffer);
 
-	/** 행 패딩 없는 RGBA8 배열로 단일 밉의 변경 불가 텍스처를 만든다. 장치, 크기, 데이터 검사나 API 실패 시 로그/false이며 기존 출력은 유지한다. */
+	/**
+	 * 행 패딩 없는 RGBA8 배열로 전체 밉 공간을 가진 DEFAULT 텍스처를 만들고 밉 0에 원본을 올린다.
+	 * 초기화된 장치와 컨텍스트의 소유 스레드에서 호출한다. 하위 밉은 미정이므로 사용 전 SRV와 GenerateMips를 연결해야 한다.
+	 * 입력, 포맷 지원 검사나 생성 API 실패는 로그/false이며 기존 출력은 유지한다. true는 GPU 완료를 뜻하지 않는다.
+	 */
 	[[nodiscard]] bool CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture);
 
 	/** D32_FLOAT 깊이 텍스처와 DSV를 만든다. 장치 미준비, 잘못된 크기, API 실패 시 로그/false이며 기존 출력은 유지한다. */
@@ -103,6 +107,15 @@ public:
 
 	/** 같은 장치 텍스처의 기본 SRV를 만든다. 장치 미준비, null, 소속 불일치, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outView);
+
+	/**
+	 * 같은 장치의 SRV 범위에 하위 밉 생성 명령을 요청한다.
+	 * 초기화된 컨텍스트의 소유 스레드에서 호출한다.
+	 * 호출자는 자동 밉 생성에 필요한 자원 설정과 포맷 지원,
+	 * SRV의 최상위 밉 데이터가 준비됐음을 보장한다.
+	 * 검사 실패는 로그와 false이며 true는 GPU 완료를 뜻하지 않는다.
+	 */
+	[[nodiscard]] bool GenerateMips(ID3D11ShaderResourceView* view);
 
 	/** 호출자가 지정한 설정으로 샘플러를 만든다. 장치 미준비, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateSamplerState(const D3D11_SAMPLER_DESC& description, Microsoft::WRL::ComPtr<ID3D11SamplerState>& outState);

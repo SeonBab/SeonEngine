@@ -26,6 +26,13 @@ public:
 	UMaterial(UMaterial&&) = delete;
 	UMaterial& operator=(UMaterial&&) = delete;
 
+	/**
+	 * 같은 스레드에서 사용하는, 텍스처 미지정 기본 재질의 비소유 주소를 반환한다.
+	 * 최초 호출 때 생성하고 이후 같은 객체를 반환한다. 호출자는 삭제하거나 소유권을 가져오거나 설정을 변경하지 않는다.
+	 * 이 코드를 포함한 모듈의 정적 객체 정리 전까지만 사용한다. GPU 생성이나 Scene 등록은 하지 않는다.
+	 */
+	static UMaterial* GetDefaultMaterial();
+
 	/** 색상 텍스처의 공유 참조를 교체한다. nullptr는 미지정이며 GPU 검사나 렌더 상태 갱신은 하지 않는다. */
 	void SetBaseColorTexture(TSharedPtr<UTexture2D> texture);
 

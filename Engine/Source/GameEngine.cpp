@@ -3,8 +3,9 @@
 #include "Components/CameraComponent.h"
 #include "Core/Math/Matrix4.h"
 #include "GameClient.h"
+#include "GameInstance.h"
+#include "GameInstanceFactory.h"
 #include "Input/PlayerInput.h"
-#include "Launch/GameEntry.h"
 #include "Renderer/Renderer.h"
 #include "World.h"
 
@@ -13,16 +14,17 @@ UGameEngine::~UGameEngine() = default;
 
 bool UGameEngine::Initialize(FRenderer& renderer)
 {
-	if (world || gameClient) { return false; }
+	if (world || gameClient || gameInstance) { return false; }
 
 	if (!UEngine::Initialize(renderer)) { return false; }
 
 	gameClient = MakeUnique<FGameClient>();
-	if (!ConfigureGameWorld(*world) || !ConfigureGameClient(*gameClient, renderer))
+	gameInstance = CreateGameInstance();
+	if (!gameInstance || !gameInstance->Initialize(*world, *gameClient, renderer))
 	{
 		return false;
 	}
-	if (!world->CreateRenderStates(renderer))
+	if (!world->CreateRenderStates())
 	{
 		return false;
 	}
@@ -65,7 +67,7 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, FRenderer& 
 		return false;
 	}
 
-	if (!world->SendAllEndOfFrameUpdates(renderer))
+	if (!world->SendAllEndOfFrameUpdates())
 	{
 		return false;
 	}
@@ -100,6 +102,7 @@ void UGameEngine::PreExit()
 	{
 		world->EndPlay(EEndPlayReason::Quit);
 	}
+	gameInstance.reset();
 	gameClient.reset();
 	world.reset();
 }

@@ -40,6 +40,11 @@ namespace
 				SetWindowLongPtrW(window, GWLP_USERDATA, 0);
 				return DefWindowProcW(window, message, wParam, lParam);
 
+			case WM_CLOSE:
+				// 창 파괴는 루프 정리에 맡겨 UI와 Renderer가 빌린 창보다 먼저 종료되게 한다.
+				PostQuitMessage(0);
+				return 0;
+
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;

@@ -9,7 +9,6 @@
 #include <concepts>
 #include <utility>
 
-class FRenderer;
 class FInputState;
 class UCameraComponent;
 class UPlayerInput;
@@ -85,23 +84,23 @@ public:
 	void EndPlay(EEndPlayReason reason);
 
 	/**
-	 * 초기 구성 후 액터 등록 순서대로 미생성 렌더 상태를 만든다. 각 액터에서 정적 메시 뒤 방향광을 처리한다.
-	 * 같은 종류의 컴포넌트는 추가 순서를 따른다. 방향광은 Renderer 없이 Scene에 CPU 값을 등록한다.
+	 * 초기 구성 후 액터 등록 순서대로 미생성 렌더 상태를 만든다. 각 액터에서 정적 메시, 방향광, SkyLight 순서로 처리한다.
+	 * 같은 종류의 컴포넌트는 추가 순서를 따른다. 준비된 메시 자산/재질을 사용하고 GPU 생성은 하지 않는다.
 	 * 생성된 상태는 변경하지 않는다. 실패하면 false로 중단하고 앞서 성공한 등록은 유지한다.
 	 * Tick과 생성 및 제거 콜백 밖에서 호출한다.
-	 * NOTE: 초기 준비 뒤 추가한 정적 메시와 방향광 컴포넌트는 자동으로 렌더 등록되지 않는다.
+	 * NOTE: 초기 준비 뒤 추가한 메시/방향광/SkyLight 컴포넌트는 자동으로 렌더 등록되지 않는다.
 	 * NOTE: 컴포넌트 등록 수명에 통합할 때 초기 일괄 준비 함수와 호출의 존치 여부를 재검토한다.
 	 */
-	[[nodiscard]] bool CreateRenderStates(FRenderer& renderer);
+	[[nodiscard]] bool CreateRenderStates();
 
 	/**
 	 * Tick 종료 후 그리기 전에 액터 등록 순서대로 생성된 렌더 상태를 갱신한다.
-	 * 각 액터에서 정적 메시의 메시 변경과 현재 변환을 전달한 뒤 방향광의 현재 방향, 색, 세기를 전달한다.
-	 * 같은 종류의 컴포넌트는 추가 순서를 따른다. 방향광은 Renderer 없이 Scene의 CPU 값만 갱신한다.
+	 * 각 액터에서 메시 자산/재질·변환, 방향광 방향·색·세기, SkyLight 색·세기 순서로 전달한다.
+	 * 같은 종류의 컴포넌트는 추가 순서를 따른다. 광원은 Renderer 없이 컴포넌트 소유 Proxy의 CPU 값만 갱신한다.
 	 * 미생성 상태는 건너뛰며 자동 생성하지 않는다. 실패하면 false로 중단하고 앞서 성공한 갱신은 유지한다.
 	 * Tick과 생성 및 제거 콜백 밖에서 명시 호출한다. 빈 월드와 갱신 대상이 없는 경우는 true다.
 	 */
-	[[nodiscard]] bool SendAllEndOfFrameUpdates(FRenderer& renderer);
+	[[nodiscard]] bool SendAllEndOfFrameUpdates();
 
 	/**
 	 * 이 월드를 전달해 액터를 생성하고 부모 없는 액터로 소유 목록에 등록한다. 생성자는 등록 전에 실행된다.

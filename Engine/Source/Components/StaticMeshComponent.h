@@ -1,64 +1,82 @@
 #pragma once
 
 #include "ActorComponent.h"
+#include "Core/Containers/Array.h"
 #include "Core/CoreTypes.h"
 #include "Core/Math/Matrix4.h"
-#include "Image/Image.h"
-#include "Renderer/StaticMeshData.h"
+#include "Core/Templates/SharedPtr.h"
 
-#include <optional>
-
-class FRenderer;
+class UStaticMesh;
+class UMaterialInterface;
+class FStaticMeshSceneProxy;
 
 ////////////////////////////////////////////////////////////////////////////////
-// 액터가 사용할 정적 메시와 선택적 이미지의 CPU 데이터를 복사해 소유한다.
-// 명시적인 렌더 상태 생성과 해제로 소속 World의 Scene 등록을 관리한다.
+// 선택한 정적 메시 자산과 재질의 수명을 공유하고 렌더 상태 생성/변경/해제를 요청한다.
+// 등록된 Proxy는 Scene이 소유한다. 컴포넌트는 현재 Proxy의 자원을 사용 종료까지 유지한다.
 ////////////////////////////////////////////////////////////////////////////////
 class UStaticMeshComponent : public UActorComponent
 {
 public:
-	/** 소속 액터와 빈 메시 데이터를 준비한다. 생성만으로 액터에 등록하지 않는다. */
+	/** 소속 액터와 빈 자산 설정을 준비한다. 생성만으로 렌더 상태를 만들지 않는다. */
 	explicit UStaticMeshComponent(AActor& owner);
 
-	/** 남은 Scene 등록을 해제한다. 소속 Actor와 World는 정리가 끝날 때까지 살아 있어야 한다. */
+	/** 남은 Proxy를 Scene에서 제거한 뒤 자원 참조를 해제한다. Actor와 World는 그때까지 살아 있어야 한다. */
 	~UStaticMeshComponent() override;
 
-	/** 입력을 복사하고 생성된 렌더 상태를 변경 표시한다. 빈 데이터도 허용하며 GPU 갱신이나 유효성 검사는 하지 않는다. */
-	void SetMeshData(const FStaticMeshData& newMeshData);
+	/** 설정 참조가 바뀌면 true와 함께 dirty 표시한다. nullptr는 표시 해제이며 GPU 생성은 하지 않는다. */
+	bool SetStaticMesh(TSharedPtr<UStaticMesh> newStaticMesh);
 
-	/** 이미지를 복사하고 생성된 렌더 상태를 변경 표시한다. 유효성 검사와 GPU 생성은 렌더 상태 반영 시 수행한다. */
-	void SetBaseColorImage(const FImage& newBaseColorImage);
+	/** 선택 자산을 비소유로 빌린다. 설정 교체/파괴 후 수명이 보장되지 않으며 삭제하지 않는다. */
+	UStaticMesh* GetStaticMesh() const;
 
-	/** 저장한 데이터를 읽기 전용으로 빌린다. 컴포넌트 파괴 후 무효이며 setter 호출 뒤 배열 원소 참조는 다시 얻어야 한다. */
-	const FStaticMeshData& GetMeshData() const;
+	/** 슬롯의 공유 참조를 변경하고 dirty 표시한다. 음수는 무시하고 nullptr는 기본 재질로 복귀한다. */
+	void SetMaterial(int32 materialIndex, TSharedPtr<UMaterialInterface> newMaterial);
 
-	/** 소속 액터의 기본 Transform에 부모 합성을 반영한, 로컬에서 월드로 변환하는 행렬을 값으로 반환한다. 메시 정점은 변경하지 않는다. */
+	/** 오버라이드, 자산 기본 순서로 조회한 비소유 주소다. 음수/미지정은 nullptr이며 기본 재질 대체는 Proxy가 한다. */
+	UMaterialInterface* GetMaterial(int32 materialIndex) const;
+
+	/** 부모 합성을 반영한 행 벡터 규칙의 로컬에서 월드로의 행렬 사본이다. 메시 정점은 변경하지 않는다. */
 	[[nodiscard]] FMatrix4 GetLocalToWorld() const;
 
-	/** 현재 CPU 메시, 선택한 이미지와 월드 행렬을 소속 World의 Scene에 등록한다. 중복 생성, 입력/자원 생성 실패는 false이며 기존 상태를 유지한다. */
-	[[nodiscard]] bool CreateRenderState(FRenderer& renderer);
+	/**
+	 * 준비된 자산에서 Proxy를 만들어 Scene에 소유권을 넘긴다. nullptr 자산은 Proxy 없는 생성 상태다.
+	 * 중복 생성/미준비 자산은 false다. GPU 생성은 하지 않으며 같은 스레드에서 호출한다.
+	 */
+	[[nodiscard]] bool CreateRenderState();
 
-	/** 변경 표시된 메시와 이미지를 기존 Scene 등록에 반영한다. 미생성/갱신 실패는 false이며 실패 시 기존 GPU 메시와 표시를 유지한다. */
-	[[nodiscard]] bool UpdateRenderState(FRenderer& renderer);
+	/** dirty 설정으로 Proxy를 교체한다. 실패하면 기존 Proxy/자원 참조/dirty를 유지한다. 미생성은 false다. */
+	[[nodiscard]] bool UpdateRenderState();
 
-	/** 생성된 렌더 상태에 부모 합성 월드 행렬을 전달한다. GPU 메시/등록 ID는 유지하며 미생성 또는 Scene 갱신 실패는 false다. */
+	/** 현재 Proxy의 변환만 갱신한다. 미생성/외부 등록 제거는 false이며 표시 해제 상태는 할 일 없이 true다. */
 	[[nodiscard]] bool SendRenderTransform();
 
-	/** 소유한 Scene 등록을 제거하고 상태를 초기화한다. Renderer를 사용하지 않으며 반복 호출할 수 있다. */
+	/** Scene 소유 Proxy를 먼저 제거하고 현재 렌더 자원 참조를 놓는다. 반복 가능하며 설정 참조는 유지한다. */
 	void DestroyRenderState();
 
-	/** 이 컴포넌트가 Scene 등록 ID를 보관하는지 조회한다. GPU 준비 상태나 외부에서의 등록 제거를 검사하지 않는다. */
+	/** 논리적 렌더 상태 생성 여부다. 자산 미지정이면 true여도 등록된 Proxy가 없을 수 있다. */
 	[[nodiscard]] bool IsRenderStateCreated() const;
 
-	/** 생성된 렌더 상태에 메시, 이미지 변경을 표시한다. GPU 갱신은 수행하지 않으며 미생성 상태에서는 무시한다. */
+	/** 생성된 렌더 상태만 dirty 표시한다. 자산의 기본 재질 변경을 반영할 때도 명시 호출한다. */
 	void MarkRenderStateDirty();
 
-	/** 렌더 상태에 반영하지 않은 메시, 이미지 변경 표시를 조회한다. */
+	/** 아직 현재 렌더 상태에 반영하지 않은 설정 변경 표시다. */
 	[[nodiscard]] bool IsRenderStateDirty() const;
 
 private:
-	FStaticMeshData meshData;
-	std::optional<FImage> baseColorImage;
-	uint64 sceneMeshId = 0;
+	TSharedPtr<UMaterialInterface> ResolveMaterial(int32 materialIndex) const;
+	bool ApplyRenderState();
+
+	// 사용자가 선택한 설정이다. 변경 직후 이전 Proxy의 자원 수명은 아래 별도 참조로 유지한다.
+	TSharedPtr<UStaticMesh> staticMesh;
+	TArray<TSharedPtr<UMaterialInterface>> overrideMaterials;
+
+	// 현재 Proxy가 빌린 자원이다. Proxy 제거 후 해제하며 기본 재질의 정적 객체는 공유 소유하지 않는다.
+	// 자산 수명 유지와 내부 RenderData 교체 안전은 별개다. 기존 Proxy 사용 중 데이터 교체/비움은 금지한다.
+	TSharedPtr<UStaticMesh> renderStateStaticMesh;
+	TSharedPtr<UMaterialInterface> renderStateMaterial;
+
+	// Scene이 소유한다. 컴포넌트는 삭제하지 않고 같은 스레드에서 Scene을 통해 제거한다.
+	FStaticMeshSceneProxy* sceneProxy = nullptr;
+	bool bRenderStateCreated = false;
 	bool bRenderStateDirty = false;
 };

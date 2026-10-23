@@ -11,7 +11,7 @@
 | 대상 | 적용 |
 |---|---|
 | 엔진 코드 (`Engine/`) | **필수**. 이 문서의 모든 규칙을 따른다. 서식은 저장소 루트의 `.clang-format`이 적용한다 |
-| 게임 코드 (`SampleGame` 등 게임 모듈) | **권장**. 엔진과 같은 규칙을 권하지만 강제하지 않는다. 서식은 저장소 루트의 `.clang-format`이 기본으로 적용되고, 게임 폴더에 자기 `.clang-format`을 두면 그쪽이 우선한다 |
+| 게임 코드 (`Game/`) | **권장**. 엔진과 같은 규칙을 권하지만 강제하지 않는다. 서식은 저장소 루트의 `.clang-format`이 기본으로 적용되고, 게임 폴더에 자기 `.clang-format`을 두면 그쪽이 우선한다 |
 | 서드파티 (`Engine/ThirdParty/`) | 적용하지 않는다(6.3 예외 조항) |
 
 ## 목차
@@ -147,7 +147,7 @@
 | 상수 / `constexpr` | PascalCase | `MaxLightCount` |
 | 전역 변수 | `g` + PascalCase | `gEngine` |
 | static 멤버 변수 | 일반 멤버 변수와 동일 (접두사 없음) | `liveCount` |
-| Macro | UPPER_SNAKE_CASE. 역할·모듈 접두사는 필요에 따라 사용 | `ASSERT`, `PLATFORM_WINDOWS`, `ENGINE_API` |
+| Macro | UPPER_SNAKE_CASE. 역할·모듈 접두사는 필요에 따라 사용 | `ASSERT`, `PLATFORM_WINDOWS`, `WITH_EDITOR` |
 
 - **렌더러의 Unreal 대응 이름** — 직접 확인한 Unreal 코드와 역할이 대응하는 렌더러 변수 / 매개변수는 원본 이름을 우선한다. 이 범위에서는 PascalCase와 입력 매개변수의 `In` 접두사를 허용한다(예: `Direct3DDevice`, `SizeX`, `InSizeX`). 역할이 다르면 이름을 억지로 맞추지 않고 차이를 설명한다. 다른 시스템에는 위 기본 표기를 유지한다.
 
@@ -168,8 +168,6 @@
   | `C` | Concept | C++20 concept (3.10 Template 참고) |
 
   Interface를 구현하는 클래스는 일반 타입이므로 `F`를 붙인다.
-
-  공통 모듈 계약 `IModuleInterface`는 예외로 기본 빈 수명 훅과 가상 소멸자를 제공하며 직접 생성할 수 있다. 모듈 구현이 필요한 훅만 재정의하도록 하는 계약이며, 이 예외를 다른 인터페이스에 일괄 적용하지 않는다.
 
   ```cpp
   class FRenderer;
@@ -206,8 +204,8 @@
   {
   public:
     explicit FMesh(uint32 initialVertexCount)
-        : vertexCount(initialVertexCount)
     {
+        vertexCount = initialVertexCount;
     }
 
     void SetVertexCount(uint32 newVertexCount)
@@ -358,7 +356,7 @@
   - 렌더러 계약 예외: `IRenderer`는 `RendererInterface.h`, 기본 구현 `FRenderer`는 `Renderer.h`에 둔다. Public / Private include 경로에서 같은 파일 이름이 겹치지 않도록 계약과 구현을 구분한다. 다른 인터페이스에 일괄 적용하는 규칙은 아니다.
 
 - **파일 단위** — 타입을 정의하는 파일에는 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다. WindowsApplication.h/.cpp는 단일 창의 수명을 관리하는 FWindowsApplication과 실행 조합 함수를 제공한다(2026-10-16 정정).
-- **현재 디렉터리 구조 (2026-10-15 정정)** — 실행 프로젝트 하나에서 엔진은 Engine/Source, 게임은 SampleGame/Source/SampleGame 아래에 둔다. 엔진은 Windows 등 역할별 폴더를 사용하고 Public/Private·별도 모듈 계층은 아직 나누지 않는다. 이 헤더 중 게임이 호출하는 함수를 공개 API로 보고 1.4의 문서 규칙을 적용한다.
+- **현재 디렉터리 구조 (2026-10-23 정정)** — 루트 SeonEngine.vcxproj 하나에서 엔진은 Engine/Source, 게임은 Game/Source 아래에 둔다. 엔진은 Windows 등 역할별 폴더를 사용하고 Public/Private·별도 모듈 계층은 아직 나누지 않는다. 이 헤더 중 게임이 호출하는 함수를 공개 API로 보고 1.4의 문서 규칙을 적용한다.
 
   ```text
   Engine/Source/Windows/
@@ -366,11 +364,11 @@
   └─ WindowsApplication.cpp
   ```
 
-- **게임 코드와 진입점 소유 (2026-10-15 정정)** — 게임 제작자는 SampleGame/Source/SampleGame 아래 게임 코드를 작성하고 엔진 API·확장 지점을 사용한다. main은 Engine/Source/EngineMain.cpp에 두며 엔진 개발 영역에서 초기화·반복·종료를 관리한다. 게임에서 별도 main을 정의하거나 엔진 진입점·플랫폼 구현을 게임별로 수정하지 않는다. 엔진에서 구체 게임 코드나 헤더를 참조하지 않는다. 게임을 만드는 확장 지점은 아직 미구현이며 이 규칙은 OS 파일 접근 권한 강제가 아니다.
+- **게임 코드와 진입점 소유 (2026-10-23 정정)** — 게임 제작자는 Game/Source 아래 게임 코드를 작성하고 엔진 API·확장 지점을 사용한다. main은 Engine/Source/Launch/EngineMain.cpp에 두며 엔진 개발 영역에서 초기화·반복·종료를 관리한다. 게임에서 별도 main을 정의하거나 엔진 진입점·플랫폼 구현을 게임별로 수정하지 않는다. 엔진에서 구체 게임 코드나 헤더를 참조하지 않는다. 게임 초기화는 게임 쪽 GameInstance 파생 구현에서 제공한다. 이 규칙은 OS 파일 접근 권한 강제가 아니다.
 
   ```text
-  Engine/Source/EngineMain.cpp       # 엔진이 소유하는 main
-  SampleGame/Source/SampleGame/       # 게임 전용 소스, 현재 비어 있음
+  Engine/Source/Launch/EngineMain.cpp  # 엔진이 소유하는 main
+  Game/Source/                        # 게임 전용 소스
   ```
 
 - **이전 규칙의 적용 범위** — 엔진 모듈마다 Public/Private를 필수로 두던 규칙은 재시작 후 적용하지 않는다. 향후 공개·내부 경계가 필요해지면 별도 검토한다. 현재 프로젝트 배치는 [빌드·개발 설정](../BuildSetup.md)의 현재 구성을 따른다.
@@ -474,7 +472,10 @@
   };
   ```
 
-- **멤버 초기화** — 모든 멤버 변수는 선언하는 자리에서 기본값을 준다. 생성자 인자로 받는 값은 초기화 리스트에서 넣는다. 생성자 본문에서 대입하는 방식은 쓰지 않는다(1.2 Naming의 `FMesh` 예시 참고).
+- **멤버 초기화** — 멤버의 기본값은 선언부에 둔다. 생성자에서 본문 대입이 가능한 값은 본문에서 설정하며, 조건에 따른 선택은 `if`로 풀어 흐름을 읽기 쉽게 작성한다(1.2 Naming의 `FMesh` 예시 참고).
+  - 기반 클래스 생성자에 인수를 전달하거나 `const` 멤버·기본 생성자가 없는 타입을 초기화할 때는 초기화 리스트를 사용한다. 본문 대입을 위해 타입의 제약을 없애지 않는다.
+  - 기본 생성 후 대입하면 불필요한 자원 생성이나 유의미한 비용이 발생하는 타입도 초기화 리스트로 직접 초기화한다.
+  - 본문 대입은 멤버 초기화가 끝난 뒤 수행된다. 직접 초기화와 같은 언어 동작으로 보지 않으며, 값을 설정하기 전에 해당 멤버를 읽지 않는다.
 - **virtual / override / final** — 함수에는 `virtual`, `override`, `final` 중 하나만 쓴다.
   - 부모 클래스에서 처음 선언하는 가상 함수는 `virtual`
   - 재정의는 `override` (`virtual`을 반복하지 않는다)
@@ -657,13 +658,12 @@
 
 ### 3.9 Macro `중요`
 
-- **이름** — UPPER_SNAKE_CASE를 사용하며 `SE_` 접두사를 일괄 요구하지 않는다(1.2 Naming 참고). 역할이나 소속을 구분할 때는 `PLATFORM_`, `BUILD_`, `WITH_` 또는 모듈 이름처럼 의미 있는 접두사를 사용한다. 외부 코드와 충돌하면 구체적인 역할·모듈·프로젝트 이름으로 구분한다. DLL export/import 선언용 공개 매크로는 `<모듈명>_API`로 표기한다(예: `ENGINE_API`).
+- **이름** — UPPER_SNAKE_CASE를 사용하며 `SE_` 접두사를 일괄 요구하지 않는다(1.2 Naming 참고). 역할이나 소속을 구분할 때는 `PLATFORM_`, `BUILD_`, `WITH_` 또는 모듈 이름처럼 의미 있는 접두사를 사용한다. 외부 코드와 충돌하면 구체적인 역할·모듈·프로젝트 이름으로 구분한다.
 - **기존 이름** — 이 명명 규칙 변경만으로 기존 매크로를 일괄 개명하지 않는다. 실제 API나 빌드 설정을 설명할 때는 현재 이름을 사용하고, 이름을 바꾸는 작업에서는 정의·사용처·프로젝트 설정·관련 문서를 함께 갱신한다.
 - **사용 범위** — 매크로로만 할 수 있는 일에만 쓴다.
   - 플랫폼 / 빌드 구성 분기
   - 파일 이름과 줄 번호가 필요한 assert, 로그
   - 반복 코드 생성 (`ENUM_CLASS_FLAGS`, 리플렉션 등록 등)
-  - DLL export/import (`ENGINE_API` 등 모듈 공개 표기)
 
   상수는 `constexpr`, 함수는 inline 함수나 템플릿으로 쓴다(`#define MAX_LIGHTS 16` 같은 매크로 상수는 쓰지 않는다).
 

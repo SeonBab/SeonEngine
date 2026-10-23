@@ -7,6 +7,7 @@
 #include "Core/Misc/Paths.h"
 #include "D3D11/D3D11Shader.h"
 #include "Image/Image.h"
+#include "Renderer/MaterialRenderProxy.h"
 #include "Renderer/StaticMeshData.h"
 #include "Renderer/Texture2D.h"
 #include "UI/UIDrawElementList.h"
@@ -38,6 +39,16 @@ namespace
 
 	static_assert(sizeof(FDirectionalLightConstants) == 32);
 	static_assert(offsetof(FDirectionalLightConstants, color) == 16);
+
+	struct FSkyLightConstants
+	{
+		FVector3 color; // SkyLight에서 받은 세기 반영 균일 주변광 RGB
+		float padding = 0.0f;
+	};
+
+	static_assert(sizeof(FSkyLightConstants) == 16);
+	static_assert(offsetof(FSkyLightConstants, color) == 0);
+	static_assert(offsetof(FSkyLightConstants, padding) == 12);
 
 	bool ValidateTriangleMesh(size_t vertexCount, const TArray<uint32>& indices)
 	{
@@ -142,6 +153,15 @@ bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 
 	if (!graphics.CreateConstantBuffer(DirectionalLightBufferByteSize, directionalLightConstantBuffer) ||
 		!graphics.UpdateConstantBuffer(directionalLightConstantBuffer.Get(), &initialLightConstants, DirectionalLightBufferByteSize))
+	{
+		Shutdown();
+		return false;
+	}
+
+	constexpr uint32 SkyLightBufferByteSize = static_cast<uint32>(sizeof(FSkyLightConstants));
+	const FSkyLightConstants initialSkyLightConstants{};
+	if (!graphics.CreateConstantBuffer(SkyLightBufferByteSize, skyLightConstantBuffer) ||
+		!graphics.UpdateConstantBuffer(skyLightConstantBuffer.Get(), &initialSkyLightConstants, SkyLightBufferByteSize))
 	{
 		Shutdown();
 		return false;
@@ -262,7 +282,7 @@ bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 	return true;
 }
 
-bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh, const FImage* baseColorImage)
+bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh)
 {
 	if (!bInitialized)
 	{
@@ -278,12 +298,8 @@ bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderDat
 		return false;
 	}
 
-	if (baseColorImage && !CreateTexture2D(*baseColorImage, newMesh.baseColorTexture)) { return false; }
-
-	// 버퍼와 지정한 이미지가 모두 준비된 뒤에만 기존 메시를 교체한다.
+	// 두 형상 버퍼가 모두 준비된 뒤에만 기존 메시를 교체한다.
 	newMesh.indexCount = static_cast<uint32>(meshData.indices.size());
-	newMesh.baseColorTexture.SetTextureAddressX(meshData.AddressX);
-	newMesh.baseColorTexture.SetTextureAddressY(meshData.AddressY);
 	outMesh = std::move(newMesh);
 
 	return true;
@@ -306,6 +322,7 @@ bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 	UTexture2D newTexture;
 	if (!graphics.CreateTexture2D(static_cast<uint32>(image.sizeX), static_cast<uint32>(image.sizeY), image.rawData, texture)) { return false; }
 	if (!graphics.CreateShaderResourceView(texture.Get(), newTexture.textureView)) { return false; }
+	if (!graphics.GenerateMips(newTexture.textureView.Get())) { return false; }
 
 	outTexture.textureView = std::move(newTexture.textureView);
 
@@ -362,6 +379,19 @@ bool FRenderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor
 	return graphics.UpdateConstantBuffer(directionalLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
 }
 
+bool FRenderer::SetSkyLight(FVector3 lightColor)
+{
+	if (!bInitialized)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Setting a sky light requires an initialized renderer.");
+		return false;
+	}
+
+	const FSkyLightConstants constants{.color = lightColor};
+
+	return graphics.UpdateConstantBuffer(skyLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
+}
+
 bool FRenderer::BeginFrame(int32 width, int32 height)
 {
 	if (!bInitialized || bFrameActive || width <= 0 || height <= 0)
@@ -401,7 +431,7 @@ bool FRenderer::BeginFrame(int32 width, int32 height)
 	return true;
 }
 
-bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
+bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRenderProxy& material)
 {
 	if (!bFrameActive)
 	{
@@ -424,17 +454,30 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 		return false;
 	}
 
+	// 조회 사본이 그리기 요청이 끝날 때까지 텍스처 객체를 유지한다.
+	const TSharedPtr<UTexture2D> texture = material.GetBaseColorTexture();
+	if (texture && texture->textureView)
+	{
+		Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
+		texture->textureView->GetDevice(textureDevice.GetAddressOf());
+		if (textureDevice.Get() != graphics.GetDevice())
+		{
+			WriteLog("Renderer", ELogLevel::Error, "Drawing requires a material texture from the current renderer device.");
+			return false;
+		}
+	}
+
 	graphics.SetVertexShader(staticMeshVertexShader.Get());
 	graphics.SetPixelShader(staticMeshPixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
 	graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
-	const auto& textureView = mesh.baseColorTexture.textureView;
-	graphics.SetPixelShaderResourceView(textureView ? textureView.Get() : whiteTextureView.Get());
-	const size_t addressU = mesh.baseColorTexture.GetTextureAddressX() == ETextureAddress::Wrap ? 1 : 0;
-	const size_t addressV = mesh.baseColorTexture.GetTextureAddressY() == ETextureAddress::Wrap ? 1 : 0;
+	graphics.SetPixelShaderResourceView(texture && texture->textureView ? texture->textureView.Get() : whiteTextureView.Get());
+	const size_t addressU = texture && texture->GetTextureAddressX() == ETextureAddress::Wrap ? 1 : 0;
+	const size_t addressV = texture && texture->GetTextureAddressY() == ETextureAddress::Wrap ? 1 : 0;
 	graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get());
 	graphics.SetVertexShaderConstantBuffer(0, transformConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
+	graphics.SetVertexShaderConstantBuffer(2, skyLightConstantBuffer.Get());
 	graphics.SetIndexBuffer(mesh.indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(mesh.indexCount, 0, 0);
@@ -550,6 +593,7 @@ void FRenderer::Shutdown()
 		graphics.SetIndexBuffer(nullptr);
 		graphics.SetVertexShaderConstantBuffer(0, nullptr);
 		graphics.SetVertexShaderConstantBuffer(1, nullptr);
+		graphics.SetVertexShaderConstantBuffer(2, nullptr);
 		graphics.SetVertexBuffer(nullptr);
 		graphics.SetInputLayout(nullptr);
 		graphics.SetRenderTarget(nullptr);
@@ -574,6 +618,7 @@ void FRenderer::Shutdown()
 	uiBlendState.Reset();
 	transformConstantBuffer.Reset();
 	directionalLightConstantBuffer.Reset();
+	skyLightConstantBuffer.Reset();
 	imageTransformConstantBuffer.Reset();
 	inputLayout.Reset();
 	staticMeshPixelShader.Reset();

@@ -342,9 +342,9 @@ void FD3D11Device::SetPixelShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffe
 
 bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture)
 {
-	if (!device)
+	if (!device || !context)
 	{
-		WriteLog("D3D11", ELogLevel::Error, "Creating a texture requires an initialized device.");
+		WriteLog("D3D11", ELogLevel::Error, "Creating a texture requires an initialized device and context.");
 		return false;
 	}
 	if (width == 0 || height == 0 || width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
@@ -362,27 +362,36 @@ bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uin
 		return false;
 	}
 
+	UINT formatSupport = 0;
+	const HRESULT supportResult = device->CheckFormatSupport(DXGI_FORMAT_R8G8B8A8_UNORM, &formatSupport);
+	constexpr UINT RequiredSupport = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE | D3D11_FORMAT_SUPPORT_RENDER_TARGET | D3D11_FORMAT_SUPPORT_MIP | D3D11_FORMAT_SUPPORT_MIP_AUTOGEN;
+	if (FAILED(supportResult) || (formatSupport & RequiredSupport) != RequiredSupport)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "RGBA8 automatic mip generation is not supported (HRESULT 0x{:08X}).", static_cast<unsigned long>(supportResult));
+		return false;
+	}
+
 	D3D11_TEXTURE2D_DESC description{};
 	description.Width = width;
 	description.Height = height;
-	description.MipLevels = 1;
+	description.MipLevels = 0;
 	description.ArraySize = 1;
 	description.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	description.SampleDesc.Count = 1;
-	description.Usage = D3D11_USAGE_IMMUTABLE;
-	description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	D3D11_SUBRESOURCE_DATA initialData{};
-	initialData.pSysMem = rgbaPixels.data();
-	initialData.SysMemPitch = rowPitch;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	description.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdTexture;
-	const HRESULT result = device->CreateTexture2D(&description, &initialData, createdTexture.GetAddressOf());
+	const HRESULT result = device->CreateTexture2D(&description, nullptr, createdTexture.GetAddressOf());
 	if (FAILED(result))
 	{
 		WriteLog("D3D11", ELogLevel::Error, "CreateTexture2D failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
 		return false;
 	}
 
+	// 원본은 밉 0에만 올린다. 하위 밉은 SRV를 준비한 뒤 GenerateMips로 채워야 한다.
+	context->UpdateSubresource(createdTexture.Get(), 0, nullptr, rgbaPixels.data(), rowPitch, 0);
 	outTexture = std::move(createdTexture);
 
 	return true;
@@ -461,6 +470,33 @@ bool FD3D11Device::CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft:
 	}
 
 	outView = std::move(createdView);
+
+	return true;
+}
+
+bool FD3D11Device::GenerateMips(ID3D11ShaderResourceView* view)
+{
+	if (!device || !context)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Generating mips requires an initialized device and context.");
+		return false;
+	}
+
+	if (view == nullptr)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Generating mips requires a shader resource view.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Device> viewDevice;
+	view->GetDevice(viewDevice.GetAddressOf());
+	if (viewDevice.Get() != device.Get())
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Shader resource view belongs to another D3D11 device.");
+		return false;
+	}
+
+	context->GenerateMips(view);
 
 	return true;
 }

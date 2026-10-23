@@ -10,9 +10,7 @@
 
 프로젝트 파일 목록을 생성한 뒤, 사용하려는 Visual Studio 버전으로 `SeonEngine.slnx`를 연다. 두 버전이 함께 설치되어 있다면 탐색기 더블클릭의 기본 연결 대신 해당 IDE의 솔루션 열기를 사용한다. VisualStudioVersion 17.0은 v143, 18.0은 v145를 선택하며, 아래 명령도 해당 버전의 개발자 명령 프롬프트에서 실행한다.
 
-구성은 Debug와 Release, 플랫폼은 x64다. 솔루션에는 SampleGame 실행 프로젝트 하나가 있으며 엔진 소스도 함께 컴파일한다.
-
-`Core/EngineAPI.h`를 사용하는 빌드 대상은 `BUILD_ENGINE_DLL`과 `BUILD_ENGINE_DLL_CONSUMER`를 각각0 또는1로 지정한다. 엔진 DLL 생산자는1/0, DLL 소비자는0/1, DLL을 사용하지 않는 빌드는0/0이다.두 값을 모두1로 지정하거나 각 값에0/1 이외의 정수를 지정하면 컴파일 오류다. 현재 SampleGame 프로젝트는 두 값을 모두0으로 명시하며 `ENGINE_API`가 빈 표기로 확장된다. 각 대상의 전처리 정의에서 지정하고 기존 정의 목록을 이어 붙인다.
+구성은 Debug와 Release, 플랫폼은 x64다. 솔루션에는 루트의 SeonEngine 실행 프로젝트 하나가 있으며 Engine/Source와 Game/Source를 함께 컴파일한다.
 
 Visual Studio 개발자 명령 프롬프트에서는 다음과 같이 빌드한다.
 
@@ -29,6 +27,7 @@ MSBuild SeonEngine.slnx /p:Configuration=Release /p:Platform=x64 /p:PreferredToo
 ```text
 SeonEngine/
 ├─ SeonEngine.slnx
+├─ SeonEngine.vcxproj          엔진·게임을 함께 빌드하는 실행 프로젝트
 ├─ Directory.Build.props       공통 컴파일·출력·vcpkg 설정
 ├─ Directory.Build.targets     vcpkg 연결
 ├─ GenerateProjectFiles.bat
@@ -42,7 +41,7 @@ SeonEngine/
 │  ├─ Shaders/Private/         HLSL 소스
 │  ├─ Content/                 엔진 콘텐츠
 │  └─ ThirdParty/              vcpkg manifest·외부 라이브러리 고지
-├─ SampleGame/Source/          게임 소스와 SampleGame.vcxproj
+├─ Game/Source/                게임 소스
 ├─ Docs/                      개발 규칙·빌드 안내
 ├─ Binaries/                  빌드 결과（Git 제외）
 └─ Intermediate/              중간 결과·vcpkg 설치 파일（Git 제외）
@@ -56,9 +55,11 @@ SeonEngine/
 |---|---|
 | `Directory.Build.props` | `SERootDir`, VS 버전별 `SEPlatformToolset`, 출력·중간 디렉터리, 공통 컴파일러 옵션, vcpkg manifest 설정 |
 | `Directory.Build.targets` | 프로젝트 본문 이후의 도구별 overlay triplet 연결, vcpkg targets import와 경로 검사 |
-| `SampleGame/Source/SampleGame.vcxproj` | 실행 프로젝트, 선택한 `SEPlatformToolset`, SDK, include·링크, 구성별 CRT·최적화, HLSL 컴파일·콘텐츠 복사 |
+| `SeonEngine.vcxproj` | 실행 프로젝트, 선택한 `SEPlatformToolset`, SDK, include·링크, 구성별 CRT·최적화, HLSL 컴파일·콘텐츠 복사 |
 | `SeonEngine.slnx` | 솔루션 프로젝트와 플랫폼 |
 
+- 실행 파일: `SeonEngine.exe`
+- 로컬 디버거 인수는 Git 제외 `SeonEngine.vcxproj.user`에서 설정한다. `-game`은 게임 모드이며 인수 없으면 Editor다.
 - 출력: `$(SERootDir)Binaries\$(SEPlatformToolset)\$(Platform)\$(Configuration)\`
 - 중간 결과: `$(SERootDir)Intermediate\$(SEPlatformToolset)\$(MSBuildProjectName)\$(Platform)\$(Configuration)\`
 - vcpkg 설치: `$(SERootDir)Intermediate\vcpkg_installed\$(SEPlatformToolset)\`
@@ -70,7 +71,7 @@ SeonEngine/
 소스를 추가·삭제·이동한 뒤 `GenerateProjectFiles.bat`을 실행한다. 본체는 `Engine/Build/BatchFiles/GenerateProjectFiles.cs`이며 도구 빌드 결과는 `Intermediate/DotNET/GenerateProjectFiles`에 둔다.
 
 - 저장소의 `.vcxproj`를 찾되 Binaries·Intermediate·ThirdParty 경로는 제외한다.
-- 기본 검색 범위는 프로젝트 폴더이며 Source 프로젝트의 형제 Shaders 폴더도 포함한다. 현재 SampleGame에는 `Engine/Source`와 `Engine/Shaders`를 추가로 포함한다.
+- 루트 `SeonEngine.vcxproj`는 `Engine/Source`, `Engine/Shaders`, `Game/Source`만 수집한다. 저장소 전체를 소스로 검색하지 않는다. 다른 프로젝트의 기본 검색 범위는 프로젝트 폴더이며 Source 프로젝트의 형제 Shaders 폴더도 포함한다.
 - `.h`는 ClInclude, `.cpp`는 ClCompile, 명시적으로 컴파일하지 않는 `.hlsl`·`.hlsli`는 편집용 None 목록에 넣는다. `.vcxproj.filters`는 폴더 구조에 맞춰 생성한다.
 - 생성 대상 소스 목록과 필터는 생성기를 통해 관리한다. 자동 목록의 파일별 메타데이터·Condition·다른 종류 항목은 지원하지 않으며 발견하면 쓰기 전에 오류로 중단한다.
 - 셰이더 FxCompile 전용 목록과 컴파일 메타데이터는 프로젝트에서 직접 관리한다. 검색 범위 안의 단일 `.hlsl` 상대 경로만 허용하며 중복·변수·와일드카드는 거부한다. 생성기는 FxCompile을 보존하고 None 중복을 제거한다.
@@ -92,7 +93,7 @@ SeonEngine/
 | Debug 정의 | `SE_BUILD_DEBUG=1`, `SE_BUILD_RELEASE=0`, `_DEBUG` |
 | Release 정의 | `SE_BUILD_DEBUG=0`, `SE_BUILD_RELEASE=1`, `NDEBUG` |
 
-SampleGame 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서브시스템, Unicode 문자 집합을 지정한다. Debug는 최적화 끔·`/MDd`, Release는 속도 최적화·`/MD`를 사용한다. 두 구성 모두 PDB 정보를 생성하며 Release는 함수 단위 링크·내장 함수·참조 제거·COMDAT 접기를 사용한다.
+SeonEngine 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서브시스템, Unicode 문자 집합을 지정한다. Debug는 최적화 끔·`/MDd`, Release는 속도 최적화·`/MD`를 사용한다. 두 구성 모두 PDB 정보를 생성하며 Release는 함수 단위 링크·내장 함수·참조 제거·COMDAT 접기를 사용한다.
 
 현재 직접 링크하는 Windows 라이브러리는 `dxgi.lib`, `d3d11.lib`, `user32.lib`, `windowscodecs.lib`, `ole32.lib`다.
 
@@ -114,7 +115,7 @@ SampleGame 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 
 ## 셰이더와 콘텐츠 출력
 
-`SampleGame.vcxproj`의 FxCompile은 `StaticMeshVertexShader.hlsl`과 `ImageVertexShader.hlsl`을 Vertex로, `StaticMeshPixelShader.hlsl`과 `ImagePixelShader.hlsl`을 Pixel로 등록한다. 모두 Shader Model 5.0, 진입점 Main으로 컴파일한다. 경고는 오류로 처리하며 출력은 `$(OutDir)Shaders/`의 같은 이름 `.cso`다. 프로젝트가 컴파일 전 해당 디렉터리를 만든다.
+`SeonEngine.vcxproj`의 FxCompile은 `StaticMeshVertexShader.hlsl`과 `ImageVertexShader.hlsl`을 Vertex로, `StaticMeshPixelShader.hlsl`과 `ImagePixelShader.hlsl`을 Pixel로 등록한다. 모두 Shader Model 5.0, 진입점 Main으로 컴파일한다. 경고는 오류로 처리하며 출력은 `$(OutDir)Shaders/`의 같은 이름 `.cso`다. 프로젝트가 컴파일 전 해당 디렉터리를 만든다.
 
 빌드 후 `Engine/Content/Textures/Checker.png`를 `$(OutDir)Content/Textures/`에 복사한다. 런타임 셰이더를 준비할 때는 실행 파일과 Shaders 출력을 함께 둔다.
 

@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C7BDB358-4452-4E76-8FD8-892D40987EA8}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>SeonEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>$(SEPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SERootDir)Engine\Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>dxgi.lib;d3d11.lib;user32.lib;windowscodecs.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Engine\Source\Actor.h" />
+    <ClInclude Include="Engine\Source\Camera\CameraViewInfo.h" />
+    <ClInclude Include="Engine\Source\Components\ActorComponent.h" />
+    <ClInclude Include="Engine\Source\Components\CameraComponent.h" />
+    <ClInclude Include="Engine\Source\Components\DirectionalLightComponent.h" />
+    <ClInclude Include="Engine\Source\Components\InputComponent.h" />
+    <ClInclude Include="Engine\Source\Components\SkyLightComponent.h" />
+    <ClInclude Include="Engine\Source\Components\StaticMeshComponent.h" />
+    <ClInclude Include="Engine\Source\Components\TransformComponent.h" />
+    <ClInclude Include="Engine\Source\Core\Containers\Array.h" />
+    <ClInclude Include="Engine\Source\Core\Containers\SeonString.h" />
+    <ClInclude Include="Engine\Source\Core\CoreTypes.h" />
+    <ClInclude Include="Engine\Source\Core\Logging\Log.h" />
+    <ClInclude Include="Engine\Source\Core\Math\Matrix4.h" />
+    <ClInclude Include="Engine\Source\Core\Math\Quat.h" />
+    <ClInclude Include="Engine\Source\Core\Math\Rotator.h" />
+    <ClInclude Include="Engine\Source\Core\Math\Transform.h" />
+    <ClInclude Include="Engine\Source\Core\Math\Vector2.h" />
+    <ClInclude Include="Engine\Source\Core\Math\Vector3.h" />
+    <ClInclude Include="Engine\Source\Core\Misc\Paths.h" />
+    <ClInclude Include="Engine\Source\Core\Templates\SharedPtr.h" />
+    <ClInclude Include="Engine\Source\Core\Templates\UniquePtr.h" />
+    <ClInclude Include="Engine\Source\Core\Time\FrameTimer.h" />
+    <ClInclude Include="Engine\Source\D3D11\D3D11Device.h" />
+    <ClInclude Include="Engine\Source\D3D11\D3D11Shader.h" />
+    <ClInclude Include="Engine\Source\D3D11\D3D11SwapChain.h" />
+    <ClInclude Include="Engine\Source\EditorEngine.h" />
+    <ClInclude Include="Engine\Source\EditorViewportClient.h" />
+    <ClInclude Include="Engine\Source\Editor\EditorUI.h" />
+    <ClInclude Include="Engine\Source\Engine.h" />
+    <ClInclude Include="Engine\Source\GameClient.h" />
+    <ClInclude Include="Engine\Source\GameEngine.h" />
+    <ClInclude Include="Engine\Source\GameInstance.h" />
+    <ClInclude Include="Engine\Source\GameInstanceFactory.h" />
+    <ClInclude Include="Engine\Source\Image\Image.h" />
+    <ClInclude Include="Engine\Source\Image\ImageUtils.h" />
+    <ClInclude Include="Engine\Source\Input\InputAction.h" />
+    <ClInclude Include="Engine\Source\Input\InputActionEvaluator.h" />
+    <ClInclude Include="Engine\Source\Input\InputActionInstance.h" />
+    <ClInclude Include="Engine\Source\Input\InputActionKeyMapping.h" />
+    <ClInclude Include="Engine\Source\Input\InputActionTypes.h" />
+    <ClInclude Include="Engine\Source\Input\InputActionValue.h" />
+    <ClInclude Include="Engine\Source\Input\InputMappingContext.h" />
+    <ClInclude Include="Engine\Source\Input\InputState.h" />
+    <ClInclude Include="Engine\Source\Input\Key.h" />
+    <ClInclude Include="Engine\Source\Input\PlayerInput.h" />
+    <ClInclude Include="Engine\Source\Launch\EngineLoop.h" />
+    <ClInclude Include="Engine\Source\Object.h" />
+    <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h" />
+    <ClInclude Include="Engine\Source\Renderer\Material.h" />
+    <ClInclude Include="Engine\Source\Renderer\MaterialInterface.h" />
+    <ClInclude Include="Engine\Source\Renderer\MaterialRenderProxy.h" />
+    <ClInclude Include="Engine\Source\Renderer\ModelData.h" />
+    <ClInclude Include="Engine\Source\Renderer\ModelLoader.h" />
+    <ClInclude Include="Engine\Source\Renderer\Renderer.h" />
+    <ClInclude Include="Engine\Source\Renderer\Scene.h" />
+    <ClInclude Include="Engine\Source\Renderer\SkyLightSceneProxy.h" />
+    <ClInclude Include="Engine\Source\Renderer\StaticMesh.h" />
+    <ClInclude Include="Engine\Source\Renderer\StaticMeshData.h" />
+    <ClInclude Include="Engine\Source\Renderer\StaticMeshRenderData.h" />
+    <ClInclude Include="Engine\Source\Renderer\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Engine\Source\Renderer\StaticMeshSceneProxyDesc.h" />
+    <ClInclude Include="Engine\Source\Renderer\Texture2D.h" />
+    <ClInclude Include="Engine\Source\Renderer\TextureAddressMode.h" />
+    <ClInclude Include="Engine\Source\Renderer\Vertex.h" />
+    <ClInclude Include="Engine\Source\UI\GameWidgetSubsystem.h" />
+    <ClInclude Include="Engine\Source\UI\ImageWidget.h" />
+    <ClInclude Include="Engine\Source\UI\UIDrawElementList.h" />
+    <ClInclude Include="Engine\Source\UI\UIImageDrawElement.h" />
+    <ClInclude Include="Engine\Source\UI\UserWidget.h" />
+    <ClInclude Include="Engine\Source\UI\Widget.h" />
+    <ClInclude Include="Engine\Source\Windows\WindowsApplication.h" />
+    <ClInclude Include="Engine\Source\Windows\WindowsHWrapper.h" />
+    <ClInclude Include="Engine\Source\Windows\WindowsInput.h" />
+    <ClInclude Include="Engine\Source\World.h" />
+    <ClInclude Include="Game\Source\SampleActor.h" />
+    <ClInclude Include="Game\Source\SampleGameInstance.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Source\Actor.cpp" />
+    <ClCompile Include="Engine\Source\Camera\CameraViewInfo.cpp" />
+    <ClCompile Include="Engine\Source\Components\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\CameraComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\InputComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\SkyLightComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\StaticMeshComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\TransformComponent.cpp" />
+    <ClCompile Include="Engine\Source\Core\Logging\Log.cpp" />
+    <ClCompile Include="Engine\Source\Core\Math\Matrix4.cpp" />
+    <ClCompile Include="Engine\Source\Core\Math\Quat.cpp" />
+    <ClCompile Include="Engine\Source\Core\Math\Rotator.cpp" />
+    <ClCompile Include="Engine\Source\Core\Math\Transform.cpp" />
+    <ClCompile Include="Engine\Source\Core\Misc\Paths.cpp" />
+    <ClCompile Include="Engine\Source\Core\Time\FrameTimer.cpp" />
+    <ClCompile Include="Engine\Source\D3D11\D3D11Device.cpp" />
+    <ClCompile Include="Engine\Source\D3D11\D3D11Shader.cpp" />
+    <ClCompile Include="Engine\Source\D3D11\D3D11SwapChain.cpp" />
+    <ClCompile Include="Engine\Source\EditorEngine.cpp" />
+    <ClCompile Include="Engine\Source\EditorViewportClient.cpp" />
+    <ClCompile Include="Engine\Source\Editor\EditorUI.cpp" />
+    <ClCompile Include="Engine\Source\Engine.cpp" />
+    <ClCompile Include="Engine\Source\GameEngine.cpp" />
+    <ClCompile Include="Engine\Source\GameInstance.cpp" />
+    <ClCompile Include="Engine\Source\Image\ImageUtils.cpp" />
+    <ClCompile Include="Engine\Source\Input\InputActionEvaluator.cpp" />
+    <ClCompile Include="Engine\Source\Input\InputActionInstance.cpp" />
+    <ClCompile Include="Engine\Source\Input\InputMappingContext.cpp" />
+    <ClCompile Include="Engine\Source\Input\InputState.cpp" />
+    <ClCompile Include="Engine\Source\Input\PlayerInput.cpp" />
+    <ClCompile Include="Engine\Source\Launch\EngineLoop.cpp" />
+    <ClCompile Include="Engine\Source\Launch\EngineMain.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\DirectionalLightSceneProxy.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\Material.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\MaterialInterface.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\MaterialRenderProxy.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\ModelLoader.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\Renderer.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\Scene.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\SkyLightSceneProxy.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\StaticMesh.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\StaticMeshSceneProxyDesc.cpp" />
+    <ClCompile Include="Engine\Source\UI\GameWidgetSubsystem.cpp" />
+    <ClCompile Include="Engine\Source\UI\ImageWidget.cpp" />
+    <ClCompile Include="Engine\Source\UI\UserWidget.cpp" />
+    <ClCompile Include="Engine\Source\Windows\WindowsApplication.cpp" />
+    <ClCompile Include="Engine\Source\Windows\WindowsInput.cpp" />
+    <ClCompile Include="Engine\Source\World.cpp" />
+    <ClCompile Include="Game\Source\SampleActor.cpp" />
+    <ClCompile Include="Game\Source\SampleGameInstance.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Engine\Shaders\Private\StaticMeshVertexShader.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\StaticMeshVertexShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="Engine\Shaders\Private\ImageVertexShader.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\ImageVertexShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="Engine\Shaders\Private\StaticMeshPixelShader.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\StaticMeshPixelShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="Engine\Shaders\Private\ImagePixelShader.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\ImagePixelShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <Content Include="Engine\Content\Textures\Checker.png" />
+  </ItemGroup>
+  <Target Name="SEPrepareShaderOutput" BeforeTargets="FxCompile">
+    <MakeDir Directories="$(OutDir)Shaders" />
+  </Target>
+  <Target Name="SECopyEngineTexture" AfterTargets="Build">
+    <Copy SourceFiles="$(SERootDir)Engine\Content\Textures\Checker.png" DestinationFolder="$(OutDir)Content\Textures" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

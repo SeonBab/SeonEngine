@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 	}
 	else if (argc != 1)
 	{
-		std::fputs("Usage: SampleGame.exe [-game]\n", stderr);
+		std::fputs("Usage: SeonEngine.exe [-game]\n", stderr);
 
 		return 1;
 	}

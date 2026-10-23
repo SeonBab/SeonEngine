@@ -17,6 +17,7 @@ struct FStaticMeshData;
 struct FImage;
 struct FUIImageDrawElement;
 class FUIDrawElementList;
+class FMaterialRenderProxy;
 class UTexture2D;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,13 +42,12 @@ public:
 	 * 비어 있지 않은 정점/인덱스와 정점 범위 안의 인덱스를 요구하며 인덱스 개수는 3의 배수여야 한다.
 	 * 두 버퍼가 모두 준비된 뒤 출력의 소유권을 교체한다. 실패하면 기존 출력은 유지한다.
 	 * 호출자가 자원을 소유하며 CPU 입력은 호출 후 보관할 필요가 없다. 장치가 바뀌면 다시 생성해야 한다.
-	 * 메시의 U축과 V축 주소 모드를 복사하며 실제 GPU 샘플러는 렌더러가 공통 소유한다.
-	 * 이미지는 호출 동안만 빌려 함께 업로드한다. nullptr면 흰색 기본 텍스처를 사용하며 지정한 이미지 생성 실패는 false다.
+	 * 형상만 생성한다. CPU 입력의 재질 번호와 주소 설정은 사용하지 않으며 텍스처는 CreateTexture2D로 별도 준비한다.
 	 */
-	[[nodiscard]] bool CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh, const FImage* baseColorImage = nullptr);
+	[[nodiscard]] bool CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh);
 
 	/**
-	 * 초기화 후 같은 스레드에서 양수 크기의 RGBA8 이미지를 단일 밉의 변경 불가 GPU 텍스처로 복사한다.
+	 * 초기화 후 같은 스레드에서 양수 크기의 RGBA8 이미지를 GPU로 복사하고 전체 하위 밉 생성을 요청한다.
 	 * 텍스처와 SRV 모두 준비된 뒤 출력의 GPU 자원 참조만 교체하며 AddressX/Y 설정은 유지한다.
 	 * 실패하면 기존 GPU 자원 참조와 주소 설정을 모두 유지한다.
 	 * 호출자가 자원을 소유하며 CPU 입력은 성공 후 해제할 수 있다. 장치가 바뀌면 다시 생성해야 한다.
@@ -75,11 +75,23 @@ public:
 	 */
 	[[nodiscard]] bool SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor);
 
+	/**
+	 * 초기화 후 같은 스레드에서 SkyLight의 균일 주변광 버퍼 갱신을 요청한다.
+	 * 색은 세기가 반영된 유한한 0 이상 선형 RGB다. 검사/clamp/세기 재곱셈은 하지 않는다.
+	 * RGB 0은 주변광 기여 없음이며 다음 DrawMesh부터 적용한다. UI에는 적용하지 않는다.
+	 */
+	[[nodiscard]] bool SetSkyLight(FVector3 lightColor);
+
 	/** 초기화 후 양수 크기로 프레임을 시작한다. 크기 변화 처리와 화면 지우기를 수행하며 이미 시작한 프레임은 거부한다. */
 	[[nodiscard]] bool BeginFrame(int32 width, int32 height);
 
-	/** 활성 프레임에서 현재 장치의 GPU 메시를 그린다. 현재 행렬과 메시의 U축과 V축 주소 모드, 메시 텍스처/기본 흰색을 사용한다. */
-	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh);
+	/**
+	 * 활성 프레임에서 현재 장치의 형상과 별도 재질 Proxy를 호출 동안 빌려 그린다.
+	 * 재질에서 얻은 텍스처 공유 참조는 호출이 끝날 때까지 유지하고 X/Y 설정으로 샘플러를 선택한다.
+	 * 텍스처 또는 GPU 뷰가 없으면 흰색을 사용한다. 텍스처 미지정이면 주소 설정은 Clamp/Clamp다.
+	 * 현재 장치와 다른 버퍼/텍스처 뷰는 거부한다. 재질과 형상 자체를 소유하거나 변경하지 않는다.
+	 */
+	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRenderProxy& material);
 
 	/** 전용 이미지 픽셀 셰이더로 목록의 이미지를 비선행곱 알파 합성한다. 성공과 실패 모두 불투명 기본 상태로 복원하며 빈 목록은 상태 변경 없이 true다. */
 	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements);
@@ -112,6 +124,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> transformConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> directionalLightConstantBuffer;
+	// VS b2. 세기 반영 RGB와 패딩을 포함한 16바이트이며 초기값은 주변광 기여 0이다.
+	Microsoft::WRL::ComPtr<ID3D11Buffer> skyLightConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
 	Microsoft::WRL::ComPtr<ID3D11BlendState> uiBlendState;

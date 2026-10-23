@@ -31,6 +31,13 @@ public:
 	const FStaticMeshRenderData* GetRenderData() const;
 
 	/**
+	 * 같은 스레드에서 렌더 데이터의 단독 소유권을 넘겨받는다. 이동 후 입력 포인터는 비며 nullptr는 비움이다.
+	 * 기존 데이터는 교체 시 파괴되므로 호출 전에 기존 데이터를 사용하는 모든 비소유 사용을 끝내야 한다.
+	 * 이전 조회 주소는 다시 사용하지 않는다. GPU 생성/유효성 검사, Scene 갱신과 재질 변경은 하지 않는다.
+	 */
+	void SetRenderData(TUniquePtr<FStaticMeshRenderData>&& newRenderData);
+
+	/**
 	 * 같은 스레드에서 기본 재질 슬롯 전체를 교체한다. 빈 배열과 nullptr 슬롯도 허용한다.
 	 * 공유 참조를 보관하며 GPU 생성이나 Scene 갱신은 수행하지 않는다.
 	 */

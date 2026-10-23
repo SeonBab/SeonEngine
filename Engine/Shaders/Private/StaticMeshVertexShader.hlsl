@@ -11,6 +11,13 @@ cbuffer DirectionalLightConstantBuffer : register(b1)
 	float3 LightColor;
 };
 
+// SkyLight의 세기 반영 RGB를 모든 방향에 동일한 주변광으로 적용한다.
+cbuffer SkyLightConstantBuffer : register(b2)
+{
+	float3 AmbientLightColor;
+	float AmbientLightPadding;
+};
+
 struct VSOutput
 {
 	float4 position : SV_POSITION;
@@ -26,7 +33,7 @@ VSOutput Main(float3 position : POSITION, float4 color : COLOR0, float3 normal :
 	float3 L = -LightDirection;
 
 	float diffuseFactor = max(dot(N, L), 0.0f);
-	float3 litColor = color.rgb * LightColor * diffuseFactor;
+	float3 litColor = color.rgb * (AmbientLightColor + LightColor * diffuseFactor);
 
 	VSOutput output;
 	output.position = mul(float4(position, 1.0f), LocalToClip);

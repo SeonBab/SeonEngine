@@ -13,6 +13,11 @@ const FStaticMeshRenderData* UStaticMesh::GetRenderData() const
 	return renderData.get();
 }
 
+void UStaticMesh::SetRenderData(TUniquePtr<FStaticMeshRenderData>&& newRenderData)
+{
+	renderData = std::move(newRenderData);
+}
+
 void UStaticMesh::SetStaticMaterials(TArray<TSharedPtr<UMaterialInterface>> materials)
 {
 	staticMaterials = std::move(materials);

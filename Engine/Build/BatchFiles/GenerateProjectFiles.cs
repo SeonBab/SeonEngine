@@ -15,8 +15,7 @@ try
 {
 	foreach (string projectPath in FindProjects(rootDir))
 	{
-		string projectDir = Path.GetDirectoryName(projectPath)!;
-		List<string> sources = CollectSources(projectDir, rootDir);
+		List<string> sources = CollectSources(projectPath, rootDir);
 
 		XDocument project = XDocument.Load(projectPath, LoadOptions.PreserveWhitespace);
 		HashSet<string> compiledShaders = ReadCompiledShaders(project, sources, projectPath);
@@ -70,26 +69,30 @@ static List<string> FindProjects(string rootDir)
 	return projects;
 }
 
-// 프로젝트 폴더 아래의 소스 파일을 프로젝트 폴더 기준 상대 경로로 모은다.
-// 프로젝트가 Source 폴더에 있으면 옆의 Shaders 폴더도 모은다(Engine/Source -> Engine/Shaders).
-// Unreal도 셰이더를 Source 밖에 두고, 프로젝트 파일을 만들 때 편집용으로 넣는다(ProjectFileGenerator.cs의 AddEngineShaderSource).
-static List<string> CollectSources(string projectDir, string rootDir)
+// 루트 실행 프로젝트는 엔진/게임 소스와 엔진 셰이더만 수집한다.
+// 다른 프로젝트는 프로젝트 폴더와 Source의 형제 Shaders 폴더를 수집한다.
+static List<string> CollectSources(string projectPath, string rootDir)
 {
-	var searchDirs = new List<string> { projectDir };
-	if (string.Equals(Path.GetFileName(projectDir), "Source", StringComparison.OrdinalIgnoreCase))
+	string projectDir = Path.GetDirectoryName(projectPath)!;
+	var searchDirs = new List<string>();
+	if (string.Equals(projectPath, Path.Combine(rootDir, "SeonEngine.vcxproj"), StringComparison.OrdinalIgnoreCase))
 	{
-		string shadersDir = Path.Combine(Path.GetDirectoryName(projectDir)!, "Shaders");
-		if (Directory.Exists(shadersDir))
-		{
-			searchDirs.Add(shadersDir);
-		}
-	}
-
-	// 현재 SampleGame 실행 프로젝트가 엔진 소스도 함께 빌드한다. 다른 도구 프로젝트에는 적용하지 않는다.
-	if (string.Equals(projectDir, Path.Combine(rootDir, "SampleGame", "Source"), StringComparison.OrdinalIgnoreCase))
-	{
+		// 저장소 전체를 검색하면 ThirdParty와 빌드 결과의 소스까지 포함되므로 책임별 루트를 명시한다.
 		searchDirs.Add(Path.Combine(rootDir, "Engine", "Source"));
 		searchDirs.Add(Path.Combine(rootDir, "Engine", "Shaders"));
+		searchDirs.Add(Path.Combine(rootDir, "Game", "Source"));
+	}
+	else
+	{
+		searchDirs.Add(projectDir);
+		if (string.Equals(Path.GetFileName(projectDir), "Source", StringComparison.OrdinalIgnoreCase))
+		{
+			string shadersDir = Path.Combine(Path.GetDirectoryName(projectDir)!, "Shaders");
+			if (Directory.Exists(shadersDir))
+			{
+				searchDirs.Add(shadersDir);
+			}
+		}
 	}
 
 	var sources = new List<string>();

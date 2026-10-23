@@ -32,6 +32,14 @@ UMaterial::UMaterial()
 
 UMaterial::~UMaterial() = default;
 
+UMaterial* UMaterial::GetDefaultMaterial()
+{
+	// 최초 조회 때 재질과 전용 Proxy를 만들며 모듈의 정적 객체 정리 때 함께 파괴한다.
+	static UMaterial defaultMaterial;
+
+	return &defaultMaterial;
+}
+
 void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture2D> texture)
 {
 	baseColorTexture = std::move(texture);

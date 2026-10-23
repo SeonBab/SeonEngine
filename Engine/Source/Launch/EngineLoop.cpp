@@ -4,6 +4,8 @@
 #include "EditorEngine.h"
 #include "GameEngine.h"
 
+#include <utility>
+
 FEngineLoop::FEngineLoop()
 	: application(input)
 {
@@ -72,7 +74,12 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 
 	if (engineMode == EEngineMode::Editor)
 	{
-		engine = MakeUnique<UEditorEngine>();
+		auto editorEngine = MakeUnique<UEditorEngine>();
+		UEditorEngine& editor = *editorEngine; // 소유권 이동 뒤에도 같은 객체를 초기화하기 위한 빌린 참조다.
+		engine = std::move(editorEngine);
+
+		// 초기화 실패도 Exit -> PreExit에서 정리하도록 호출 전에 소유권을 옮긴다.
+		return editor.Initialize(renderer) && editor.InitializeEditorUI(application.GetWindowHandle());
 	}
 	else
 	{

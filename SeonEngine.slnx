@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="SampleGame/Source/SampleGame.vcxproj" Id="c7bdb358-4452-4e76-8fd8-892d40987ea8" />
+  <Project Path="SeonEngine.vcxproj" Id="c7bdb358-4452-4e76-8fd8-892d40987ea8" />
 </Solution>
