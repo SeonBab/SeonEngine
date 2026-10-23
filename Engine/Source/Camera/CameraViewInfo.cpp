@@ -1,14 +1,18 @@
 #include "CameraViewInfo.h"
 
+#include "Core/Math/Transform.h"
+
 #include <cmath>
 #include <numbers>
 
-FMatrix4 FCameraViewInfo::GetViewMatrix() const
+FMatrix4 FCameraViewInfo::CalculateViewMatrix() const
 {
-	return worldTransform.ToMatrixNoScale().Inverse();
+	const FTransform cameraTransform{location, rotation.ToQuat()};
+
+	return cameraTransform.ToMatrixNoScale().Inverse();
 }
 
-FMatrix4 FCameraViewInfo::GetProjectionMatrix(float aspectRatio) const
+FMatrix4 FCameraViewInfo::CalculateProjectionMatrix(float aspectRatio) const
 {
 	if (projectionMode == ECameraProjectionMode::Orthographic)
 	{
@@ -39,7 +43,7 @@ FMatrix4 FCameraViewInfo::GetProjectionMatrix(float aspectRatio) const
 	return projection;
 }
 
-FMatrix4 FCameraViewInfo::GetWorldToClipMatrix(float aspectRatio) const
+FMatrix4 FCameraViewInfo::CalculateWorldToClipMatrix(float aspectRatio) const
 {
-	return GetViewMatrix() * GetProjectionMatrix(aspectRatio);
+	return CalculateViewMatrix() * CalculateProjectionMatrix(aspectRatio);
 }

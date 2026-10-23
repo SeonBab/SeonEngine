@@ -517,7 +517,34 @@ bool FD3D11Device::CreateBlendState(const D3D11_BLEND_DESC& description, Microso
 	return true;
 }
 
+bool FD3D11Device::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& description, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& outState)
+{
+	if (!device)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating a depth stencil state requires an initialized device.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> createdState;
+	const HRESULT result = device->CreateDepthStencilState(&description, createdState.GetAddressOf());
+
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "CreateDepthStencilState failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	outState = std::move(createdState);
+
+	return true;
+}
+
 void FD3D11Device::SetBlendState(ID3D11BlendState* state)
 {
 	context->OMSetBlendState(state, nullptr, 0xffffffff);
+}
+
+void FD3D11Device::SetDepthStencilState(ID3D11DepthStencilState* state)
+{
+	context->OMSetDepthStencilState(state, 0);
 }

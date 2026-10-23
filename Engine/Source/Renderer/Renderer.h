@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/Math/Matrix4.h"
+#include "Core/Math/Vector3.h"
 #include "D3D11/D3D11Device.h"
 #include "D3D11/D3D11SwapChain.h"
 #include "Renderer/StaticMeshRenderData.h"
@@ -13,7 +14,6 @@
 #include <array>
 
 struct FStaticMeshData;
-struct FDirectionalLightData;
 struct FImage;
 struct FUIImageDrawElement;
 class FUIDrawElementList;
@@ -34,7 +34,7 @@ public:
 	FRenderer& operator=(FRenderer&&) = delete;
 
 	/** 유효한 창과 양수 클라이언트 크기로 준비한다. 중복 초기화는 거부하며 자원 생성 실패 시 부분 자원을 정리하고 false를 반환한다. */
-	[[nodiscard]] bool Initialize(HWND windowHandle, int width, int height);
+	[[nodiscard]] bool Initialize(HWND windowHandle, int32 width, int32 height);
 
 	/**
 	 * 초기화 후 같은 스레드에서 CPU 데이터를 GPU로 복사한다.
@@ -48,7 +48,8 @@ public:
 
 	/**
 	 * 초기화 후 같은 스레드에서 양수 크기의 RGBA8 이미지를 단일 밉의 변경 불가 GPU 텍스처로 복사한다.
-	 * 텍스처와 SRV 모두 준비된 뒤 출력의 소유권을 교체한다. 실패하면 기존 출력은 유지한다.
+	 * 텍스처와 SRV 모두 준비된 뒤 출력의 GPU 자원 참조만 교체하며 AddressX/Y 설정은 유지한다.
+	 * 실패하면 기존 GPU 자원 참조와 주소 설정을 모두 유지한다.
 	 * 호출자가 자원을 소유하며 CPU 입력은 성공 후 해제할 수 있다. 장치가 바뀌면 다시 생성해야 한다.
 	 */
 	[[nodiscard]] bool CreateTexture2D(const FImage& image, UTexture2D& outTexture);
@@ -67,11 +68,15 @@ public:
 	 */
 	[[nodiscard]] bool SetWorldToClip(const FMatrix4& matrix);
 
-	/** 초기화 후 같은 스레드에서 방향광 버퍼 갱신을 요청한다. 입력은 유효해야 하며 호출 동안만 읽는다. */
-	[[nodiscard]] bool SetDirectionalLight(const FDirectionalLightData& data);
+	/**
+	 * 초기화 후 같은 스레드에서 방향광 버퍼 갱신을 요청한다.
+	 * 방향은 빛이 진행하는 월드 단위 방향이며 색은 세기가 반영된 유한한 0 이상 선형 RGB다.
+	 * 입력 검사나 정규화는 하지 않는다. RGB가 0이면 방향광 기여가 없다.
+	 */
+	[[nodiscard]] bool SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor);
 
 	/** 초기화 후 양수 크기로 프레임을 시작한다. 크기 변화 처리와 화면 지우기를 수행하며 이미 시작한 프레임은 거부한다. */
-	[[nodiscard]] bool BeginFrame(int width, int height);
+	[[nodiscard]] bool BeginFrame(int32 width, int32 height);
 
 	/** 활성 프레임에서 현재 장치의 GPU 메시를 그린다. 현재 행렬과 메시의 U축과 V축 주소 모드, 메시 텍스처/기본 흰색을 사용한다. */
 	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh);
@@ -97,6 +102,9 @@ private:
 
 	FD3D11Device graphics;
 	FD3D11SwapChain swapChain;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilTexture;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> staticMeshVertexShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> imageVertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> staticMeshPixelShader;
@@ -107,14 +115,18 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
 	Microsoft::WRL::ComPtr<ID3D11BlendState> uiBlendState;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> worldDepthStencilState;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> uiDepthStencilState;
+
 	// [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. UI는 [0][0]을 사용한다.
 	std::array<std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>, 2> samplerStates;
+
 	// TODO(seon): UI 배칭, 전용 정점 도입 시 공통 사각형의 보관 형식을 재검토한다.
 	FStaticMeshRenderData imageQuad;
 	FMatrix4 localToWorld{};
 	FMatrix4 worldToClip{};
-	int bufferWidth = 0;
-	int bufferHeight = 0;
+	int32 bufferWidth = 0;
+	int32 bufferHeight = 0;
 	bool bInitialized = false;
 	bool bFrameActive = false;
 };

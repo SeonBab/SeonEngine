@@ -24,7 +24,7 @@ public:
 	/** 등록된 액터와 렌더링 항목이 없는 월드를 만든다. GPU 자원은 생성하지 않는다. */
 	UWorld();
 
-	/** 남은 등록 액터를 실제 제거 경로로 정리한 뒤 Scene을 정리한다. 시작 완료 대상은 Quit로 종료 처리한 뒤 자손부터 파괴한다. */
+	/** 남은 플레이를 Quit로 종료한 뒤 등록 액터와 Scene을 정리한다. 명시적 EndPlay 뒤에는 종료 알림을 반복하지 않는다. */
 	~UWorld() override;
 
 	UWorld(const UWorld&) = delete;
@@ -53,10 +53,20 @@ public:
 	[[nodiscard]] UCameraComponent* GetActiveCamera() const;
 
 	/**
-	 * 시작 시점의 등록 순서로 각 액터의 입력 컴포넌트에 키 입력, 평가된 액션 결과를 전달한 뒤 Tick한다. 같은 월드의 중첩 호출은 무시한다.
+	 * 현재 등록된 액터에 시작 알림을 보낸 뒤 월드 플레이를 시작한다. 같은 스레드의 프레임 밖에서 호출한다.
+	 * 이미 시작했거나 종료된 월드, 액터 콜백 순회 중의 중첩 호출은 무시한다.
+	 * 알림 중 제거는 보류하고 순회 뒤 처리한다. 알림 중 생성한 액터는 다음 Tick에서 시작한다.
+	 */
+	void BeginPlay();
+
+	/** 초기 액터의 시작 알림과 보류 제거 처리를 마친 플레이 중 상태를 반환한다. */
+	[[nodiscard]] bool HasBegunPlay() const;
+
+	/**
+	 * BeginPlay가 완료된 월드에서 등록 순서로 입력을 전달한 뒤 Tick한다. 시작 전, 중첩 호출과 종료 중·종료 후 호출은 무시한다.
 	 * 도중 생성한 액터는 다음 호출부터 갱신하고 제거 중인 대상은 건너뛴다. 시간값은 그대로 전달한다.
 	 * 순회 중에는 요청 대상만 보관하며 직접 요청된 대상의 남은 Tick은 건너뛴다. 이미 실행 중인 Tick은 중단하지 않는다.
-	 * 첫 Tick 전에 시작 처리를 한 번 호출한다. 기반 BeginPlay 누락으로 미완료면 Tick을 보류하고 시작을 재호출하지 않는다.
+	 * 플레이 중 추가한 액터는 첫 Tick 전에 시작 처리를 한 번 호출한다. 기반 BeginPlay 누락으로 미완료면 Tick을 보류하고 시작을 재호출하지 않는다.
 	 * 시작 처리 뒤 직접 제거 요청을 다시 확인해 해당 대상의 Tick은 생략한다.
 	 * 입력 목록은 액터의 시작 처리 완료 뒤 수집하며 해당 처리 중 추가한 컴포넌트는 다음 호출부터 반영한다.
 	 * 입력 중 자기 제거 요청은 현재 키 처리/액션 전달이 반환한 뒤 남은 입력 처리와 Tick을 생략한다.
@@ -65,6 +75,14 @@ public:
 	 * 자손은 직접 요청되지 않았다면 Tick하며 종료 정리에서 처리 시점의 현재 자손을 함께 파괴한다.
 	 */
 	void Tick(float deltaSeconds, const FInputState& input, UPlayerInput& playerInput);
+
+	/**
+	 * 시작한 등록 액터에 종료 알림을 보낸다. 종료 후 Tick은 무시하며 같은 World를 다시 시작하지 않는다.
+	 * 시작 알림과 Tick 밖에서 호출한다. 해당 순회 중 요청과 반복 호출·종료 알림 중 재진입은 무시하며 요청을 보관하지 않는다.
+	 * 종료 알림 중 제거는 보류했다가 모든 알림 뒤 처리한다. 나머지 액터는 소유·관계를 유지하고 World 파괴 때 해제한다.
+	 * 알림 중 생성한 액터는 시작하지 않으며 별도 종료 알림 없이 이후 정리한다. 같은 스레드에서 호출한다.
+	 */
+	void EndPlay(EEndPlayReason reason);
 
 	/**
 	 * 초기 구성 후 액터 등록 순서대로 미생성 렌더 상태를 만든다. 각 액터에서 정적 메시 뒤 방향광을 처리한다.
@@ -89,6 +107,7 @@ public:
 	 * 이 월드를 전달해 액터를 생성하고 부모 없는 액터로 소유 목록에 등록한다. 생성자는 등록 전에 실행된다.
 	 * T는 AActor 자신 또는 public 파생 타입이며 UWorld&로 생성할 수 있어야 한다.
 	 * 반환 참조는 비소유이며 월드가 소멸하면 무효다. 할당 실패 복구, 생명주기 이벤트는 제공하지 않는다.
+	 * 종료 중·종료 후 생성도 허용하지만 해당 액터의 플레이는 시작하지 않는다.
 	 */
 	template<typename T>
 		requires std::derived_from<T, AActor> && std::constructible_from<T, UWorld&>
@@ -112,13 +131,14 @@ public:
 	[[nodiscard]] bool SetActorParent(AActor* actor, AActor* newParent, EActorTransformRule rule = EActorTransformRule::KeepLocal);
 
 	/**
-	 * 등록된 액터와 처리 시점의 모든 자손을 제거한다. Tick 중에는 요청만 보관하고 Tick 종료 정리에서 파괴한다.
+	 * 등록된 액터와 처리 시점의 모든 자손을 제거한다. 월드 시작·종료 알림 또는 Tick 중에는 요청만 보관하고 순회 뒤 파괴한다.
 	 * 보류 중에는 제거 상태를 켜지 않고 부모 변경을 허용하되 직접 요청된 대상의 남은 Tick은 건너뛴다.
 	 * 같은 대상의 중복 요청은 true다.
-	 * Tick 밖에서는 관계/등록 정리 후 자손부터 즉시 파괴한다.
+	 * 월드 시작·종료 알림과 Tick 순회 밖에서는 관계/등록 정리 후 자손부터 즉시 파괴한다.
 	 * null, 미등록, 다른 월드 대상은 false다. 인수는 null 또는 살아 있는 객체여야 한다.
 	 * 소멸 중 다른 등록 액터의 제거 요청을 허용한다. 이미 분리한 제거 대상은 미등록으로 거부한다.
-	 * 관계/등록 정리 뒤 시작 완료 대상에 EndPlay(Destroyed)를 호출하고 파괴한다.
+	 * 월드 종료 전에는 관계/등록 정리 뒤 시작 완료 대상에 EndPlay(Destroyed)를 호출하고 파괴한다.
+	 * 기반 Actor.EndPlay가 시작 상태를 해제한 대상은 알림을 반복하지 않고 파괴한다.
 	 * 실제 파괴 후 제거된 액터/컴포넌트의 외부 포인터는 무효다. GC, 할당 실패 복구는 없다.
 	 */
 	[[nodiscard]] bool DestroyActor(AActor* actor);
@@ -135,7 +155,9 @@ private:
 	TArray<TUniquePtr<AActor>> actors{};
 	AActor* activeCameraActor = nullptr;
 	TArray<AActor*> pendingDestroyActors{};
-	bool bIsTicking = false;
+	bool bIsTicking = false;     // 액터 시작·갱신과 보류한 제거를 처리하는 중이다.
+	bool bBegunPlay = false;     // 초기 시작 알림이 완료됐으며 플레이가 아직 끝나지 않았다.
+	bool bIsTearingDown = false; // 월드 종료가 시작됐으며 이후 Tick을 막는다.
 };
 
 template<typename T>

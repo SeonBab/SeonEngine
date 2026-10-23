@@ -86,7 +86,11 @@
     <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Device.h" />
     <ClInclude Include="..\..\Engine\Source\D3D11\D3D11Shader.h" />
     <ClInclude Include="..\..\Engine\Source\D3D11\D3D11SwapChain.h" />
+    <ClInclude Include="..\..\Engine\Source\EditorEngine.h" />
+    <ClInclude Include="..\..\Engine\Source\EditorViewportClient.h" />
+    <ClInclude Include="..\..\Engine\Source\Engine.h" />
     <ClInclude Include="..\..\Engine\Source\GameClient.h" />
+    <ClInclude Include="..\..\Engine\Source\GameEngine.h" />
     <ClInclude Include="..\..\Engine\Source\Image\Image.h" />
     <ClInclude Include="..\..\Engine\Source\Image\ImageUtils.h" />
     <ClInclude Include="..\..\Engine\Source\Input\InputAction.h" />
@@ -103,7 +107,7 @@
     <ClInclude Include="..\..\Engine\Source\Launch\GameEntry.h" />
     <ClInclude Include="..\..\Engine\Source\ModuleInterface.h" />
     <ClInclude Include="..\..\Engine\Source\Object.h" />
-    <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightData.h" />
+    <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightSceneProxy.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelLoader.h" />
     <ClInclude Include="..\..\Engine\Source\Renderer\Renderer.h" />
@@ -144,6 +148,10 @@
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Device.cpp" />
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11Shader.cpp" />
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11SwapChain.cpp" />
+    <ClCompile Include="..\..\Engine\Source\EditorEngine.cpp" />
+    <ClCompile Include="..\..\Engine\Source\EditorViewportClient.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Engine.cpp" />
+    <ClCompile Include="..\..\Engine\Source\GameEngine.cpp" />
     <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp" />
     <ClCompile Include="..\..\Engine\Source\Input\InputActionEvaluator.cpp" />
     <ClCompile Include="..\..\Engine\Source\Input\InputActionInstance.cpp" />
@@ -153,6 +161,7 @@
     <ClCompile Include="..\..\Engine\Source\Launch\EngineLoop.cpp" />
     <ClCompile Include="..\..\Engine\Source\Launch\EngineMain.cpp" />
     <ClCompile Include="..\..\Engine\Source\ModuleInterface.cpp" />
+    <ClCompile Include="..\..\Engine\Source\Renderer\DirectionalLightSceneProxy.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\Renderer.cpp" />
     <ClCompile Include="..\..\Engine\Source\Renderer\Scene.cpp" />

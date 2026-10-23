@@ -1,10 +1,12 @@
 #include "DirectionalLightComponent.h"
 
 #include "Actor.h"
-#include "Renderer/DirectionalLightData.h"
+#include "Renderer/DirectionalLightSceneProxy.h"
 #include "Renderer/Scene.h"
 #include "TransformComponent.h"
 #include "World.h"
+
+#include <utility>
 
 UDirectionalLightComponent::UDirectionalLightComponent(AActor& owner)
 	: UActorComponent(owner)
@@ -47,29 +49,37 @@ bool UDirectionalLightComponent::CreateRenderState()
 {
 	if (IsRenderStateCreated()) { return false; }
 
-	const FDirectionalLightData data{GetLightDirection(), GetLightColor(), GetIntensity()};
+	auto newProxy = MakeUnique<FDirectionalLightSceneProxy>(*this);
+	if (!GetOwner().GetWorld().GetScene().AddDirectionalLight(*newProxy)) { return false; }
 
-	return GetOwner().GetWorld().GetScene().AddDirectionalLight(data, sceneLightId);
+	// 소유 포인터를 이동해도 Scene이 빌린 Proxy 객체의 주소는 유지된다.
+	sceneProxy = std::move(newProxy);
+
+	return true;
 }
 
 bool UDirectionalLightComponent::UpdateRenderState()
 {
 	if (!IsRenderStateCreated()) { return false; }
 
-	const FDirectionalLightData data{GetLightDirection(), GetLightColor(), GetIntensity()};
+	if (GetOwner().GetWorld().GetScene().GetDirectionalLight() != sceneProxy.get()) { return false; }
 
-	return GetOwner().GetWorld().GetScene().SetDirectionalLight(sceneLightId, data);
+	sceneProxy->SetLightDirection(GetLightDirection());
+	sceneProxy->SetLightColor(GetLightColor() * GetIntensity());
+
+	return true;
 }
 
 void UDirectionalLightComponent::DestroyRenderState()
 {
 	if (!IsRenderStateCreated()) { return; }
 
-	(void)GetOwner().GetWorld().GetScene().RemoveDirectionalLight(sceneLightId);
-	sceneLightId = 0;
+	// Scene이 빌린 주소를 먼저 제거한 뒤 Proxy를 파괴한다.
+	(void)GetOwner().GetWorld().GetScene().RemoveDirectionalLight(*sceneProxy);
+	sceneProxy.reset();
 }
 
 bool UDirectionalLightComponent::IsRenderStateCreated() const
 {
-	return sceneLightId != 0;
+	return sceneProxy != nullptr;
 }

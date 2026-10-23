@@ -71,7 +71,9 @@ FTransform UCameraComponent::GetCameraWorldTransform() const
 FCameraViewInfo UCameraComponent::GetCameraView() const
 {
 	FCameraViewInfo view;
-	view.worldTransform = GetCameraWorldTransform();
+	const FTransform cameraTransform = GetCameraWorldTransform();
+	view.location = cameraTransform.position;
+	view.rotation = cameraTransform.rotation.ToRotator();
 	view.projectionMode = projectionMode;
 	view.horizontalFovDegrees = horizontalFovDegrees;
 	view.orthographicWidth = orthographicWidth;

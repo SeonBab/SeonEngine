@@ -7,7 +7,6 @@
 #include "Core/Misc/Paths.h"
 #include "D3D11/D3D11Shader.h"
 #include "Image/Image.h"
-#include "Renderer/DirectionalLightData.h"
 #include "Renderer/StaticMeshData.h"
 #include "Renderer/Texture2D.h"
 #include "UI/UIDrawElementList.h"
@@ -61,7 +60,7 @@ namespace
 	}
 }
 
-bool FRenderer::Initialize(HWND windowHandle, int width, int height)
+bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 {
 	if (bInitialized || graphics.GetDevice())
 	{
@@ -172,6 +171,34 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 		return false;
 	}
 
+	D3D11_DEPTH_STENCIL_DESC depthDescription{};
+	depthDescription.DepthEnable = TRUE;
+	depthDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDescription.DepthFunc = D3D11_COMPARISON_LESS;
+	depthDescription.StencilEnable = FALSE;
+	depthDescription.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	depthDescription.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	depthDescription.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDescription.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDescription.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDescription.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthDescription.BackFace = depthDescription.FrontFace;
+
+	if (!graphics.CreateDepthStencilState(depthDescription, worldDepthStencilState))
+	{
+		Shutdown();
+		return false;
+	}
+
+	depthDescription.DepthEnable = FALSE;
+	depthDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+
+	if (!graphics.CreateDepthStencilState(depthDescription, uiDepthStencilState))
+	{
+		Shutdown();
+		return false;
+	}
+
 	D3D11_SAMPLER_DESC samplerDescription{};
 	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -202,6 +229,12 @@ bool FRenderer::Initialize(HWND windowHandle, int width, int height)
 		return false;
 	}
 	if (!swapChain.Initialize(graphics.GetDevice(), windowHandle))
+	{
+		Shutdown();
+		return false;
+	}
+
+	if (!graphics.CreateDepthStencilBuffer(static_cast<uint32>(width), static_cast<uint32>(height), depthStencilTexture, depthStencilView))
 	{
 		Shutdown();
 		return false;
@@ -249,8 +282,8 @@ bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderDat
 
 	// 버퍼와 지정한 이미지가 모두 준비된 뒤에만 기존 메시를 교체한다.
 	newMesh.indexCount = static_cast<uint32>(meshData.indices.size());
-	newMesh.addressU = meshData.addressU;
-	newMesh.addressV = meshData.addressV;
+	newMesh.baseColorTexture.SetTextureAddressX(meshData.AddressX);
+	newMesh.baseColorTexture.SetTextureAddressY(meshData.AddressY);
 	outMesh = std::move(newMesh);
 
 	return true;
@@ -274,7 +307,7 @@ bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 	if (!graphics.CreateTexture2D(static_cast<uint32>(image.sizeX), static_cast<uint32>(image.sizeY), image.rawData, texture)) { return false; }
 	if (!graphics.CreateShaderResourceView(texture.Get(), newTexture.textureView)) { return false; }
 
-	outTexture = std::move(newTexture);
+	outTexture.textureView = std::move(newTexture.textureView);
 
 	return true;
 }
@@ -316,7 +349,7 @@ bool FRenderer::SetWorldToClip(const FMatrix4& matrix)
 	return true;
 }
 
-bool FRenderer::SetDirectionalLight(const FDirectionalLightData& data)
+bool FRenderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor)
 {
 	if (!bInitialized)
 	{
@@ -324,12 +357,12 @@ bool FRenderer::SetDirectionalLight(const FDirectionalLightData& data)
 		return false;
 	}
 
-	const FDirectionalLightConstants constants{.direction = data.direction, .color = data.lightColor * data.intensity};
+	const FDirectionalLightConstants constants{.direction = lightDirection, .color = lightColor};
 
 	return graphics.UpdateConstantBuffer(directionalLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
 }
 
-bool FRenderer::BeginFrame(int width, int height)
+bool FRenderer::BeginFrame(int32 width, int32 height)
 {
 	if (!bInitialized || bFrameActive || width <= 0 || height <= 0)
 	{
@@ -339,18 +372,30 @@ bool FRenderer::BeginFrame(int width, int height)
 	if (width != bufferWidth || height != bufferHeight)
 	{
 		graphics.SetRenderTarget(nullptr);
+
 		if (!swapChain.Resize(graphics.GetDevice(), width, height))
 		{
 			return false;
 		}
+
+		if (!graphics.CreateDepthStencilBuffer(static_cast<uint32>(width), static_cast<uint32>(height), depthStencilTexture, depthStencilView))
+		{
+			return false;
+		}
+
 		bufferWidth = width;
 		bufferHeight = height;
 	}
 
 	const float clearColor[] = {0.05f, 0.10f, 0.20f, 1.0f};
-	graphics.SetRenderTarget(swapChain.GetBackBufferRenderTargetView());
+
+	graphics.SetRenderTarget(swapChain.GetBackBufferRenderTargetView(), depthStencilView.Get());
 	graphics.SetViewport(bufferWidth, bufferHeight);
+	graphics.SetDepthStencilState(worldDepthStencilState.Get());
+
 	graphics.ClearRenderTargetView(swapChain.GetBackBufferRenderTargetView(), clearColor);
+	graphics.ClearDepthStencilView(depthStencilView.Get(), 1.0f);
+
 	bFrameActive = true;
 
 	return true;
@@ -385,8 +430,8 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh)
 	graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
 	const auto& textureView = mesh.baseColorTexture.textureView;
 	graphics.SetPixelShaderResourceView(textureView ? textureView.Get() : whiteTextureView.Get());
-	const size_t addressU = mesh.addressU == ETextureAddressMode::Wrap ? 1 : 0;
-	const size_t addressV = mesh.addressV == ETextureAddressMode::Wrap ? 1 : 0;
+	const size_t addressU = mesh.baseColorTexture.GetTextureAddressX() == ETextureAddress::Wrap ? 1 : 0;
+	const size_t addressV = mesh.baseColorTexture.GetTextureAddressY() == ETextureAddress::Wrap ? 1 : 0;
 	graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get());
 	graphics.SetVertexShaderConstantBuffer(0, transformConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
@@ -407,15 +452,20 @@ bool FRenderer::DrawUI(const FUIDrawElementList& elements)
 	}
 
 	graphics.SetBlendState(uiBlendState.Get());
+	graphics.SetDepthStencilState(uiDepthStencilState.Get());
+
 	for (const FUIImageDrawElement& element : elements.GetImageElements())
 	{
 		if (!DrawImage(element))
 		{
 			graphics.SetBlendState(nullptr);
+			graphics.SetDepthStencilState(worldDepthStencilState.Get());
 			return false;
 		}
 	}
+
 	graphics.SetBlendState(nullptr);
+	graphics.SetDepthStencilState(worldDepthStencilState.Get());
 
 	return true;
 }
@@ -494,6 +544,7 @@ void FRenderer::Shutdown()
 	if (graphics.GetContext())
 	{
 		graphics.SetBlendState(nullptr);
+		graphics.SetDepthStencilState(nullptr);
 		graphics.SetPixelShaderResourceView(nullptr);
 		graphics.SetPixelShaderSamplerState(nullptr);
 		graphics.SetIndexBuffer(nullptr);
@@ -505,6 +556,11 @@ void FRenderer::Shutdown()
 		graphics.SetPixelShader(nullptr);
 		graphics.SetVertexShader(nullptr);
 	}
+
+	depthStencilView.Reset();
+	depthStencilTexture.Reset();
+	worldDepthStencilState.Reset();
+	uiDepthStencilState.Reset();
 	swapChain.Shutdown();
 	imageQuad = FStaticMeshRenderData{};
 	for (auto& samplersForU : samplerStates)

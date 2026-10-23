@@ -147,7 +147,19 @@
     <ClInclude Include="..\..\Engine\Source\D3D11\D3D11SwapChain.h">
       <Filter>Engine\Source\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\EditorEngine.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\EditorViewportClient.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\Engine.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Engine\Source\GameClient.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Engine\Source\GameEngine.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Image\Image.h">
@@ -198,7 +210,7 @@
     <ClInclude Include="..\..\Engine\Source\Object.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightData.h">
+    <ClInclude Include="..\..\Engine\Source\Renderer\DirectionalLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Engine\Source\Renderer\ModelData.h">
@@ -315,6 +327,18 @@
     <ClCompile Include="..\..\Engine\Source\D3D11\D3D11SwapChain.cpp">
       <Filter>Engine\Source\D3D11</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\EditorEngine.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\EditorViewportClient.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Engine.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\GameEngine.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Image\ImageUtils.cpp">
       <Filter>Engine\Source\Image</Filter>
     </ClCompile>
@@ -341,6 +365,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\ModuleInterface.cpp">
       <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Engine\Source\Renderer\DirectionalLightSceneProxy.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Engine\Source\Renderer\ModelLoader.cpp">
       <Filter>Engine\Source\Renderer</Filter>

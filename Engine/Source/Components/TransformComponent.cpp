@@ -9,17 +9,31 @@ UTransformComponent::UTransformComponent(AActor& owner)
 
 FTransform UTransformComponent::GetTransform() const
 {
-	return transform;
+	return {relativePosition, relativeRotation.ToQuat(), relativeScale};
 }
 
 FTransform UTransformComponent::GetComponentTransform() const
 {
+	return componentToWorld;
+}
+
+void UTransformComponent::UpdateComponentToWorld()
+{
+	componentToWorld = GetTransform();
 	const AActor* parent = GetOwner().GetParent();
-	if (!parent) { return transform; }
+	if (parent)
+	{
+		const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
+		componentToWorld = componentToWorld * parentTransform->GetComponentTransform();
+	}
 
-	const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
-
-	return transform * parentTransform->GetComponentTransform();
+	// 부모의 값을 먼저 확정한 뒤 자식에 전파한다. 이 경로는 콜백이나 계층 변경을 수행하지 않는다.
+	const int32 childCount = GetOwner().GetChildCount();
+	for (int32 index = 0; index < childCount; ++index)
+	{
+		UTransformComponent* childTransform = GetOwner().GetChild(index)->GetComponent<UTransformComponent>();
+		childTransform->UpdateComponentToWorld();
+	}
 }
 
 FVector3 UTransformComponent::GetForwardVector() const
@@ -32,7 +46,10 @@ FVector3 UTransformComponent::GetForwardVector() const
 
 void UTransformComponent::SetTransform(const FTransform& newTransform)
 {
-	transform = newTransform;
+	relativePosition = newTransform.position;
+	relativeRotation = newTransform.rotation.ToRotator();
+	relativeScale = newTransform.scale;
+	UpdateComponentToWorld();
 }
 
 void UTransformComponent::SetComponentTransform(const FTransform& newTransform)
@@ -50,40 +67,44 @@ void UTransformComponent::SetComponentTransform(const FTransform& newTransform)
 
 FVector3 UTransformComponent::GetPosition() const
 {
-	return transform.position;
+	return relativePosition;
 }
 
 void UTransformComponent::SetPosition(FVector3 newPosition)
 {
-	transform.position = newPosition;
+	relativePosition = newPosition;
+	UpdateComponentToWorld();
 }
 
 FQuat UTransformComponent::GetQuaternion() const
 {
-	return transform.rotation;
+	return relativeRotation.ToQuat();
 }
 
 void UTransformComponent::SetQuaternion(FQuat newRotation)
 {
-	transform.rotation = newRotation;
+	relativeRotation = newRotation.ToRotator();
+	UpdateComponentToWorld();
 }
 
 FRotator UTransformComponent::GetRotation() const
 {
-	return GetQuaternion().ToRotator();
+	return relativeRotation;
 }
 
 void UTransformComponent::SetRotation(FRotator newRotation)
 {
-	SetQuaternion(newRotation.ToQuat());
+	relativeRotation = newRotation;
+	UpdateComponentToWorld();
 }
 
 FVector3 UTransformComponent::GetScale() const
 {
-	return transform.scale;
+	return relativeScale;
 }
 
 void UTransformComponent::SetScale(FVector3 newScale)
 {
-	transform.scale = newScale;
+	relativeScale = newScale;
+	UpdateComponentToWorld();
 }

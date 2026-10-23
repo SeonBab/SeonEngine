@@ -14,6 +14,8 @@ UWorld::UWorld() = default;
 
 UWorld::~UWorld()
 {
+	EndPlay(EEndPlayReason::Quit);
+
 	while (!actors.empty())
 	{
 		(void)DestroyActorImmediately(actors.back().get(), EEndPlayReason::Quit);
@@ -68,9 +70,36 @@ void UWorld::GetActors(TArray<AActor*>& outActors) const
 	}
 }
 
+void UWorld::BeginPlay()
+{
+	if (bIsTicking || bBegunPlay || bIsTearingDown) { return; }
+
+	const auto actorCount = actors.size();
+	bIsTicking = true;
+	for (decltype(actors.size()) index = 0; index < actorCount; ++index)
+	{
+		AActor* actor = actors[index].get();
+		if (actor->IsActorBeingDestroyed()) { continue; }
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		actor->DispatchBeginPlay();
+	}
+	PurgeDestroyedActors();
+	bBegunPlay = true;
+	bIsTicking = false;
+}
+
+bool UWorld::HasBegunPlay() const
+{
+	return bBegunPlay;
+}
+
 void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& playerInput)
 {
-	if (bIsTicking) { return; }
+	if (bIsTicking || !bBegunPlay || bIsTearingDown) { return; }
 
 	const auto tickCount = actors.size();
 	TArray<UInputComponent*> inputComponents;
@@ -116,6 +145,23 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 	}
 	PurgeDestroyedActors();
 	bIsTicking = false;
+}
+
+void UWorld::EndPlay(EEndPlayReason reason)
+{
+	if (bIsTicking || bIsTearingDown) { return; }
+
+	bIsTearingDown = true;
+	if (!bBegunPlay) { return; }
+
+	const auto actorCount = actors.size();
+	for (decltype(actors.size()) index = 0; index < actorCount; ++index)
+	{
+		actors[index]->RouteEndPlay(reason);
+	}
+	bBegunPlay = false;
+
+	PurgeDestroyedActors();
 }
 
 bool UWorld::CreateRenderStates(FRenderer& renderer)
@@ -221,11 +267,10 @@ bool UWorld::SetActorParent(AActor* actor, AActor* newParent, EActorTransformRul
 		constexpr TArray<AActor*>::size_type GrowthFactor = 2;
 		newParent->children.reserve(newParent->children.empty() ? 1 : newParent->children.size() * GrowthFactor);
 	}
-	UTransformComponent* actorTransform = nullptr;
+	UTransformComponent* actorTransform = actor->GetComponent<UTransformComponent>();
 	FTransform previousWorld{};
 	if (rule == EActorTransformRule::KeepWorld)
 	{
-		actorTransform = actor->GetComponent<UTransformComponent>();
 		previousWorld = actorTransform->GetComponentTransform();
 	}
 	if (oldParent)
@@ -237,9 +282,14 @@ bool UWorld::SetActorParent(AActor* actor, AActor* newParent, EActorTransformRul
 		newParent->children.push_back(actor);
 	}
 	actor->parent = newParent;
-	if (actorTransform)
+	if (rule == EActorTransformRule::KeepWorld)
 	{
 		actorTransform->SetComponentTransform(previousWorld);
+	}
+	else
+	{
+		// 상대값을 유지해도 부모가 바뀌면 자신과 자손의 월드 캐시는 갱신한다.
+		actorTransform->UpdateComponentToWorld();
 	}
 
 	return true;
@@ -256,8 +306,9 @@ bool UWorld::DestroyActor(AActor* actor)
 	if (ownedActor == actors.end()) { return false; }
 	if (&actor->GetWorld() != this) { return false; }
 
-	// TODO(seon): Tick 밖에서도 논리 제거와 메모리 회수를 분리하도록 안전한 회수 경계를 설계한다.
-	if (!bIsTicking) { return DestroyActorImmediately(actor); }
+	// TODO(seon): 월드 시작·종료 알림과 Tick 외의 콜백에서도 논리 제거와 메모리 회수의 경계를 검토한다.
+	const bool bIsEndingPlay = bIsTearingDown && bBegunPlay;
+	if (!bIsTicking && !bIsEndingPlay) { return DestroyActorImmediately(actor); }
 	if (actor->IsActorBeingDestroyed()) { return true; }
 
 	if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) == pendingDestroyActors.end())
@@ -319,6 +370,8 @@ bool UWorld::DestroyActorImmediately(AActor* actor, EEndPlayReason reason)
 		target->bActorIsBeingDestroyed = true;
 		target->parent = nullptr;
 		target->children.clear();
+		// 관계 해제 뒤 종료 콜백에서도 부모 없는 상대값과 일치하는 월드 캐시를 읽게 한다.
+		target->GetComponent<UTransformComponent>()->UpdateComponentToWorld();
 	}
 	for (const auto index : actorIndices)
 	{

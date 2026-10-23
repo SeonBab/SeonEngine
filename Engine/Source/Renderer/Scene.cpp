@@ -1,6 +1,7 @@
 #include "Scene.h"
 
 #include "Core/Logging/Log.h"
+#include "Renderer/DirectionalLightSceneProxy.h"
 #include "Renderer/Renderer.h"
 
 #include <algorithm>
@@ -59,51 +60,42 @@ bool FScene::RemoveStaticMesh(uint64 meshId)
 	return true;
 }
 
-bool FScene::AddDirectionalLight(const FDirectionalLightData& data, uint64& outLightId)
+bool FScene::AddDirectionalLight(const FDirectionalLightSceneProxy& proxy)
 {
-	if (directionalLight || nextDirectionalLightId == 0) { return false; }
+	if (directionalLight) { return false; }
 
-	directionalLight = FDirectionalLightEntry{nextDirectionalLightId, data};
-	outLightId = nextDirectionalLightId;
-	++nextDirectionalLightId;
+	directionalLight = &proxy;
 
 	return true;
 }
 
-bool FScene::SetDirectionalLight(uint64 lightId, const FDirectionalLightData& data)
+bool FScene::RemoveDirectionalLight(const FDirectionalLightSceneProxy& proxy)
 {
-	if (!directionalLight || directionalLight->lightId != lightId) { return false; }
+	if (directionalLight != &proxy) { return false; }
 
-	directionalLight->data = data;
+	directionalLight = nullptr;
 
 	return true;
 }
 
-bool FScene::RemoveDirectionalLight(uint64 lightId)
+const FDirectionalLightSceneProxy* FScene::GetDirectionalLight() const
 {
-	if (!directionalLight || directionalLight->lightId != lightId) { return false; }
-
-	directionalLight.reset();
-
-	return true;
-}
-
-const FDirectionalLightData* FScene::GetDirectionalLight() const
-{
-	return directionalLight ? &directionalLight->data : nullptr;
+	return directionalLight;
 }
 
 bool FScene::Draw(FRenderer& renderer)
 {
-	FDirectionalLightData lightData{};
-	lightData.intensity = 0.0f;
+	// 미등록 프레임에도 유효한 기본 방향과 광량 0을 전달해 이전 광량을 지운다.
+	FVector3 lightDirection{0.0f, 0.0f, 1.0f};
+	FVector3 lightColor{};
 
 	if (directionalLight)
 	{
-		lightData = directionalLight->data;
+		lightDirection = directionalLight->GetLightDirection();
+		lightColor = directionalLight->GetLightColor();
 	}
 
-	if (!renderer.SetDirectionalLight(lightData))
+	if (!renderer.SetDirectionalLight(lightDirection, lightColor))
 	{
 		return false;
 	}

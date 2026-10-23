@@ -1,15 +1,8 @@
 #include "EngineLoop.h"
 
-#include "Components/CameraComponent.h"
-#include "Core/Math/Matrix4.h"
 #include "Core/Time/FrameTimer.h"
-#include "GameClient.h"
-#include "GameEntry.h"
-#include "Input/InputState.h"
-#include "Input/PlayerInput.h"
-#include "Renderer/Renderer.h"
-#include "Windows/WindowsApplication.h"
-#include "World.h"
+#include "EditorEngine.h"
+#include "GameEngine.h"
 
 FEngineLoop::FEngineLoop()
 	: application(input)
@@ -18,15 +11,16 @@ FEngineLoop::FEngineLoop()
 
 FEngineLoop::~FEngineLoop()
 {
-	(void)Shutdown();
+	(void)Exit();
 }
 
-int FEngineLoop::Run()
+int FEngineLoop::Run(EEngineMode engineMode)
 {
 	int exitCode = 1;
 
-	if (Initialize())
+	if (Initialize(engineMode))
 	{
+		engine->Start();
 		exitCode = 0;
 
 		FFrameTimer frameTimer;
@@ -43,7 +37,7 @@ int FEngineLoop::Run()
 		}
 	}
 
-	if (!Shutdown())
+	if (!Exit())
 	{
 		exitCode = 1;
 	}
@@ -51,8 +45,10 @@ int FEngineLoop::Run()
 	return exitCode;
 }
 
-bool FEngineLoop::Initialize()
+bool FEngineLoop::Initialize(EEngineMode engineMode)
 {
+	if (engineMode != EEngineMode::Editor && engineMode != EEngineMode::Game) { return false; }
+
 	const FWindowDescription description{};
 	// NOTE: application이 입력을 빌리므로 input을 먼저 생성해 더 오래 유지한다.
 	// 단일 창 기준의 실행부 소유이며 여러 창이나 플레이어별 입력이 필요하면 소유와 분배 구조를 재검토한다.
@@ -74,15 +70,16 @@ bool FEngineLoop::Initialize()
 		return false;
 	}
 
-	// 게임 구성 실패와 정상 종료 모두 Client, World, Renderer 순서로 정리한다.
-	world = MakeUnique<UWorld>();
-	gameClient = MakeUnique<FGameClient>();
-	if (!ConfigureGameWorld(*world) || !ConfigureGameClient(*gameClient, renderer))
+	if (engineMode == EEngineMode::Editor)
 	{
-		return false;
+		engine = MakeUnique<UEditorEngine>();
+	}
+	else
+	{
+		engine = MakeUnique<UGameEngine>();
 	}
 
-	return world->CreateRenderStates(renderer);
+	return engine->Initialize(renderer);
 }
 
 bool FEngineLoop::Tick(float deltaSeconds)
@@ -99,60 +96,17 @@ bool FEngineLoop::Tick(float deltaSeconds)
 	{
 		return true;
 	}
-	UPlayerInput& playerInput = gameClient->GetPlayerInput();
-	if (!playerInput.EvaluateInputActions(gameClient->GetInputMappingContext(), input))
-	{
-		return false;
-	}
 
-	world->Tick(deltaSeconds, input, playerInput);
-
-	FMatrix4 worldToClip;
-	worldToClip.SetIdentity();
-	if (const UCameraComponent* camera = world->GetActiveCamera())
-	{
-		const float aspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
-		const FCameraViewInfo view = camera->GetCameraView();
-		worldToClip = view.GetWorldToClipMatrix(aspectRatio);
-	}
-
-	if (!renderer.SetWorldToClip(worldToClip))
-	{
-		return false;
-	}
-
-	if (!world->SendAllEndOfFrameUpdates(renderer))
-	{
-		return false;
-	}
-
-	if (!renderer.BeginFrame(clientWidth, clientHeight))
-	{
-		return false;
-	}
-
-	if (!world->GetScene().Draw(renderer))
-	{
-		return false;
-	}
-
-	if (!gameClient->GetWidgetSubsystem().Draw(renderer))
-	{
-		return false;
-	}
-
-	if (!renderer.EndFrame())
-	{
-		return false;
-	}
-
-	return true;
+	return engine->Tick(deltaSeconds, input, renderer, clientWidth, clientHeight);
 }
 
-bool FEngineLoop::Shutdown()
+bool FEngineLoop::Exit()
 {
-	gameClient.reset();
-	world.reset();
+	if (engine)
+	{
+		engine->PreExit();
+		engine.reset();
+	}
 	renderer.Shutdown();
 
 	bool bSuccess = true;

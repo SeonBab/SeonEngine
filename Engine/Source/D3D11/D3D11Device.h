@@ -116,8 +116,14 @@ public:
 	/** 호출자가 지정한 설정으로 블렌드 상태를 만든다. 장치 미준비, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateBlendState(const D3D11_BLEND_DESC& description, Microsoft::WRL::ComPtr<ID3D11BlendState>& outState);
 
+	/** 지정한 깊이·스텐실 상태를 만든다. 장치 미준비나 API 실패 시 로그/false이며 기존 출력은 유지한다. */
+	[[nodiscard]] bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& description, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& outState);
+
 	/** 준비된 컨텍스트에 같은 장치의 블렌드 상태를 연결한다. nullptr면 불투명 기본 상태로 복원한다. */
 	void SetBlendState(ID3D11BlendState* state);
+
+	/** 준비된 컨텍스트에 같은 장치의 깊이, 스텐실 상태를 연결한다. nullptr면 D3D11 기본 상태로 복원한다. */
+	void SetDepthStencilState(ID3D11DepthStencilState* state);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> device;

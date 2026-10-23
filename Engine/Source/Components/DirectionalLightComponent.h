@@ -1,10 +1,15 @@
 #pragma once
 
 #include "ActorComponent.h"
-#include "Core/CoreTypes.h"
 #include "Core/Math/Vector3.h"
+#include "Core/Templates/UniquePtr.h"
 
-/** 방향광의 색, 세기와 Scene 등록을 관리한다. 방향은 소속 액터의 앞 방향이며 GPU 전달은 아직 없다. */
+class FDirectionalLightSceneProxy;
+
+////////////////////////////////////////////////////////////////////////////////
+// 방향광의 색과 세기를 보관하고 렌더용 Proxy를 소유한다.
+// 방향은 소속 액터의 앞 방향이며 Scene에는 Proxy 주소를 등록한다.
+////////////////////////////////////////////////////////////////////////////////
 class UDirectionalLightComponent : public UActorComponent
 {
 public:
@@ -33,24 +38,30 @@ public:
 	/** 유한한 0 이상의 밝기 배율을 저장한다. 값 검사나 보정은 하지 않으며 화면 반영을 요청하지 않는다. */
 	void SetIntensity(float newIntensity);
 
-	/** 현재 방향, 색, 세기를 소속 World의 Scene에 등록한다. 중복 생성이나 Scene 등록 실패는 false이며 기존 상태를 유지한다. GPU 자원은 만들지 않는다. */
+	/**
+	 * 현재 설정으로 Proxy를 생성하고 Scene에 주소를 등록한다.
+	 * 이미 생성됐거나 등록에 실패하면 false이며 기존 상태를 유지한다.
+	 * Proxy는 컴포넌트가 소유하며 GPU 자원은 만들지 않는다.
+	 */
 	[[nodiscard]] bool CreateRenderState();
 
 	/**
-	 * 현재 방향, 색, 세기를 등록된 Scene 항목에 복사한다. 변경 여부와 관계없이 호출할 때마다 전달한다.
-	 * 미등록이거나 Scene에 보관한 ID가 없으면 false다. 등록을 복구하거나 ID를 변경하지 않는다.
-	 * 자동 호출이나 GPU 전달은 수행하지 않는다.
+	 * Scene에 등록된 소유 Proxy에 현재 방향과 세기가 반영된 색을 전달한다.
+	 * 미생성이거나 Scene 등록이 일치하지 않으면 false다.
+	 * 같은 스레드에서 사용하며 재등록이나 GPU 업로드는 수행하지 않는다.
 	 */
 	[[nodiscard]] bool UpdateRenderState();
 
-	/** 보관한 ID의 Scene 등록 해제를 요청하고 ID를 0으로 초기화한다. 미등록이면 아무것도 하지 않으며 반복 호출할 수 있다. */
+	/** Scene 등록을 먼저 해제한 뒤 소유 Proxy를 파괴한다. 미생성이면 아무것도 하지 않으며 반복 호출할 수 있다. */
 	void DestroyRenderState();
 
-	/** Scene 등록 ID를 보관하는지 반환한다. 실제 Scene 항목의 존재나 GPU 준비 상태는 검사하지 않는다. */
+	/** 소유 Proxy가 있는지 반환한다. 외부에서 Scene 등록을 해제했는지나 GPU 준비 상태는 검사하지 않는다. */
 	[[nodiscard]] bool IsRenderStateCreated() const;
 
 private:
 	FVector3 lightColor{1.0f, 1.0f, 1.0f};
 	float intensity = 1.0f;
-	uint64 sceneLightId = 0;
+
+	// 이 컴포넌트가 소유한다. Scene 등록을 해제한 뒤 파괴하며 nullptr는 렌더 상태 미생성이다.
+	TUniquePtr<FDirectionalLightSceneProxy> sceneProxy{};
 };

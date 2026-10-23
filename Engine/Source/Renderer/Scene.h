@@ -3,18 +3,17 @@
 #include "Core/Containers/Array.h"
 #include "Core/CoreTypes.h"
 #include "Core/Math/Matrix4.h"
-#include "Renderer/DirectionalLightData.h"
 #include "Renderer/StaticMeshRenderData.h"
 
-#include <optional>
-
-class FRenderer;
 struct FStaticMeshData;
 struct FImage;
+class FDirectionalLightSceneProxy;
+class FRenderer;
 
 ////////////////////////////////////////////////////////////////////////////////
-// 등록한 정적 메시의 GPU 자원, 월드 행렬과 방향광 하나의 CPU 데이터를 소유한다.
-// 액터, 컴포넌트, 렌더러 주소는 보관하지 않으며 변경 전달은 호출자가 맡는다.
+// 등록한 정적 메시의 GPU 자원과 월드 행렬을 소유한다.
+// 방향광 Proxy 하나의 주소를 빌리며 소유권은 해당 컴포넌트에 있다.
+// 액터, 컴포넌트, 렌더러 주소는 보관하지 않는다.
 ////////////////////////////////////////////////////////////////////////////////
 class FScene
 {
@@ -44,37 +43,28 @@ public:
 	[[nodiscard]] bool RemoveStaticMesh(uint64 meshId);
 
 	/**
-	 * 방향광 데이터를 복사해 하나만 등록한다. Renderer나 GPU 자원은 사용하지 않는다.
-	 * 이미 등록됐거나 ID가 소진되면 false이며 기존 데이터와 출력 ID를 유지한다.
-	 * ID는 이 Scene의 방향광 등록에만 유효하고 0은 사용하지 않으며 재사용하지 않는다.
-	 * 입력은 FDirectionalLightData의 계약을 따르며 값 검사나 정규화는 하지 않는다.
+	 * 방향광 Proxy 하나의 주소를 빌려 등록한다. 소유권은 가져오지 않는다.
+	 * 이미 등록된 Proxy가 있으면 같은 객체라도 false이며 기존 등록을 유지한다.
+	 * Proxy는 등록 해제까지 살아 있어야 하며 같은 스레드에서 사용한다.
 	 */
-	// NOTE: 컨벤션 예외: 성공 여부와 성공할 때만 갱신하는 ID 출력을 분리한다.
-	[[nodiscard]] bool AddDirectionalLight(const FDirectionalLightData& data, uint64& outLightId);
+	[[nodiscard]] bool AddDirectionalLight(const FDirectionalLightSceneProxy& proxy);
 
 	/**
-	 * 일치하는 ID로 등록된 방향광 데이터를 복사해 교체한다.
-	 * 미등록 또는 다른 ID면 false이고 기존 값을 유지한다. 성공해도 등록 ID는 바뀌지 않는다.
-	 * 입력은 FDirectionalLightData의 계약을 따르며 값 검사, 정규화, GPU 갱신은 하지 않는다.
+	 * 등록된 주소가 인수의 주소와 같을 때 등록을 비운다.
+	 * 미등록이거나 다른 주소면 false이며 기존 등록을 유지한다.
+	 * Proxy를 파괴하지 않는다. 소유자는 등록 해제 후 객체를 파괴해야 한다.
 	 */
-	[[nodiscard]] bool SetDirectionalLight(uint64 lightId, const FDirectionalLightData& data);
+	[[nodiscard]] bool RemoveDirectionalLight(const FDirectionalLightSceneProxy& proxy);
 
 	/**
-	 * 일치하는 ID의 방향광 등록을 제거한다. 미등록 또는 다른 ID면 false이며 기존 상태를 유지한다.
-	 * 이전 조회 포인터는 무효가 된다. 다음 ID는 유지해 재등록 시 제거한 ID를 재사용하지 않는다.
-	 * 호출자가 보관한 ID 변수는 변경하지 않으며 GPU 갱신은 수행하지 않는다.
+	 * 등록된 Proxy의 비소유 포인터를 반환한다. 미등록이면 nullptr다.
+	 * 호출자는 포인터를 장기 보관하지 않으며 등록 해제 후에는 사용하지 않는다.
 	 */
-	[[nodiscard]] bool RemoveDirectionalLight(uint64 lightId);
-
-	/**
-	 * 등록된 방향광 데이터를 읽기 전용으로 빌린다. 미등록이면 nullptr이며 세기 0도 등록된 데이터로 반환한다.
-	 * 소유권은 Scene에 있고 Scene 파괴 후 포인터는 무효다. 보관 값의 갱신, 제거 뒤에는 다시 조회한다.
-	 */
-	[[nodiscard]] const FDirectionalLightData* GetDirectionalLight() const;
+	[[nodiscard]] const FDirectionalLightSceneProxy* GetDirectionalLight() const;
 
 	/**
 	 * 시작된 프레임 안에서 같은 스레드, 같은 장치의 렌더러로 그린다.
-	 * 방향광을 먼저 전달하며 미등록이면 세기 0을 사용한다. 이후 등록 순서대로 메시를 그린다.
+	 * 방향광을 먼저 전달하며 미등록이면 유효한 기본 방향과 RGB 0을 사용한다. 이후 등록 순서대로 메시를 그린다.
 	 * 실패하면 false이며 호출자는 반복을 중단하고 Renderer를 Shutdown해야 한다.
 	 * 화면 지우기나 EndFrame/Present는 수행하지 않는다.
 	 */
@@ -88,16 +78,11 @@ private:
 		FMatrix4 localToWorld{};
 	};
 
-	struct FDirectionalLightEntry
-	{
-		uint64 lightId = 0;
-		FDirectionalLightData data;
-	};
-
 	FStaticMeshEntry* FindMeshEntry(uint64 meshId);
 
 	TArray<FStaticMeshEntry> staticMeshes;
 	uint64 nextMeshId = 1;
-	std::optional<FDirectionalLightEntry> directionalLight;
-	uint64 nextDirectionalLightId = 1;
+
+	// 컴포넌트 소유 Proxy를 빌린다. nullptr는 미등록이며 해제 시 객체를 삭제하지 않는다.
+	const FDirectionalLightSceneProxy* directionalLight = nullptr;
 };
