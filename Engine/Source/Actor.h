@@ -89,7 +89,13 @@ public:
 #pragma region PlayLifecycle
 
 public:
-	/** World의 Tick에서 초 단위 프레임 경과 시간을 받는 재정의 지점이다. 기본 구현은 비어 있다. */
+	/** World의 Actor Tick 전달 여부만 설정한다. 기본은 true이며 입력·컴포넌트 Tick·시작·종료는 제어하지 않는다. 같은 스레드에서 호출한다. */
+	void SetActorTickEnabled(bool enabled);
+
+	/** 시작 완료 여부와 별개인 Actor Tick 활성 설정을 반환한다. */
+	[[nodiscard]] bool IsActorTickEnabled() const;
+
+	/** World가 시작했고 Actor Tick이 활성인 대상에 전달한다. 초 단위 프레임 경과 시간을 받으며 기본 구현은 비어 있다. */
 	virtual void Tick(float deltaSeconds);
 
 	/** 기반 BeginPlay에서 시작 완료 상태로 전환됐는지 반환한다. */
@@ -163,6 +169,7 @@ private:
 	AActor* parent = nullptr;
 	bool bActorIsBeingDestroyed = false;
 	EPlayState actorHasBegunPlay = EPlayState::NotBegun;
+	bool bTickEnabled = true; // World가 Actor Tick 직전에 검사한다. 실행 중인 콜백은 중단하지 않는다.
 	TArray<TUniquePtr<UActorComponent>> components{};
 	TArray<AActor*> children{};
 

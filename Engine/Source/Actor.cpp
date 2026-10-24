@@ -69,6 +69,16 @@ bool AActor::IsActorBeingDestroyed() const
 
 #pragma region PlayLifecycle
 
+void AActor::SetActorTickEnabled(bool enabled)
+{
+	bTickEnabled = enabled;
+}
+
+bool AActor::IsActorTickEnabled() const
+{
+	return bTickEnabled;
+}
+
 void AActor::Tick([[maybe_unused]] float deltaSeconds)
 {
 }

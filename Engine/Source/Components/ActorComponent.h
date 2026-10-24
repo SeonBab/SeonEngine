@@ -61,11 +61,18 @@ public:
 	/** 시작 완료 상태를 해제한다. 파생 구현은 기반 함수를 호출해야 하며 시작한 경우 소유 액터의 기반 EndPlay에서 호출한다. */
 	virtual void EndPlay(EEndPlayReason reason);
 
-	/** 초 단위 프레임 경과 시간을 받는 재정의 지점이다. 기본 구현은 비어 있으며 자동 호출은 아직 연결하지 않았다. */
+	/** World의 컴포넌트 Tick 전달 여부만 설정한다. 기본은 true이며 시작·종료 상태는 바꾸지 않는다. 같은 스레드에서 호출한다. */
+	void SetComponentTickEnabled(bool enabled);
+
+	/** 시작 완료 여부와 별개인 Tick 활성 설정을 반환한다. */
+	[[nodiscard]] bool IsComponentTickEnabled() const;
+
+	/** World가 소유 액터 Tick 뒤 시작했고 Tick이 활성인 컴포넌트에 전달한다. 인수는 초 단위이며 기본 구현은 비어 있다. */
 	virtual void TickComponent(float deltaSeconds);
 
 private:
 	EPlayState playState = EPlayState::NotBegun; // 현재는 NotBegun/Begun만 사용하며 기반 이벤트가 전환한다.
+	bool bTickEnabled = true;                    // World가 각 Tick 호출 직전에 검사한다. 실행 중인 콜백은 중단하지 않는다.
 
 #pragma endregion
 };

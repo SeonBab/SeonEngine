@@ -37,6 +37,16 @@ void UActorComponent::EndPlay([[maybe_unused]] EEndPlayReason reason)
 	playState = EPlayState::NotBegun;
 }
 
+void UActorComponent::SetComponentTickEnabled(bool enabled)
+{
+	bTickEnabled = enabled;
+}
+
+bool UActorComponent::IsComponentTickEnabled() const
+{
+	return bTickEnabled;
+}
+
 void UActorComponent::TickComponent([[maybe_unused]] float deltaSeconds)
 {
 }

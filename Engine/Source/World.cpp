@@ -347,6 +347,7 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 
 	const TArray<TUniquePtr<AActor>>::size_type tickCount = actors.size();
 	TArray<UInputComponent*> inputComponents;
+	TArray<UActorComponent*> tickComponents;
 	bIsTicking = true;
 	for (decltype(actors.size()) index = 0; index < tickCount; ++index)
 	{
@@ -385,7 +386,29 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 			continue;
 		}
 
-		actor->Tick(deltaSeconds);
+		if (actor->IsActorTickEnabled())
+		{
+			actor->Tick(deltaSeconds);
+		}
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		actor->GetComponents(tickComponents);
+		for (UActorComponent* component : tickComponents)
+		{
+			if (!component->HasBegunPlay() || !component->IsComponentTickEnabled())
+			{
+				continue;
+			}
+
+			component->TickComponent(deltaSeconds);
+			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			{
+				break;
+			}
+		}
 	}
 	PurgeDestroyedActors();
 	bIsTicking = false;
