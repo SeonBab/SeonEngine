@@ -5,17 +5,7 @@
 
 #include <utility>
 
-bool FGameWidgetSubsystem::Draw(FRenderer& renderer)
-{
-	FUIDrawElementList elements;
-
-	for (const TUniquePtr<UUserWidget>& widget : widgets)
-	{
-		if (!widget->CollectDrawElements(elements)) { return false; }
-	}
-
-	return renderer.DrawUI(elements);
-}
+#pragma region Widgets
 
 bool FGameWidgetSubsystem::AddWidget(TUniquePtr<UUserWidget>& widget)
 {
@@ -42,3 +32,21 @@ bool FGameWidgetSubsystem::RemoveWidget(UUserWidget* widget)
 
 	return false;
 }
+
+#pragma endregion
+
+#pragma region Drawing
+
+bool FGameWidgetSubsystem::Draw(FRenderer& renderer)
+{
+	FUIDrawElementList elements;
+
+	for (const TUniquePtr<UUserWidget>& widget : widgets)
+	{
+		if (!widget->CollectDrawElements(elements)) { return false; }
+	}
+
+	return renderer.DrawUI(elements);
+}
+
+#pragma endregion

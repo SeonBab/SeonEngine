@@ -23,7 +23,7 @@ bool ReadShaderBytecode(const std::filesystem::path& path, TArray<uint8>& outByt
 		return false;
 	}
 
-	const auto byteCount = static_cast<std::uintmax_t>(static_cast<std::streamoff>(endPosition));
+	const std::uintmax_t byteCount = static_cast<std::uintmax_t>(static_cast<std::streamoff>(endPosition));
 	TArray<uint8> newBytecode;
 	if (byteCount > newBytecode.max_size() || byteCount > static_cast<std::uintmax_t>(std::numeric_limits<std::streamsize>::max()))
 	{

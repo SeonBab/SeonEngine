@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <utility>
 
+#pragma region Lifecycle
+
 bool FD3D11Device::Initialize()
 {
 	if (device || context)
@@ -38,6 +40,10 @@ void FD3D11Device::Shutdown()
 	device.Reset();
 }
 
+#pragma endregion
+
+#pragma region RenderTargets
+
 void FD3D11Device::ClearRenderTargetView(ID3D11RenderTargetView* renderTargetView, const float color[4])
 {
 	context->ClearRenderTargetView(renderTargetView, color);
@@ -47,6 +53,31 @@ void FD3D11Device::ClearDepthStencilView(ID3D11DepthStencilView* depthStencilVie
 {
 	context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, depth, 0);
 }
+
+void FD3D11Device::SetRenderTarget(ID3D11RenderTargetView* renderTargetView, ID3D11DepthStencilView* depthStencilView)
+{
+	if (renderTargetView == nullptr)
+	{
+		context->OMSetRenderTargets(0, nullptr, nullptr);
+		return;
+	}
+
+	context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+}
+
+void FD3D11Device::SetViewport(int width, int height)
+{
+	D3D11_VIEWPORT viewport{};
+	viewport.Width = static_cast<float>(width);
+	viewport.Height = static_cast<float>(height);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+}
+
+#pragma endregion
+
+#pragma region Shaders
 
 bool FD3D11Device::CreateVertexShader(const TArray<uint8>& bytecode, Microsoft::WRL::ComPtr<ID3D11VertexShader>& outShader)
 {
@@ -100,26 +131,9 @@ void FD3D11Device::SetPixelShader(ID3D11PixelShader* shader)
 	context->PSSetShader(shader, nullptr, 0);
 }
 
-void FD3D11Device::SetRenderTarget(ID3D11RenderTargetView* renderTargetView, ID3D11DepthStencilView* depthStencilView)
-{
-	if (renderTargetView == nullptr)
-	{
-		context->OMSetRenderTargets(0, nullptr, nullptr);
-		return;
-	}
+#pragma endregion
 
-	context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
-}
-
-void FD3D11Device::SetViewport(int width, int height)
-{
-	D3D11_VIEWPORT viewport{};
-	viewport.Width = static_cast<float>(width);
-	viewport.Height = static_cast<float>(height);
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	context->RSSetViewports(1, &viewport);
-}
+#pragma region Drawing
 
 void FD3D11Device::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology)
 {
@@ -135,6 +149,10 @@ void FD3D11Device::DrawIndexed(uint32 indexCount, uint32 startIndexLocation, int
 {
 	context->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 }
+
+#pragma endregion
+
+#pragma region Buffers
 
 bool FD3D11Device::CreateVertexBuffer(const TArray<FVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer)
 {
@@ -340,6 +358,10 @@ void FD3D11Device::SetPixelShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffe
 	context->PSSetConstantBuffers(slot, 1, &buffer);
 }
 
+#pragma endregion
+
+#pragma region Textures
+
 bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture)
 {
 	if (!device || !context)
@@ -532,6 +554,10 @@ void FD3D11Device::SetPixelShaderSamplerState(ID3D11SamplerState* sampler)
 	context->PSSetSamplers(0, 1, &sampler);
 }
 
+#pragma endregion
+
+#pragma region PipelineState
+
 bool FD3D11Device::CreateBlendState(const D3D11_BLEND_DESC& description, Microsoft::WRL::ComPtr<ID3D11BlendState>& outState)
 {
 	if (!device)
@@ -584,3 +610,5 @@ void FD3D11Device::SetDepthStencilState(ID3D11DepthStencilState* state)
 {
 	context->OMSetDepthStencilState(state, 0);
 }
+
+#pragma endregion

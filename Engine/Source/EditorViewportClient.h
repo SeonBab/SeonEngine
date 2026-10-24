@@ -35,6 +35,28 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 class FEditorViewportClient
 {
+#pragma region View
+
+public:
+	/** 현재 투영 방식의 편집 시점을 반환한다. 참조는 이 클라이언트가 살아 있는 동안 유효하며 모드가 바뀌어도 원래 선택한 시점을 가리킨다. */
+	FViewportCameraTransform& GetViewTransform();
+
+	/** 현재 투영 방식의 편집 시점을 읽기 전용으로 반환한다. 참조의 수명과 모드 변경 시 동작은 비const 오버로드와 같다. */
+	const FViewportCameraTransform& GetViewTransform() const;
+
+	/** 선택한 편집 시점과 투영 설정의 사본을 반환한다. 반환값은 이후 편집 상태 변경을 추적하지 않으며 회전 각도는 그대로 복사한다. */
+	FCameraViewInfo GetCameraView() const;
+
+private:
+	// 모드를 전환해도 각 모드의 위치와 회전을 유지할 수 있도록 별도로 보관한다.
+	FViewportCameraTransform viewTransformPerspective;
+
+	FViewportCameraTransform viewTransformOrthographic;
+
+#pragma endregion
+
+#pragma region Projection
+
 public:
 	/** 현재 투영 방식을 값으로 반환한다. */
 	ECameraProjectionMode GetProjectionMode() const;
@@ -66,15 +88,23 @@ public:
 	/** 먼 클리핑 거리를 월드 단위로 저장한다. 유효한 투영에는 유한한 0 < near < far가 필요하며 값 검사나 보정은 하지 않는다. */
 	void SetFarClipDistance(float newFarClipDistance);
 
-	/** 현재 투영 방식의 편집 시점을 반환한다. 참조는 이 클라이언트가 살아 있는 동안 유효하며 모드가 바뀌어도 원래 선택한 시점을 가리킨다. */
-	FViewportCameraTransform& GetViewTransform();
+private:
+	ECameraProjectionMode projectionMode = ECameraProjectionMode::Perspective;
 
-	/** 현재 투영 방식의 편집 시점을 읽기 전용으로 반환한다. 참조의 수명과 모드 변경 시 동작은 비const 오버로드와 같다. */
-	const FViewportCameraTransform& GetViewTransform() const;
+	float horizontalFovDegrees = 90.0f; // 원근 투영의 수평 시야각이며 단위는 도다.
 
-	/** 선택한 편집 시점과 투영 설정의 사본을 반환한다. 반환값은 이후 편집 상태 변경을 추적하지 않으며 회전 각도는 그대로 복사한다. */
-	FCameraViewInfo GetCameraView() const;
+	float orthographicWidth = 4.0f; // 직교 투영의 가로 폭이며 월드 위치와 같은 단위다. Unreal OrthoZoom 수치와는 다르다.
 
+	// 최종 시점의 near/far 거리다. FCameraViewInfo와 같은 기본값이며 0 < near < far를 전제로 사용한다.
+	float nearClipDistance = 0.1f;
+
+	float farClipDistance = 1000.0f;
+
+#pragma endregion
+
+#pragma region Drawing
+
+public:
 	/**
 	 * 편집 시점 행렬을 전달하고 장면을 그린다. 양수 크기와 유효한 시점 설정이 필요하며 크기는 설정한 viewport와 일치해야 한다.
 	 * 호출자는 Renderer 초기화, 장면 렌더 상태 준비, 출력과 viewport 설정 및 BeginFrame을 완료하고 프레임 종료를 담당한다.
@@ -82,15 +112,5 @@ public:
 	 */
 	[[nodiscard]] bool Draw(FScene& scene, FRenderer& renderer, int width, int height) const;
 
-private:
-	// 모드를 전환해도 각 모드의 위치와 회전을 유지할 수 있도록 별도로 보관한다.
-	FViewportCameraTransform viewTransformPerspective;
-	FViewportCameraTransform viewTransformOrthographic;
-	ECameraProjectionMode projectionMode = ECameraProjectionMode::Perspective;
-
-	float horizontalFovDegrees = 90.0f; // 원근 투영의 수평 시야각이며 단위는 도다.
-	float orthographicWidth = 4.0f;     // 직교 투영의 가로 폭이며 월드 위치와 같은 단위다. Unreal OrthoZoom 수치와는 다르다.
-	// 최종 시점의 near/far 거리다. FCameraViewInfo와 같은 기본값이며 0 < near < far를 전제로 사용한다.
-	float nearClipDistance = 0.1f;
-	float farClipDistance = 1000.0f;
+#pragma endregion
 };

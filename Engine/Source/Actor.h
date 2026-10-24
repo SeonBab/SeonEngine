@@ -24,6 +24,10 @@ enum class EActorTransformRule : uint8
 ////////////////////////////////////////////////////////////////////////////////
 class AActor : public UObject
 {
+	friend class UWorld;
+
+#pragma region Lifecycle
+
 public:
 	/** 비소유 월드를 연결하고 기본 트랜스폼 하나를 소유한다. 자동 등록은 하지 않으며 월드는 액터보다 오래 살아야 한다. */
 	explicit AActor(UWorld& inWorld);
@@ -36,15 +40,11 @@ public:
 	AActor(AActor&&) = delete;
 	AActor& operator=(AActor&&) = delete;
 
-	/** World의 Tick에서 초 단위 프레임 경과 시간을 받는 재정의 지점이다. 기본 구현은 비어 있다. */
-	virtual void Tick(float deltaSeconds);
+#pragma endregion
 
-	/** 기반 BeginPlay에서 시작 완료 상태로 전환됐는지 반환한다. */
-	[[nodiscard]] bool HasActorBegunPlay() const;
+#pragma region WorldAndHierarchy
 
-	/** 시작 진입 뒤 기반 BeginPlay가 아직 완료 상태로 바꾸지 않았는지 반환한다. 기반 호출을 생략하면 true가 유지된다. */
-	[[nodiscard]] bool IsActorBeginningPlay() const;
-
+public:
 	/** 생성 시 지정한 월드를 반환한다. 월드의 수명을 연장하거나 소유 목록 등록 여부를 검사하지 않는다. */
 	[[nodiscard]] UWorld& GetWorld() const;
 
@@ -67,6 +67,11 @@ public:
 	 */
 	[[nodiscard]] bool SetParent(AActor* newParent, EActorTransformRule rule = EActorTransformRule::KeepLocal);
 
+#pragma endregion
+
+#pragma region Destruction
+
+public:
 	/**
 	 * 월드에 자신과 모든 자손의 제거를 요청한다. 미등록이면 false이며 기존 상태를 유지한다.
 	 * Tick 중 true는 요청 보관 성공이며, 보류 중 부모 변경을 허용하고 종료 때 현재 자손과 함께 파괴한다.
@@ -79,6 +84,46 @@ public:
 	/** 실제 제거 처리가 시작됐는지 반환한다. 요청만 보류된 상태에서는 false다. */
 	[[nodiscard]] bool IsActorBeingDestroyed() const;
 
+#pragma endregion
+
+#pragma region PlayLifecycle
+
+public:
+	/** World의 Tick에서 초 단위 프레임 경과 시간을 받는 재정의 지점이다. 기본 구현은 비어 있다. */
+	virtual void Tick(float deltaSeconds);
+
+	/** 기반 BeginPlay에서 시작 완료 상태로 전환됐는지 반환한다. */
+	[[nodiscard]] bool HasActorBegunPlay() const;
+
+	/** 시작 진입 뒤 기반 BeginPlay가 아직 완료 상태로 바꾸지 않았는지 반환한다. 기반 호출을 생략하면 true가 유지된다. */
+	[[nodiscard]] bool IsActorBeginningPlay() const;
+
+protected:
+	/**
+	 * 첫 World Tick 직전에 호출할 시작 처리를 재정의한다.
+	 * 기반 구현은 호출 시점 목록의 미시작 컴포넌트를 시작한 뒤 액터를 시작 완료로 표시한다.
+	 * NOTE: 기반 BeginPlay를 호출하지 않으면 시작 미완료 상태로 남아 Tick이 보류된다.
+	 */
+	virtual void BeginPlay();
+
+	/**
+	 * World가 실제 제거 전에 호출할 종료 처리를 재정의한다. 파생 구현은 기반 함수를 호출해야 한다.
+	 * 기반 구현은 시작 완료 상태를 먼저 해제하고 호출 시점 목록의 시작한 컴포넌트에 같은 종료 이유를 전달한다.
+	 */
+	virtual void EndPlay(EEndPlayReason reason);
+
+private:
+	/** World가 등록된 액터의 첫 Tick 전에 호출한다. 시작 전일 때만 진입하며 완료 상태는 기반 BeginPlay가 설정한다. */
+	void DispatchBeginPlay();
+
+	/** World가 관계와 등록을 정리한 뒤 파괴 전에 호출한다. 시작 완료 상태인 경우에만 가상 종료 처리를 실행한다. */
+	void RouteEndPlay(EEndPlayReason reason);
+
+#pragma endregion
+
+#pragma region Components
+
+public:
 	/**
 	 * 소속이 자신인 컴포넌트의 소유권을 받는다. 성공 시 입력 포인터는 비워진다.
 	 * 빈 포인터, 다른 소속, 복수 불허인 같은 실제 타입의 중복이면 false이며 입력과 기존 목록을 유지한다.
@@ -109,42 +154,28 @@ public:
 		requires std::derived_from<T, UActorComponent>
 	void GetComponents(TArray<T*>& outComponents) const;
 
-protected:
-	/**
-	 * 첫 World Tick 직전에 호출할 시작 처리를 재정의한다.
-	 * 기반 구현은 호출 시점 목록의 미시작 컴포넌트를 시작한 뒤 액터를 시작 완료로 표시한다.
-	 * NOTE: 기반 BeginPlay를 호출하지 않으면 시작 미완료 상태로 남아 Tick이 보류된다.
-	 */
-	virtual void BeginPlay();
+#pragma endregion
 
-	/**
-	 * World가 실제 제거 전에 호출할 종료 처리를 재정의한다. 파생 구현은 기반 함수를 호출해야 한다.
-	 * 기반 구현은 시작 완료 상태를 먼저 해제하고 호출 시점 목록의 시작한 컴포넌트에 같은 종료 이유를 전달한다.
-	 */
-	virtual void EndPlay(EEndPlayReason reason);
+#pragma region ActorState
 
 private:
-	friend class UWorld;
-
-	/** World가 등록된 액터의 첫 Tick 전에 호출한다. 시작 전일 때만 진입하며 완료 상태는 기반 BeginPlay가 설정한다. */
-	void DispatchBeginPlay();
-
-	/** World가 관계와 등록을 정리한 뒤 파괴 전에 호출한다. 시작 완료 상태인 경우에만 가상 종료 처리를 실행한다. */
-	void RouteEndPlay(EEndPlayReason reason);
-
 	UWorld* const world;
 	AActor* parent = nullptr;
 	bool bActorIsBeingDestroyed = false;
 	EPlayState actorHasBegunPlay = EPlayState::NotBegun;
 	TArray<TUniquePtr<UActorComponent>> components{};
 	TArray<AActor*> children{};
+
+#pragma endregion
 };
+
+#pragma region Components
 
 template<typename T>
 	requires std::derived_from<T, UActorComponent>
 T* AActor::GetComponent() const
 {
-	for (const auto& component : components)
+	for (const TUniquePtr<UActorComponent>& component : components)
 	{
 		if (T* found = dynamic_cast<T*>(component.get()))
 		{
@@ -161,7 +192,7 @@ void AActor::GetComponents(TArray<T*>& outComponents) const
 {
 	outComponents.clear();
 
-	for (const auto& component : components)
+	for (const TUniquePtr<UActorComponent>& component : components)
 	{
 		if (T* found = dynamic_cast<T*>(component.get()))
 		{
@@ -169,3 +200,5 @@ void AActor::GetComponents(TArray<T*>& outComponents) const
 		}
 	}
 }
+
+#pragma endregion

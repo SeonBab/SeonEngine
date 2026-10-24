@@ -15,14 +15,31 @@ class UTexture2D : public UObject
 	// GPU 뷰를 외부에 노출하지 않고 렌더러의 생성, 바인딩에만 사용한다.
 	friend class FRenderer;
 
+#pragma region Lifecycle
+
 public:
 	UTexture2D() = default;
 
 	UTexture2D(const UTexture2D&) = delete;
+
 	UTexture2D& operator=(const UTexture2D&) = delete;
+
 	UTexture2D(UTexture2D&&) = default;
+
 	UTexture2D& operator=(UTexture2D&&) = default;
 
+#pragma endregion
+
+#pragma region TextureResource
+
+private:
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
+
+#pragma endregion
+
+#pragma region Addressing
+
+public:
 	/** 텍스처 X축(U)의 기본 주소 설정을 값으로 반환한다. 현재 바인딩된 샘플러 상태를 조회하지 않는다. */
 	ETextureAddress GetTextureAddressX() const { return AddressX; }
 
@@ -42,9 +59,10 @@ public:
 	}
 
 private:
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView;
-
 	// 텍스처 자체의 기본 설정이다. X는 샘플링 U축, Y는 V축에 대응한다.
 	ETextureAddress AddressX = ETextureAddress::Clamp;
+
 	ETextureAddress AddressY = ETextureAddress::Clamp;
+
+#pragma endregion
 };

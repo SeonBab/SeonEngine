@@ -9,6 +9,8 @@
 
 #include <algorithm>
 
+#pragma region Lifecycle
+
 UWorld::UWorld() = default;
 
 UWorld::~UWorld()
@@ -21,6 +23,10 @@ UWorld::~UWorld()
 	}
 }
 
+#pragma endregion
+
+#pragma region Rendering
+
 FScene& UWorld::GetScene()
 {
 	return scene;
@@ -29,138 +35,6 @@ FScene& UWorld::GetScene()
 const FScene& UWorld::GetScene() const
 {
 	return scene;
-}
-
-bool UWorld::SetActiveCamera(AActor* actor)
-{
-	if (!actor)
-	{
-		activeCameraActor = nullptr;
-
-		return true;
-	}
-
-	const auto ownedActor = std::find_if(actors.begin(), actors.end(), [actor](const auto& entry)
-	{
-		return entry.get() == actor;
-	});
-	if (ownedActor == actors.end()) { return false; }
-	if (&actor->GetWorld() != this || actor->IsActorBeingDestroyed()) { return false; }
-	if (!actor->GetComponent<UCameraComponent>()) { return false; }
-
-	activeCameraActor = actor;
-
-	return true;
-}
-
-UCameraComponent* UWorld::GetActiveCamera() const
-{
-	if (!activeCameraActor) { return nullptr; }
-
-	return activeCameraActor->GetComponent<UCameraComponent>();
-}
-
-void UWorld::GetActors(TArray<AActor*>& outActors) const
-{
-	outActors.clear();
-	for (const TUniquePtr<AActor>& actor : actors)
-	{
-		outActors.push_back(actor.get());
-	}
-}
-
-void UWorld::BeginPlay()
-{
-	if (bIsTicking || bBegunPlay || bIsTearingDown) { return; }
-
-	const auto actorCount = actors.size();
-	bIsTicking = true;
-	for (decltype(actors.size()) index = 0; index < actorCount; ++index)
-	{
-		AActor* actor = actors[index].get();
-		if (actor->IsActorBeingDestroyed()) { continue; }
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
-		{
-			continue;
-		}
-
-		actor->DispatchBeginPlay();
-	}
-	PurgeDestroyedActors();
-	bBegunPlay = true;
-	bIsTicking = false;
-}
-
-bool UWorld::HasBegunPlay() const
-{
-	return bBegunPlay;
-}
-
-void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& playerInput)
-{
-	if (bIsTicking || !bBegunPlay || bIsTearingDown) { return; }
-
-	const auto tickCount = actors.size();
-	TArray<UInputComponent*> inputComponents;
-	bIsTicking = true;
-	for (decltype(actors.size()) index = 0; index < tickCount; ++index)
-	{
-		AActor* actor = actors[index].get();
-		if (actor->IsActorBeingDestroyed()) { continue; }
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
-		{
-			continue;
-		}
-
-		actor->DispatchBeginPlay();
-		if (!actor->HasActorBegunPlay()) { continue; }
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
-		{
-			continue;
-		}
-
-		// TODO(seon): 입력 우선순위, 소비, 플레이어별 대상이 필요해지면 입력 처리 계층으로 배분 책임을 옮긴다.
-		actor->GetComponents(inputComponents);
-		for (UInputComponent* component : inputComponents)
-		{
-			component->ProcessInput(input, deltaSeconds);
-			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
-			{
-				break;
-			}
-
-			playerInput.DispatchActionEvents(*component, deltaSeconds);
-			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
-			{
-				break;
-			}
-		}
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
-		{
-			continue;
-		}
-
-		actor->Tick(deltaSeconds);
-	}
-	PurgeDestroyedActors();
-	bIsTicking = false;
-}
-
-void UWorld::EndPlay(EEndPlayReason reason)
-{
-	if (bIsTicking || bIsTearingDown) { return; }
-
-	bIsTearingDown = true;
-	if (!bBegunPlay) { return; }
-
-	const auto actorCount = actors.size();
-	for (decltype(actors.size()) index = 0; index < actorCount; ++index)
-	{
-		actors[index]->RouteEndPlay(reason);
-	}
-	bBegunPlay = false;
-
-	PurgeDestroyedActors();
 }
 
 bool UWorld::CreateRenderStates()
@@ -195,6 +69,19 @@ bool UWorld::SendAllEndOfFrameUpdates()
 	return true;
 }
 
+#pragma endregion
+
+#pragma region Actors
+
+void UWorld::GetActors(TArray<AActor*>& outActors) const
+{
+	outActors.clear();
+	for (const TUniquePtr<AActor>& actor : actors)
+	{
+		outActors.push_back(actor.get());
+	}
+}
+
 bool UWorld::SetActorParent(AActor* actor, AActor* newParent, EActorTransformRule rule)
 {
 	if (!actor || actor == newParent)
@@ -204,7 +91,7 @@ bool UWorld::SetActorParent(AActor* actor, AActor* newParent, EActorTransformRul
 
 	bool bActorRegistered = false;
 	bool bParentRegistered = newParent == nullptr;
-	for (const auto& ownedActor : actors)
+	for (const TUniquePtr<AActor>& ownedActor : actors)
 	{
 		bActorRegistered = bActorRegistered || ownedActor.get() == actor;
 		bParentRegistered = bParentRegistered || ownedActor.get() == newParent;
@@ -278,11 +165,48 @@ bool UWorld::SetActorParent(AActor* actor, AActor* newParent, EActorTransformRul
 	return true;
 }
 
+#pragma endregion
+
+#pragma region Camera
+
+bool UWorld::SetActiveCamera(AActor* actor)
+{
+	if (!actor)
+	{
+		activeCameraActor = nullptr;
+
+		return true;
+	}
+
+	const auto ownedActor = std::find_if(actors.begin(), actors.end(), [actor](const TUniquePtr<AActor>& entry)
+	{
+		return entry.get() == actor;
+	});
+	if (ownedActor == actors.end()) { return false; }
+	if (&actor->GetWorld() != this || actor->IsActorBeingDestroyed()) { return false; }
+	if (!actor->GetComponent<UCameraComponent>()) { return false; }
+
+	activeCameraActor = actor;
+
+	return true;
+}
+
+UCameraComponent* UWorld::GetActiveCamera() const
+{
+	if (!activeCameraActor) { return nullptr; }
+
+	return activeCameraActor->GetComponent<UCameraComponent>();
+}
+
+#pragma endregion
+
+#pragma region Destruction
+
 bool UWorld::DestroyActor(AActor* actor)
 {
 	if (!actor) { return false; }
 
-	const auto ownedActor = std::find_if(actors.begin(), actors.end(), [actor](const auto& entry)
+	const auto ownedActor = std::find_if(actors.begin(), actors.end(), [actor](const TUniquePtr<AActor>& entry)
 	{
 		return entry.get() == actor;
 	});
@@ -317,7 +241,7 @@ bool UWorld::DestroyActorImmediately(AActor* actor, EEndPlayReason reason)
 	actorIndices.reserve(subtree.size());
 	for (AActor* target : subtree)
 	{
-		const auto entry = std::find_if(actors.begin(), actors.end(), [target](const auto& candidate)
+		const auto entry = std::find_if(actors.begin(), actors.end(), [target](const TUniquePtr<AActor>& candidate)
 		{
 			return candidate.get() == target;
 		});
@@ -356,11 +280,11 @@ bool UWorld::DestroyActorImmediately(AActor* actor, EEndPlayReason reason)
 		// 관계 해제 뒤 종료 콜백에서도 부모 없는 상대값과 일치하는 월드 캐시를 읽게 한다.
 		target->GetComponent<UTransformComponent>()->UpdateComponentToWorld();
 	}
-	for (const auto index : actorIndices)
+	for (const TArray<TUniquePtr<AActor>>::size_type index : actorIndices)
 	{
 		removedActors.push_back(std::move(actors[index]));
 	}
-	std::erase_if(actors, [](const auto& entry)
+	std::erase_if(actors, [](const TUniquePtr<AActor>& entry)
 	{
 		return !entry;
 	});
@@ -385,3 +309,103 @@ void UWorld::PurgeDestroyedActors()
 		(void)DestroyActorImmediately(actor);
 	}
 }
+
+#pragma endregion
+
+#pragma region PlayLifecycle
+
+void UWorld::BeginPlay()
+{
+	if (bIsTicking || bBegunPlay || bIsTearingDown) { return; }
+
+	const TArray<TUniquePtr<AActor>>::size_type actorCount = actors.size();
+	bIsTicking = true;
+	for (decltype(actors.size()) index = 0; index < actorCount; ++index)
+	{
+		AActor* actor = actors[index].get();
+		if (actor->IsActorBeingDestroyed()) { continue; }
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		actor->DispatchBeginPlay();
+	}
+	PurgeDestroyedActors();
+	bBegunPlay = true;
+	bIsTicking = false;
+}
+
+bool UWorld::HasBegunPlay() const
+{
+	return bBegunPlay;
+}
+
+void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& playerInput)
+{
+	if (bIsTicking || !bBegunPlay || bIsTearingDown) { return; }
+
+	const TArray<TUniquePtr<AActor>>::size_type tickCount = actors.size();
+	TArray<UInputComponent*> inputComponents;
+	bIsTicking = true;
+	for (decltype(actors.size()) index = 0; index < tickCount; ++index)
+	{
+		AActor* actor = actors[index].get();
+		if (actor->IsActorBeingDestroyed()) { continue; }
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		actor->DispatchBeginPlay();
+		if (!actor->HasActorBegunPlay()) { continue; }
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		// TODO(seon): 입력 우선순위, 소비, 플레이어별 대상이 필요해지면 입력 처리 계층으로 배분 책임을 옮긴다.
+		actor->GetComponents(inputComponents);
+		for (UInputComponent* component : inputComponents)
+		{
+			component->ProcessInput(input, deltaSeconds);
+			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			{
+				break;
+			}
+
+			playerInput.DispatchActionEvents(*component, deltaSeconds);
+			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			{
+				break;
+			}
+		}
+		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		{
+			continue;
+		}
+
+		actor->Tick(deltaSeconds);
+	}
+	PurgeDestroyedActors();
+	bIsTicking = false;
+}
+
+void UWorld::EndPlay(EEndPlayReason reason)
+{
+	if (bIsTicking || bIsTearingDown) { return; }
+
+	bIsTearingDown = true;
+	if (!bBegunPlay) { return; }
+
+	const TArray<TUniquePtr<AActor>>::size_type actorCount = actors.size();
+	for (decltype(actors.size()) index = 0; index < actorCount; ++index)
+	{
+		actors[index]->RouteEndPlay(reason);
+	}
+	bBegunPlay = false;
+
+	PurgeDestroyedActors();
+}
+
+#pragma endregion

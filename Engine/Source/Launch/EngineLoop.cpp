@@ -6,6 +6,8 @@
 
 #include <utility>
 
+#pragma region Lifecycle
+
 FEngineLoop::FEngineLoop()
 	: application(input)
 {
@@ -15,6 +17,10 @@ FEngineLoop::~FEngineLoop()
 {
 	(void)Exit();
 }
+
+#pragma endregion
+
+#pragma region Execution
 
 int FEngineLoop::Run(EEngineMode engineMode)
 {
@@ -74,7 +80,7 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 
 	if (engineMode == EEngineMode::Editor)
 	{
-		auto editorEngine = MakeUnique<UEditorEngine>();
+		TUniquePtr<UEditorEngine> editorEngine = MakeUnique<UEditorEngine>();
 		UEditorEngine& editor = *editorEngine; // 소유권 이동 뒤에도 같은 객체를 초기화하기 위한 빌린 참조다.
 		engine = std::move(editorEngine);
 
@@ -138,3 +144,5 @@ bool FEngineLoop::Exit()
 
 	return bSuccess;
 }
+
+#pragma endregion

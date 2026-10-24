@@ -7,6 +7,8 @@
 
 #include <utility>
 
+#pragma region Lifecycle
+
 USkyLightComponent::USkyLightComponent(AActor& owner)
 	: URenderStateComponent(owner)
 {
@@ -16,6 +18,10 @@ USkyLightComponent::~USkyLightComponent()
 {
 	DestroyRenderState();
 }
+
+#pragma endregion
+
+#pragma region Light
 
 FVector3 USkyLightComponent::GetLightColor() const
 {
@@ -37,11 +43,15 @@ void USkyLightComponent::SetIntensity(float newIntensity)
 	intensity = newIntensity;
 }
 
+#pragma endregion
+
+#pragma region RenderState
+
 bool USkyLightComponent::CreateRenderState()
 {
 	if (IsRenderStateCreated()) { return false; }
 
-	auto newProxy = MakeUnique<FSkyLightSceneProxy>(*this);
+	TUniquePtr<FSkyLightSceneProxy> newProxy = MakeUnique<FSkyLightSceneProxy>(*this);
 	if (!GetOwner().GetWorld().GetScene().SetSkyLight(*newProxy)) { return false; }
 
 	// 등록 성공 뒤 소유권만 옮긴다. Scene에 등록한 객체 주소는 유지된다.
@@ -75,3 +85,5 @@ bool USkyLightComponent::IsRenderStateCreated() const
 {
 	return sceneProxy != nullptr;
 }
+
+#pragma endregion

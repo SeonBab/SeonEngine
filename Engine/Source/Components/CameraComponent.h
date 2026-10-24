@@ -10,10 +10,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 class UCameraComponent : public UActorComponent
 {
+#pragma region Lifecycle
+
 public:
 	/** 소속 액터를 지정한다. 생성만으로 액터에 등록하지 않는다. */
 	explicit UCameraComponent(AActor& owner);
 
+#pragma endregion
+
+#pragma region Projection
+
+public:
 	/** 저장된 투영 방식을 반환한다. */
 	ECameraProjectionMode GetProjectionMode() const;
 
@@ -44,16 +51,23 @@ public:
 	/** 먼 클리핑 거리를 월드 단위로 저장한다. 값 검사는 하지 않는다. */
 	void SetFarClipDistance(float newFarClipDistance);
 
-	/** 소속 액터의 월드 위치, 회전을 반환한다. 크기 배율은 1이며 원본은 변경하지 않는다. */
-	[[nodiscard]] FTransform GetCameraWorldTransform() const;
-
-	/** 현재 월드 위치·회전과 투영 설정을 복사해 반환한다. */
-	[[nodiscard]] FCameraViewInfo GetCameraView() const;
-
 private:
 	ECameraProjectionMode projectionMode = ECameraProjectionMode::Perspective;
 	float horizontalFovDegrees = 90.0f;
 	float orthographicWidth = 4.0f;
 	float nearClipDistance = 0.1f;
 	float farClipDistance = 1000.0f;
+
+#pragma endregion
+
+#pragma region View
+
+public:
+	/** 소속 액터의 월드 위치, 회전을 반환한다. 크기 배율은 1이며 원본은 변경하지 않는다. */
+	[[nodiscard]] FTransform GetCameraWorldTransform() const;
+
+	/** 현재 월드 위치·회전과 투영 설정을 복사해 반환한다. */
+	[[nodiscard]] FCameraViewInfo GetCameraView() const;
+
+#pragma endregion
 };

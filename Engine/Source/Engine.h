@@ -10,11 +10,19 @@ class UWorld;
 /** 게임과 에디터 실행 객체의 공통 계약이다. 창과 Renderer의 소유 및 바깥 반복은 실행 루프가 맡는다. */
 class UEngine : public UObject
 {
+#pragma region Lifecycle
+
 public:
 	UEngine();
+
 	/** 남은 World를 파괴한다. 가상 PreExit는 호출하지 않는다. */
 	~UEngine() override;
 
+#pragma endregion
+
+#pragma region Execution
+
+public:
 	/** 빈 World를 만든다. 기존 World가 있으면 거부한다. 게임 구성과 렌더 상태 생성은 파생 구현에서 수행한다. */
 	[[nodiscard]] virtual bool Initialize(FRenderer& renderer);
 
@@ -34,4 +42,6 @@ public:
 protected:
 	/** 공통 기반이 단독 소유한다. 파생 구현은 자신의 자원을 정리한 뒤 이 World를 해제한다. */
 	TUniquePtr<UWorld> world;
+
+#pragma endregion
 };

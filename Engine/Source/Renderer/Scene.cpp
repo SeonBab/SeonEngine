@@ -19,9 +19,15 @@ namespace
 }
 
 // unique_ptr 대상의 완전한 정의가 있는 cpp에서 생성/파괴한다.
+#pragma region Lifecycle
+
 FScene::FScene() = default;
 
 FScene::~FScene() = default;
+
+#pragma endregion
+
+#pragma region StaticMeshes
 
 bool FScene::AddStaticMesh(TUniquePtr<FStaticMeshSceneProxy>& proxy)
 {
@@ -36,7 +42,7 @@ bool FScene::ReplaceStaticMesh(const FStaticMeshSceneProxy* oldProxy, TUniquePtr
 {
 	if (!oldProxy || !newProxy || !IsMeshProxyReady(*newProxy)) { return false; }
 
-	const auto entry = std::find_if(staticMeshes.begin(), staticMeshes.end(), [oldProxy](const auto& candidate)
+	const auto entry = std::find_if(staticMeshes.begin(), staticMeshes.end(), [oldProxy](const TUniquePtr<FStaticMeshSceneProxy>& candidate)
 	{
 		return candidate.get() == oldProxy;
 	});
@@ -52,7 +58,7 @@ bool FScene::SetLocalToWorld(const FStaticMeshSceneProxy* proxy, const FMatrix4&
 {
 	if (!proxy) { return false; }
 
-	for (const auto& entry : staticMeshes)
+	for (const TUniquePtr<FStaticMeshSceneProxy>& entry : staticMeshes)
 	{
 		if (entry.get() == proxy)
 		{
@@ -69,7 +75,7 @@ bool FScene::RemoveStaticMesh(const FStaticMeshSceneProxy* proxy)
 {
 	if (!proxy) { return false; }
 
-	const auto entry = std::find_if(staticMeshes.begin(), staticMeshes.end(), [proxy](const auto& candidate)
+	const auto entry = std::find_if(staticMeshes.begin(), staticMeshes.end(), [proxy](const TUniquePtr<FStaticMeshSceneProxy>& candidate)
 	{
 		return candidate.get() == proxy;
 	});
@@ -79,6 +85,10 @@ bool FScene::RemoveStaticMesh(const FStaticMeshSceneProxy* proxy)
 
 	return true;
 }
+
+#pragma endregion
+
+#pragma region DirectionalLight
 
 bool FScene::AddDirectionalLight(const FDirectionalLightSceneProxy& proxy)
 {
@@ -102,6 +112,10 @@ const FDirectionalLightSceneProxy* FScene::GetDirectionalLight() const
 {
 	return directionalLight;
 }
+
+#pragma endregion
+
+#pragma region SkyLight
 
 bool FScene::SetSkyLight(const FSkyLightSceneProxy& proxy)
 {
@@ -134,6 +148,10 @@ const FSkyLightSceneProxy* FScene::GetSkyLight() const
 	return skyLightStack.back();
 }
 
+#pragma endregion
+
+#pragma region Rendering
+
 bool FScene::Draw(FRenderer& renderer)
 {
 	// 미등록 프레임에도 유효한 기본 방향과 광량 0을 전달해 이전 광량을 지운다.
@@ -155,7 +173,7 @@ bool FScene::Draw(FRenderer& renderer)
 	}
 	if (!renderer.SetSkyLight(ambientLightColor)) { return false; }
 
-	for (const auto& proxy : staticMeshes)
+	for (const TUniquePtr<FStaticMeshSceneProxy>& proxy : staticMeshes)
 	{
 		const FStaticMeshRenderData* renderData = proxy->GetRenderData();
 		const FMaterialRenderProxy* materialProxy = proxy->GetMaterialRenderProxy();
@@ -167,3 +185,5 @@ bool FScene::Draw(FRenderer& renderer)
 
 	return true;
 }
+
+#pragma endregion

@@ -26,17 +26,30 @@ class UTexture2D;
 ////////////////////////////////////////////////////////////////////////////////
 class FRenderer
 {
+#pragma region Lifecycle
+
 public:
 	FRenderer() = default;
 
 	FRenderer(const FRenderer&) = delete;
+
 	FRenderer& operator=(const FRenderer&) = delete;
+
 	FRenderer(FRenderer&&) = delete;
+
 	FRenderer& operator=(FRenderer&&) = delete;
 
 	/** 유효한 창과 양수 클라이언트 크기로 준비한다. 중복 초기화는 거부하며 자원 생성 실패 시 부분 자원을 정리하고 false를 반환한다. */
 	[[nodiscard]] bool Initialize(HWND windowHandle, int32 width, int32 height);
 
+	/** 바인딩, 스왑 체인, 텍스처/샘플러/버퍼/셰이더, 장치 순서로 정리한다. 빈 상태나 부분 초기화 후에도 반복 호출할 수 있다. */
+	void Shutdown();
+
+#pragma endregion
+
+#pragma region ResourceCreation
+
+public:
 	/**
 	 * 초기화 후 같은 스레드에서 CPU 데이터를 GPU로 복사한다.
 	 * 비어 있지 않은 정점/인덱스와 정점 범위 안의 인덱스를 요구하며 인덱스 개수는 3의 배수여야 한다.
@@ -54,6 +67,11 @@ public:
 	 */
 	[[nodiscard]] bool CreateTexture2D(const FImage& image, UTexture2D& outTexture);
 
+#pragma endregion
+
+#pragma region ViewTransform
+
+public:
 	/**
 	 * 초기화 후 같은 스레드에서 객체를 로컬에서 월드로 변환하는 행렬을 값으로 설정한다. 다음 DrawMesh부터 적용한다.
 	 * 보관한 WorldToClip과 합성해 GPU 갱신을 요청하며 실패하면 기존 보관 값을 유지한다.
@@ -68,6 +86,11 @@ public:
 	 */
 	[[nodiscard]] bool SetWorldToClip(const FMatrix4& matrix);
 
+#pragma endregion
+
+#pragma region Lighting
+
+public:
 	/**
 	 * 초기화 후 같은 스레드에서 방향광 버퍼 갱신을 요청한다.
 	 * 방향은 빛이 진행하는 월드 단위 방향이며 색은 세기가 반영된 유한한 0 이상 선형 RGB다.
@@ -82,6 +105,11 @@ public:
 	 */
 	[[nodiscard]] bool SetSkyLight(FVector3 lightColor);
 
+#pragma endregion
+
+#pragma region Frame
+
+public:
 	/** 초기화 후 양수 크기로 프레임을 시작한다. 크기 변화 처리와 화면 지우기를 수행하며 이미 시작한 프레임은 거부한다. */
 	[[nodiscard]] bool BeginFrame(int32 width, int32 height);
 
@@ -93,14 +121,16 @@ public:
 	 */
 	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRenderProxy& material);
 
-	/** 전용 이미지 픽셀 셰이더로 목록의 이미지를 비선행곱 알파 합성한다. 성공과 실패 모두 불투명 기본 상태로 복원하며 빈 목록은 상태 변경 없이 true다. */
-	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements);
-
 	/** 시작한 프레임을 닫고 Present한다. 그리기 없는 프레임도 허용하며 Present 실패 시 false를 반환한다. */
 	[[nodiscard]] bool EndFrame();
 
-	/** 바인딩, 스왑 체인, 텍스처/샘플러/버퍼/셰이더, 장치 순서로 정리한다. 빈 상태나 부분 초기화 후에도 반복 호출할 수 있다. */
-	void Shutdown();
+#pragma endregion
+
+#pragma region UI
+
+public:
+	/** 전용 이미지 픽셀 셰이더로 목록의 이미지를 비선행곱 알파 합성한다. 성공과 실패 모두 불투명 기본 상태로 복원하며 빈 목록은 상태 변경 없이 true다. */
+	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements);
 
 private:
 	/**
@@ -112,24 +142,44 @@ private:
 	 */
 	[[nodiscard]] bool DrawImage(const FUIImageDrawElement& element);
 
+#pragma endregion
+
+#pragma region RenderResources
+
+private:
 	FD3D11Device graphics;
+
 	FD3D11SwapChain swapChain;
 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilTexture;
+
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
+
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> staticMeshVertexShader;
+
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> imageVertexShader;
+
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> staticMeshPixelShader;
+
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> imagePixelShader;
+
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> transformConstantBuffer;
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> directionalLightConstantBuffer;
+
 	// VS b2. 세기 반영 RGB와 패딩을 포함한 16바이트이며 초기값은 주변광 기여 0이다.
 	Microsoft::WRL::ComPtr<ID3D11Buffer> skyLightConstantBuffer;
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
+
 	Microsoft::WRL::ComPtr<ID3D11BlendState> uiBlendState;
+
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> worldDepthStencilState;
+
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> uiDepthStencilState;
 
 	// [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. UI는 [0][0]을 사용한다.
@@ -137,10 +187,18 @@ private:
 
 	// TODO(seon): UI 배칭, 전용 정점 도입 시 공통 사각형의 보관 형식을 재검토한다.
 	FStaticMeshRenderData imageQuad;
+
 	FMatrix4 localToWorld{};
+
 	FMatrix4 worldToClip{};
+
 	int32 bufferWidth = 0;
+
 	int32 bufferHeight = 0;
+
 	bool bInitialized = false;
+
 	bool bFrameActive = false;
+
+#pragma endregion
 };

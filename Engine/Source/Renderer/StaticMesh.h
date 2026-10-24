@@ -15,15 +15,26 @@ class UMaterialInterface;
 ////////////////////////////////////////////////////////////////////////////////
 class UStaticMesh : public UObject
 {
+#pragma region Lifecycle
+
 public:
 	UStaticMesh();
+
 	~UStaticMesh() override;
 
 	UStaticMesh(const UStaticMesh&) = delete;
+
 	UStaticMesh& operator=(const UStaticMesh&) = delete;
+
 	UStaticMesh(UStaticMesh&&) = delete;
+
 	UStaticMesh& operator=(UStaticMesh&&) = delete;
 
+#pragma endregion
+
+#pragma region RenderData
+
+public:
 	/**
 	 * 소유한 렌더 데이터의 읽기 전용 비소유 포인터를 반환한다. 미준비면 nullptr다.
 	 * 자산 파괴 후에는 사용할 수 없으며 렌더 데이터 교체 뒤에는 다시 조회해야 한다.
@@ -37,6 +48,15 @@ public:
 	 */
 	void SetRenderData(TUniquePtr<FStaticMeshRenderData>&& newRenderData);
 
+private:
+	// 이 자산이 단독 소유한다. nullptr는 렌더 데이터가 아직 준비되지 않은 상태다.
+	TUniquePtr<FStaticMeshRenderData> renderData{};
+
+#pragma endregion
+
+#pragma region Materials
+
+public:
 	/**
 	 * 같은 스레드에서 기본 재질 슬롯 전체를 교체한다. 빈 배열과 nullptr 슬롯도 허용한다.
 	 * 공유 참조를 보관하며 GPU 생성이나 Scene 갱신은 수행하지 않는다.
@@ -50,9 +70,8 @@ public:
 	TSharedPtr<UMaterialInterface> GetMaterial(int32 materialIndex) const;
 
 private:
-	// 이 자산이 단독 소유한다. nullptr는 렌더 데이터가 아직 준비되지 않은 상태다.
-	TUniquePtr<FStaticMeshRenderData> renderData{};
-
 	// 배열 인덱스가 기본 재질 슬롯이다. 빈 배열은 슬롯 없음, nullptr 원소는 재질 미지정이다.
 	TArray<TSharedPtr<UMaterialInterface>> staticMaterials;
+
+#pragma endregion
 };

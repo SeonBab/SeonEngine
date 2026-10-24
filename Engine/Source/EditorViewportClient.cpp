@@ -23,6 +23,38 @@ void FViewportCameraTransform::SetRotation(FRotator newRotation)
 	viewRotation = newRotation;
 }
 
+#pragma region View
+
+FViewportCameraTransform& FEditorViewportClient::GetViewTransform()
+{
+	return projectionMode == ECameraProjectionMode::Perspective ? viewTransformPerspective : viewTransformOrthographic;
+}
+
+const FViewportCameraTransform& FEditorViewportClient::GetViewTransform() const
+{
+	return projectionMode == ECameraProjectionMode::Perspective ? viewTransformPerspective : viewTransformOrthographic;
+}
+
+FCameraViewInfo FEditorViewportClient::GetCameraView() const
+{
+	const FViewportCameraTransform& transform = GetViewTransform();
+
+	FCameraViewInfo view;
+	view.location = transform.GetLocation();
+	view.rotation = transform.GetRotation();
+	view.projectionMode = projectionMode;
+	view.horizontalFovDegrees = horizontalFovDegrees;
+	view.orthographicWidth = orthographicWidth;
+	view.nearClipDistance = nearClipDistance;
+	view.farClipDistance = farClipDistance;
+
+	return view;
+}
+
+#pragma endregion
+
+#pragma region Projection
+
 ECameraProjectionMode FEditorViewportClient::GetProjectionMode() const
 {
 	return projectionMode;
@@ -73,31 +105,9 @@ void FEditorViewportClient::SetFarClipDistance(float newFarClipDistance)
 	farClipDistance = newFarClipDistance;
 }
 
-FViewportCameraTransform& FEditorViewportClient::GetViewTransform()
-{
-	return projectionMode == ECameraProjectionMode::Perspective ? viewTransformPerspective : viewTransformOrthographic;
-}
+#pragma endregion
 
-const FViewportCameraTransform& FEditorViewportClient::GetViewTransform() const
-{
-	return projectionMode == ECameraProjectionMode::Perspective ? viewTransformPerspective : viewTransformOrthographic;
-}
-
-FCameraViewInfo FEditorViewportClient::GetCameraView() const
-{
-	const FViewportCameraTransform& transform = GetViewTransform();
-
-	FCameraViewInfo view;
-	view.location = transform.GetLocation();
-	view.rotation = transform.GetRotation();
-	view.projectionMode = projectionMode;
-	view.horizontalFovDegrees = horizontalFovDegrees;
-	view.orthographicWidth = orthographicWidth;
-	view.nearClipDistance = nearClipDistance;
-	view.farClipDistance = farClipDistance;
-
-	return view;
-}
+#pragma region Drawing
 
 bool FEditorViewportClient::Draw(FScene& scene, FRenderer& renderer, int width, int height) const
 {
@@ -112,3 +122,5 @@ bool FEditorViewportClient::Draw(FScene& scene, FRenderer& renderer, int width, 
 
 	return scene.Draw(renderer);
 }
+
+#pragma endregion

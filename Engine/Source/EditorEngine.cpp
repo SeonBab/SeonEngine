@@ -3,6 +3,8 @@
 #include "Renderer/Renderer.h"
 #include "World.h"
 
+#pragma region EditorUI
+
 bool UEditorEngine::InitializeEditorUI(HWND windowHandle)
 {
 	return editorUI.Initialize(windowHandle);
@@ -12,6 +14,10 @@ bool UEditorEngine::HandleWindowMessage(HWND windowHandle, UINT message, WPARAM 
 {
 	return editorUI.HandleWindowMessage(windowHandle, message, wParam, lParam, outResult);
 }
+
+#pragma endregion
+
+#pragma region Execution
 
 bool UEditorEngine::Tick(float, const FInputState&, FRenderer& renderer, int width, int height)
 {
@@ -38,3 +44,5 @@ void UEditorEngine::PreExit()
 	editorUI.Shutdown();
 	world.reset();
 }
+
+#pragma endregion

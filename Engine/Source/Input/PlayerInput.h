@@ -13,6 +13,8 @@ class UInputMappingContext;
 ////////////////////////////////////////////////////////////////////////////////
 class UPlayerInput final : public UObject
 {
+#pragma region ActionState
+
 public:
 	/** 이벤트 전달 중이거나 빈 액션, 잘못된 값 형식, 같은 액션 객체의 중복 등록은 false이며 기존 목록을 유지한다. */
 	[[nodiscard]] bool RegisterAction(TSharedPtr<const UInputAction> action);
@@ -35,14 +37,6 @@ public:
 	[[nodiscard]] bool UpdateActionValue(const UInputAction& action, const FInputActionValue& newValue);
 
 	/**
-	 * 등록 순서로 저장된 전이 결과를 한 컴포넌트에 전달한다. StartedAndTriggered는 해당 액션의 Started 다음 Triggered로 보낸다.
-	 * 평가/상태 변경/소비는 하지 않는다. 재호출하면 같은 결과를 다시 보내며 평가 실패 시 호출하지 않는 것은 호출자 책임이다.
-	 * 전달 중 등록, 단일/일괄 평가, 직접 값 갱신은 false로 거부하고 중첩 전달은 무시한다. 조회는 허용한다.
-	 * 콜백은 정상 반환해야 하며 관리자를 이동/대입하거나 관리자, 대상 컴포넌트, 소유 액터를 즉시 파괴하면 안 된다. 값 참조는 전달 중에만 사용한다.
-	 */
-	void DispatchActionEvents(UInputComponent& inputComponent, float deltaSeconds);
-
-	/**
 	 * 같은 액션 객체의 인스턴스를 빌린다. 미등록이면 nullptr다.
 	 * 반환 포인터는 등록 성공, 관리자의 이동/대입, 파괴 후 다시 사용하지 않는다.
 	 */
@@ -50,5 +44,22 @@ public:
 
 private:
 	TArray<FInputActionInstance> actionInstances;
+
+#pragma endregion
+
+#pragma region EventDispatch
+
+public:
+	/**
+	 * 등록 순서로 저장된 전이 결과를 한 컴포넌트에 전달한다. StartedAndTriggered는 해당 액션의 Started 다음 Triggered로 보낸다.
+	 * 평가/상태 변경/소비는 하지 않는다. 재호출하면 같은 결과를 다시 보내며 평가 실패 시 호출하지 않는 것은 호출자 책임이다.
+	 * 전달 중 등록, 단일/일괄 평가, 직접 값 갱신은 false로 거부하고 중첩 전달은 무시한다. 조회는 허용한다.
+	 * 콜백은 정상 반환해야 하며 관리자를 이동/대입하거나 관리자, 대상 컴포넌트, 소유 액터를 즉시 파괴하면 안 된다. 값 참조는 전달 중에만 사용한다.
+	 */
+	void DispatchActionEvents(UInputComponent& inputComponent, float deltaSeconds);
+
+private:
 	bool bDispatchingActionEvents = false;
+
+#pragma endregion
 };

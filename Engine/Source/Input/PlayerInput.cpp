@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <utility>
 
+#pragma region ActionState
+
 bool UPlayerInput::RegisterAction(TSharedPtr<const UInputAction> action)
 {
 	if (bDispatchingActionEvents || !action) { return false; }
@@ -62,6 +64,20 @@ bool UPlayerInput::UpdateActionValue(const UInputAction& action, const FInputAct
 	return false;
 }
 
+const FInputActionInstance* UPlayerInput::FindActionInstanceData(const UInputAction& action) const
+{
+	for (const FInputActionInstance& instance : actionInstances)
+	{
+		if (&instance.GetSourceAction() == &action) { return &instance; }
+	}
+
+	return nullptr;
+}
+
+#pragma endregion
+
+#pragma region EventDispatch
+
 void UPlayerInput::DispatchActionEvents(UInputComponent& inputComponent, float deltaSeconds)
 {
 	if (bDispatchingActionEvents) { return; }
@@ -92,12 +108,4 @@ void UPlayerInput::DispatchActionEvents(UInputComponent& inputComponent, float d
 	bDispatchingActionEvents = false;
 }
 
-const FInputActionInstance* UPlayerInput::FindActionInstanceData(const UInputAction& action) const
-{
-	for (const FInputActionInstance& instance : actionInstances)
-	{
-		if (&instance.GetSourceAction() == &action) { return &instance; }
-	}
-
-	return nullptr;
-}
+#pragma endregion

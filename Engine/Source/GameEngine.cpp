@@ -9,8 +9,15 @@
 #include "Renderer/Renderer.h"
 #include "World.h"
 
+#pragma region Lifecycle
+
 UGameEngine::UGameEngine() = default;
+
 UGameEngine::~UGameEngine() = default;
+
+#pragma endregion
+
+#pragma region Execution
 
 bool UGameEngine::Initialize(FRenderer& renderer)
 {
@@ -106,3 +113,5 @@ void UGameEngine::PreExit()
 	gameClient.reset();
 	world.reset();
 }
+
+#pragma endregion

@@ -48,10 +48,17 @@ struct FInputActionBinding
 /** 액터의 입력 처리를 담당하는 컴포넌트다. */
 class UInputComponent : public UActorComponent
 {
+#pragma region Lifecycle
+
 public:
 	/** 소속 액터를 지정한다. 입력 연결이나 액터 등록은 수행하지 않는다. */
 	explicit UInputComponent(AActor& owner);
 
+#pragma endregion
+
+#pragma region Input
+
+public:
 	/** 유효 키, 실행 조건, 콜백을 등록 순서대로 저장한다. 중복을 허용하며 처리 중이거나 잘못된 키/조건, 빈 콜백이면 false다. */
 	[[nodiscard]] bool BindKey(EKey key, EInputTrigger trigger, FInputCallback callback);
 
@@ -77,4 +84,6 @@ private:
 	TArray<FInputKeyBinding> keyBindings;
 	TArray<FInputActionBinding> actionBindings;
 	bool bProcessingInput = false;
+
+#pragma endregion
 };

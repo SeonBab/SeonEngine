@@ -9,10 +9,13 @@
 /** 단일 창의 스왑 체인과 백 버퍼 RTV 참조를 소유한다. 창과 장치는 호출자가 유지한다. */
 class FD3D11SwapChain
 {
+#pragma region Lifecycle
+
 public:
 	FD3D11SwapChain() = default;
 
 	FD3D11SwapChain(const FD3D11SwapChain&) = delete;
+
 	FD3D11SwapChain& operator=(const FD3D11SwapChain&) = delete;
 
 	/** 창 모드 RGBA8·버퍼 2개의 스왑 체인과 백 버퍼 RTV를 만든다. 중복·잘못된 인자·API 실패는 false다. */
@@ -21,6 +24,11 @@ public:
 	/** RTV 다음 스왑 체인 참조를 해제한다. 빈 상태에서도 호출할 수 있다. */
 	void Shutdown();
 
+#pragma endregion
+
+#pragma region Presentation
+
+public:
 	/** 비소유 백 버퍼 RTV다. 참조를 추가하지 않으며 Resize/Shutdown/소멸 뒤 이전 포인터를 사용하면 안 된다. */
 	ID3D11RenderTargetView* GetBackBufferRenderTargetView() const { return renderTargetView.Get(); }
 
@@ -37,6 +45,10 @@ private:
 	/** 지정한 체인의 백 버퍼 RTV를 만든다. 성공한 참조만 출력으로 옮긴다. */
 	bool CreateBackBufferRenderTargetView(ID3D11Device* device, IDXGISwapChain1* sourceSwapChain, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outView);
 
+private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
+
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
+
+#pragma endregion
 };

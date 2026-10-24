@@ -7,6 +7,8 @@
 #include <typeinfo>
 #include <utility>
 
+#pragma region Lifecycle
+
 AActor::AActor(UWorld& inWorld)
 	: world(&inWorld)
 {
@@ -15,19 +17,9 @@ AActor::AActor(UWorld& inWorld)
 
 AActor::~AActor() = default;
 
-void AActor::Tick([[maybe_unused]] float deltaSeconds)
-{
-}
+#pragma endregion
 
-bool AActor::HasActorBegunPlay() const
-{
-	return actorHasBegunPlay == EPlayState::Begun;
-}
-
-bool AActor::IsActorBeginningPlay() const
-{
-	return actorHasBegunPlay == EPlayState::Beginning;
-}
+#pragma region WorldAndHierarchy
 
 UWorld& AActor::GetWorld() const
 {
@@ -59,6 +51,10 @@ bool AActor::SetParent(AActor* newParent, EActorTransformRule rule)
 	return GetWorld().SetActorParent(this, newParent, rule);
 }
 
+#pragma endregion
+
+#pragma region Destruction
+
 bool AActor::Destroy()
 {
 	return GetWorld().DestroyActor(this);
@@ -69,35 +65,22 @@ bool AActor::IsActorBeingDestroyed() const
 	return bActorIsBeingDestroyed;
 }
 
-bool AActor::AddComponent(TUniquePtr<UActorComponent>& component)
+#pragma endregion
+
+#pragma region PlayLifecycle
+
+void AActor::Tick([[maybe_unused]] float deltaSeconds)
 {
-	if (!component || &component->GetOwner() != this)
-	{
-		return false;
-	}
+}
 
-	if (!component->AllowsMultipleComponents())
-	{
-		const std::type_info& componentType = typeid(*component);
+bool AActor::HasActorBegunPlay() const
+{
+	return actorHasBegunPlay == EPlayState::Begun;
+}
 
-		for (const auto& existingComponent : components)
-		{
-			if (typeid(*existingComponent) == componentType)
-			{
-				return false;
-			}
-		}
-	}
-
-	UActorComponent* addedComponent = component.get();
-	components.push_back(std::move(component));
-
-	if ((IsActorBeginningPlay() || HasActorBegunPlay()) && !addedComponent->HasBegunPlay())
-	{
-		addedComponent->BeginPlay();
-	}
-
-	return true;
+bool AActor::IsActorBeginningPlay() const
+{
+	return actorHasBegunPlay == EPlayState::Beginning;
 }
 
 void AActor::BeginPlay()
@@ -156,3 +139,40 @@ void AActor::RouteEndPlay(EEndPlayReason reason)
 		EndPlay(reason);
 	}
 }
+
+#pragma endregion
+
+#pragma region Components
+
+bool AActor::AddComponent(TUniquePtr<UActorComponent>& component)
+{
+	if (!component || &component->GetOwner() != this)
+	{
+		return false;
+	}
+
+	if (!component->AllowsMultipleComponents())
+	{
+		const std::type_info& componentType = typeid(*component);
+
+		for (const TUniquePtr<UActorComponent>& existingComponent : components)
+		{
+			if (typeid(*existingComponent) == componentType)
+			{
+				return false;
+			}
+		}
+	}
+
+	UActorComponent* addedComponent = component.get();
+	components.push_back(std::move(component));
+
+	if ((IsActorBeginningPlay() || HasActorBegunPlay()) && !addedComponent->HasBegunPlay())
+	{
+		addedComponent->BeginPlay();
+	}
+
+	return true;
+}
+
+#pragma endregion

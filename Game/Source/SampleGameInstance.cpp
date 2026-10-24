@@ -54,15 +54,15 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 				{0, 1, 2, 0, 2, 3}};
 
 		// 형상/재질을 한 번 준비한다. 컴포넌트가 자산을 공유하고 자산이 GPU 형상을 단독 소유한다.
-		auto renderData = MakeUnique<FStaticMeshRenderData>();
+		TUniquePtr<FStaticMeshRenderData> renderData = MakeUnique<FStaticMeshRenderData>();
 		if (!renderer.CreateMesh(meshData, *renderData)) { return false; }
 
-		auto meshTexture = MakeShared<UTexture2D>();
+		TSharedPtr<UTexture2D> meshTexture = MakeShared<UTexture2D>();
 		if (!renderer.CreateTexture2D(checkerImage, *meshTexture)) { return false; }
 
-		auto meshMaterial = MakeShared<UMaterial>();
+		TSharedPtr<UMaterial> meshMaterial = MakeShared<UMaterial>();
 		meshMaterial->SetBaseColorTexture(meshTexture);
-		auto staticMesh = MakeShared<UStaticMesh>();
+		TSharedPtr<UStaticMesh> staticMesh = MakeShared<UStaticMesh>();
 		staticMesh->SetRenderData(std::move(renderData));
 		staticMesh->SetStaticMaterials({meshMaterial});
 
@@ -114,7 +114,7 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 
 		// 방향광과 독립적인 균일 주변광이다. 세기 0.15는 비교용 예시이며 물리 단위가 아니다.
 		AActor& skyLightActor = world.SpawnActor<AActor>();
-		auto skyLight = MakeUnique<USkyLightComponent>(skyLightActor);
+		TUniquePtr<USkyLightComponent> skyLight = MakeUnique<USkyLightComponent>(skyLightActor);
 		skyLight->SetIntensity(0.15f);
 		TUniquePtr<UActorComponent> skyLightComponent = std::move(skyLight);
 		if (!skyLightActor.AddComponent(skyLightComponent)) { return false; }

@@ -3,10 +3,16 @@
 #include "Actor.h"
 #include "TransformComponent.h"
 
+#pragma region Lifecycle
+
 UCameraComponent::UCameraComponent(AActor& owner)
 	: UActorComponent(owner)
 {
 }
+
+#pragma endregion
+
+#pragma region Projection
 
 ECameraProjectionMode UCameraComponent::GetProjectionMode() const
 {
@@ -58,6 +64,10 @@ void UCameraComponent::SetFarClipDistance(float newFarClipDistance)
 	farClipDistance = newFarClipDistance;
 }
 
+#pragma endregion
+
+#pragma region View
+
 FTransform UCameraComponent::GetCameraWorldTransform() const
 {
 	const UTransformComponent* transform = GetOwner().GetComponent<UTransformComponent>();
@@ -82,3 +92,5 @@ FCameraViewInfo UCameraComponent::GetCameraView() const
 
 	return view;
 }
+
+#pragma endregion

@@ -2,46 +2,20 @@
 
 #include "Actor.h"
 
+#pragma region Lifecycle
+
 UTransformComponent::UTransformComponent(AActor& owner)
 	: UActorComponent(owner)
 {
 }
 
+#pragma endregion
+
+#pragma region RelativeTransform
+
 FTransform UTransformComponent::GetTransform() const
 {
 	return {relativePosition, relativeRotation.ToQuat(), relativeScale};
-}
-
-FTransform UTransformComponent::GetComponentTransform() const
-{
-	return componentToWorld;
-}
-
-void UTransformComponent::UpdateComponentToWorld()
-{
-	componentToWorld = GetTransform();
-	const AActor* parent = GetOwner().GetParent();
-	if (parent)
-	{
-		const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
-		componentToWorld = componentToWorld * parentTransform->GetComponentTransform();
-	}
-
-	// 부모의 값을 먼저 확정한 뒤 자식에 전파한다. 이 경로는 콜백이나 계층 변경을 수행하지 않는다.
-	const int32 childCount = GetOwner().GetChildCount();
-	for (int32 index = 0; index < childCount; ++index)
-	{
-		UTransformComponent* childTransform = GetOwner().GetChild(index)->GetComponent<UTransformComponent>();
-		childTransform->UpdateComponentToWorld();
-	}
-}
-
-FVector3 UTransformComponent::GetForwardVector() const
-{
-	// 행 벡터 규칙에서 세 번째 행은 월드 회전으로 변환한 로컬 +Z축이다.
-	const FMatrix4 matrix = GetComponentTransform().ToMatrixNoScale();
-
-	return {matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]};
 }
 
 void UTransformComponent::SetTransform(const FTransform& newTransform)
@@ -50,19 +24,6 @@ void UTransformComponent::SetTransform(const FTransform& newTransform)
 	relativeRotation = newTransform.rotation.ToRotator();
 	relativeScale = newTransform.scale;
 	UpdateComponentToWorld();
-}
-
-void UTransformComponent::SetComponentTransform(const FTransform& newTransform)
-{
-	const AActor* parent = GetOwner().GetParent();
-	if (!parent)
-	{
-		SetTransform(newTransform);
-		return;
-	}
-
-	const auto* parentTransform = parent->GetComponent<UTransformComponent>();
-	SetTransform(newTransform.GetRelativeTransform(parentTransform->GetComponentTransform()));
 }
 
 FVector3 UTransformComponent::GetPosition() const
@@ -108,3 +69,54 @@ void UTransformComponent::SetScale(FVector3 newScale)
 	relativeScale = newScale;
 	UpdateComponentToWorld();
 }
+
+#pragma endregion
+
+#pragma region WorldTransform
+
+FTransform UTransformComponent::GetComponentTransform() const
+{
+	return componentToWorld;
+}
+
+void UTransformComponent::UpdateComponentToWorld()
+{
+	componentToWorld = GetTransform();
+	const AActor* parent = GetOwner().GetParent();
+	if (parent)
+	{
+		const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
+		componentToWorld = componentToWorld * parentTransform->GetComponentTransform();
+	}
+
+	// 부모의 값을 먼저 확정한 뒤 자식에 전파한다. 이 경로는 콜백이나 계층 변경을 수행하지 않는다.
+	const int32 childCount = GetOwner().GetChildCount();
+	for (int32 index = 0; index < childCount; ++index)
+	{
+		UTransformComponent* childTransform = GetOwner().GetChild(index)->GetComponent<UTransformComponent>();
+		childTransform->UpdateComponentToWorld();
+	}
+}
+
+FVector3 UTransformComponent::GetForwardVector() const
+{
+	// 행 벡터 규칙에서 세 번째 행은 월드 회전으로 변환한 로컬 +Z축이다.
+	const FMatrix4 matrix = GetComponentTransform().ToMatrixNoScale();
+
+	return {matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]};
+}
+
+void UTransformComponent::SetComponentTransform(const FTransform& newTransform)
+{
+	const AActor* parent = GetOwner().GetParent();
+	if (!parent)
+	{
+		SetTransform(newTransform);
+		return;
+	}
+
+	const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
+	SetTransform(newTransform.GetRelativeTransform(parentTransform->GetComponentTransform()));
+}
+
+#pragma endregion

@@ -71,6 +71,8 @@ namespace
 	}
 }
 
+#pragma region Lifecycle
+
 bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 {
 	if (bInitialized || graphics.GetDevice())
@@ -282,6 +284,62 @@ bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 	return true;
 }
 
+void FRenderer::Shutdown()
+{
+	if (graphics.GetContext())
+	{
+		graphics.SetBlendState(nullptr);
+		graphics.SetDepthStencilState(nullptr);
+		graphics.SetPixelShaderResourceView(nullptr);
+		graphics.SetPixelShaderSamplerState(nullptr);
+		graphics.SetIndexBuffer(nullptr);
+		graphics.SetVertexShaderConstantBuffer(0, nullptr);
+		graphics.SetVertexShaderConstantBuffer(1, nullptr);
+		graphics.SetVertexShaderConstantBuffer(2, nullptr);
+		graphics.SetVertexBuffer(nullptr);
+		graphics.SetInputLayout(nullptr);
+		graphics.SetRenderTarget(nullptr);
+		graphics.SetPixelShader(nullptr);
+		graphics.SetVertexShader(nullptr);
+	}
+
+	depthStencilView.Reset();
+	depthStencilTexture.Reset();
+	worldDepthStencilState.Reset();
+	uiDepthStencilState.Reset();
+	swapChain.Shutdown();
+	imageQuad = FStaticMeshRenderData{};
+	for (std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>& samplersForU : samplerStates)
+	{
+		for (Microsoft::WRL::ComPtr<ID3D11SamplerState>& sampler : samplersForU)
+		{
+			sampler.Reset();
+		}
+	}
+	whiteTextureView.Reset();
+	uiBlendState.Reset();
+	transformConstantBuffer.Reset();
+	directionalLightConstantBuffer.Reset();
+	skyLightConstantBuffer.Reset();
+	imageTransformConstantBuffer.Reset();
+	inputLayout.Reset();
+	staticMeshPixelShader.Reset();
+	imagePixelShader.Reset();
+	staticMeshVertexShader.Reset();
+	imageVertexShader.Reset();
+	graphics.Shutdown();
+	localToWorld = FMatrix4{};
+	worldToClip = FMatrix4{};
+	bufferWidth = 0;
+	bufferHeight = 0;
+	bInitialized = false;
+	bFrameActive = false;
+}
+
+#pragma endregion
+
+#pragma region ResourceCreation
+
 bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh)
 {
 	if (!bInitialized)
@@ -329,6 +387,10 @@ bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 	return true;
 }
 
+#pragma endregion
+
+#pragma region ViewTransform
+
 bool FRenderer::SetLocalToWorld(const FMatrix4& matrix)
 {
 	if (!bInitialized)
@@ -366,6 +428,10 @@ bool FRenderer::SetWorldToClip(const FMatrix4& matrix)
 	return true;
 }
 
+#pragma endregion
+
+#pragma region Lighting
+
 bool FRenderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor)
 {
 	if (!bInitialized)
@@ -391,6 +457,10 @@ bool FRenderer::SetSkyLight(FVector3 lightColor)
 
 	return graphics.UpdateConstantBuffer(skyLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
 }
+
+#pragma endregion
+
+#pragma region Frame
 
 bool FRenderer::BeginFrame(int32 width, int32 height)
 {
@@ -485,6 +555,22 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRende
 	return true;
 }
 
+bool FRenderer::EndFrame()
+{
+	if (!bFrameActive)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Ending a frame requires an active frame.");
+		return false;
+	}
+	bFrameActive = false;
+
+	return swapChain.Present();
+}
+
+#pragma endregion
+
+#pragma region UI
+
 bool FRenderer::DrawUI(const FUIDrawElementList& elements)
 {
 	if (elements.GetImageElements().empty()) { return true; }
@@ -570,66 +656,4 @@ bool FRenderer::DrawImage(const FUIImageDrawElement& element)
 	return true;
 }
 
-bool FRenderer::EndFrame()
-{
-	if (!bFrameActive)
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Ending a frame requires an active frame.");
-		return false;
-	}
-	bFrameActive = false;
-
-	return swapChain.Present();
-}
-
-void FRenderer::Shutdown()
-{
-	if (graphics.GetContext())
-	{
-		graphics.SetBlendState(nullptr);
-		graphics.SetDepthStencilState(nullptr);
-		graphics.SetPixelShaderResourceView(nullptr);
-		graphics.SetPixelShaderSamplerState(nullptr);
-		graphics.SetIndexBuffer(nullptr);
-		graphics.SetVertexShaderConstantBuffer(0, nullptr);
-		graphics.SetVertexShaderConstantBuffer(1, nullptr);
-		graphics.SetVertexShaderConstantBuffer(2, nullptr);
-		graphics.SetVertexBuffer(nullptr);
-		graphics.SetInputLayout(nullptr);
-		graphics.SetRenderTarget(nullptr);
-		graphics.SetPixelShader(nullptr);
-		graphics.SetVertexShader(nullptr);
-	}
-
-	depthStencilView.Reset();
-	depthStencilTexture.Reset();
-	worldDepthStencilState.Reset();
-	uiDepthStencilState.Reset();
-	swapChain.Shutdown();
-	imageQuad = FStaticMeshRenderData{};
-	for (auto& samplersForU : samplerStates)
-	{
-		for (auto& sampler : samplersForU)
-		{
-			sampler.Reset();
-		}
-	}
-	whiteTextureView.Reset();
-	uiBlendState.Reset();
-	transformConstantBuffer.Reset();
-	directionalLightConstantBuffer.Reset();
-	skyLightConstantBuffer.Reset();
-	imageTransformConstantBuffer.Reset();
-	inputLayout.Reset();
-	staticMeshPixelShader.Reset();
-	imagePixelShader.Reset();
-	staticMeshVertexShader.Reset();
-	imageVertexShader.Reset();
-	graphics.Shutdown();
-	localToWorld = FMatrix4{};
-	worldToClip = FMatrix4{};
-	bufferWidth = 0;
-	bufferHeight = 0;
-	bInitialized = false;
-	bFrameActive = false;
-}
+#pragma endregion

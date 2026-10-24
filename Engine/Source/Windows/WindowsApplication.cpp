@@ -41,6 +41,60 @@ namespace
 
 }
 
+#pragma region Lifecycle
+
+FWindowsApplication::FWindowsApplication(FInputState& input)
+	: inputState(input)
+{
+}
+
+#pragma endregion
+
+#pragma region Messages
+
+void FWindowsApplication::SetMessageHandler(FWindowsMessageHandler handler)
+{
+	messageHandler = std::move(handler);
+}
+
+void FWindowsApplication::ClearMessageHandler()
+{
+	messageHandler = nullptr;
+}
+
+bool FWindowsApplication::PumpMessages(int& outExitCode)
+{
+	inputState.ResetFrameState();
+
+	MSG message{};
+	while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+	{
+		if (message.message == WM_QUIT)
+		{
+			outExitCode = static_cast<int>(message.wParam);
+			return false;
+		}
+
+		if (message.hwnd == window)
+		{
+			if (message.message == WM_KEYDOWN)
+			{
+				const bool bIsRepeat = (message.lParam & (static_cast<LPARAM>(1) << 30)) != 0;
+				const EKeyEventType type = bIsRepeat ? EKeyEventType::Repeat : EKeyEventType::Pressed;
+				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), type});
+			}
+			else if (message.message == WM_KEYUP)
+			{
+				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), EKeyEventType::Released});
+			}
+		}
+
+		TranslateMessage(&message);
+		DispatchMessageW(&message);
+	}
+	return true;
+}
+
 LRESULT CALLBACK FWindowsApplication::WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (message == WM_NCCREATE)
@@ -96,20 +150,9 @@ LRESULT CALLBACK FWindowsApplication::WindowProc(HWND windowHandle, UINT message
 	}
 }
 
-FWindowsApplication::FWindowsApplication(FInputState& input)
-	: inputState(input)
-{
-}
+#pragma endregion
 
-void FWindowsApplication::SetMessageHandler(FWindowsMessageHandler handler)
-{
-	messageHandler = std::move(handler);
-}
-
-void FWindowsApplication::ClearMessageHandler()
-{
-	messageHandler = nullptr;
-}
+#pragma region Window
 
 bool FWindowsApplication::Initialize(const FWindowDescription& description)
 {
@@ -173,39 +216,6 @@ bool FWindowsApplication::Initialize(const FWindowDescription& description)
 	return true;
 }
 
-bool FWindowsApplication::PumpMessages(int& outExitCode)
-{
-	inputState.ResetFrameState();
-
-	MSG message{};
-	while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
-	{
-		if (message.message == WM_QUIT)
-		{
-			outExitCode = static_cast<int>(message.wParam);
-			return false;
-		}
-
-		if (message.hwnd == window)
-		{
-			if (message.message == WM_KEYDOWN)
-			{
-				const bool bIsRepeat = (message.lParam & (static_cast<LPARAM>(1) << 30)) != 0;
-				const EKeyEventType type = bIsRepeat ? EKeyEventType::Repeat : EKeyEventType::Pressed;
-				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), type});
-			}
-			else if (message.message == WM_KEYUP)
-			{
-				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), EKeyEventType::Released});
-			}
-		}
-
-		TranslateMessage(&message);
-		DispatchMessageW(&message);
-	}
-	return true;
-}
-
 bool FWindowsApplication::Shutdown()
 {
 	bool bSuccess = true;
@@ -259,3 +269,5 @@ bool FWindowsApplication::GetClientSize(int& outWidth, int& outHeight) const
 
 	return true;
 }
+
+#pragma endregion

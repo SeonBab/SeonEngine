@@ -9,16 +9,27 @@ class UGameInstance;
 /** 게임 실행 객체와 로컬 Client를 단독 소유하고 공통 World의 게임 갱신과 그리기를 연결한다. */
 class UGameEngine : public UEngine
 {
+#pragma region Lifecycle
+
 public:
 	UGameEngine();
+
 	/** 남은 GameInstance, Client, World 순서로 파괴한다. PreExit를 자동 호출하지 않으며 Renderer와 창은 소유하지 않는다. */
 	~UGameEngine() override;
 
 	UGameEngine(const UGameEngine&) = delete;
+
 	UGameEngine& operator=(const UGameEngine&) = delete;
+
 	UGameEngine(UGameEngine&&) = delete;
+
 	UGameEngine& operator=(UGameEngine&&) = delete;
 
+#pragma endregion
+
+#pragma region Execution
+
+public:
 	/** 게임 제공 CreateGameInstance로 실행 객체를 만들고 World와 Client 초기화 뒤 렌더 상태를 준비한다. 기존 소유 객체는 거부하고 부분 실패는 PreExit로 정리한다. 종료 콜백에서 호출하지 않는다. */
 	[[nodiscard]] bool Initialize(FRenderer& renderer) override;
 
@@ -33,6 +44,10 @@ public:
 
 private:
 	TUniquePtr<FGameClient> gameClient;
+
 	TUniquePtr<UGameInstance> gameInstance; // Client/World보다 먼저 파괴한다.
-	bool bInitialized = false;              // 게임 준비가 완료됐다. Tick에는 Start 완료도 필요하다.
+
+	bool bInitialized = false; // 게임 준비가 완료됐다. Tick에는 Start 완료도 필요하다.
+
+#pragma endregion
 };

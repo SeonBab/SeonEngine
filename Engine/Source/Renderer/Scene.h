@@ -17,15 +17,26 @@ class FSkyLightSceneProxy;
 ////////////////////////////////////////////////////////////////////////////////
 class FScene
 {
+#pragma region Lifecycle
+
 public:
 	FScene();
+
 	~FScene();
 
 	FScene(const FScene&) = delete;
+
 	FScene& operator=(const FScene&) = delete;
+
 	FScene(FScene&&) = delete;
+
 	FScene& operator=(FScene&&) = delete;
 
+#pragma endregion
+
+#pragma region StaticMeshes
+
+public:
 	/**
 	 * 준비된 Proxy의 단독 소유권을 넘겨받는다. 성공하면 입력은 비고 객체 주소는 유지된다.
 	 * null/렌더 데이터 미지정/재질 Proxy 미지정이면 false이며 입력과 목록을 유지한다.
@@ -43,6 +54,15 @@ public:
 	/** 일치하는 등록을 제거하고 Proxy를 동기 파괴한다. null/미등록은 false다. 제거 후 주소는 무효다. */
 	[[nodiscard]] bool RemoveStaticMesh(const FStaticMeshSceneProxy* proxy);
 
+private:
+	// 소유 포인터만 이동하므로 배열 재할당에도 등록된 Proxy 객체의 주소는 유지된다.
+	TArray<TUniquePtr<FStaticMeshSceneProxy>> staticMeshes;
+
+#pragma endregion
+
+#pragma region DirectionalLight
+
+public:
 	/**
 	 * 방향광 Proxy 하나의 주소를 빌려 등록한다. 소유권은 가져오지 않는다.
 	 * 이미 등록된 Proxy가 있으면 같은 객체라도 false이며 기존 등록을 유지한다.
@@ -63,6 +83,15 @@ public:
 	 */
 	[[nodiscard]] const FDirectionalLightSceneProxy* GetDirectionalLight() const;
 
+private:
+	// 컴포넌트 소유 Proxy를 빌린다. nullptr는 미등록이며 해제 시 객체를 삭제하지 않는다.
+	const FDirectionalLightSceneProxy* directionalLight = nullptr;
+
+#pragma endregion
+
+#pragma region SkyLight
+
+public:
 	/**
 	 * Proxy 주소를 빌려 등록하고 가장 최근 활성 항목으로 선택한다. 같은 주소 중복은 false다.
 	 * 객체는 등록 해제까지 살아 있어야 하며 같은 스레드에서 사용한다. 소유권은 가져오지 않는다.
@@ -78,6 +107,15 @@ public:
 	/** 마지막 등록 항목의 비소유 주소 또는 nullptr다. 활성 항목 변경/해제 후 다시 조회하며 삭제하지 않는다. */
 	[[nodiscard]] const FSkyLightSceneProxy* GetSkyLight() const;
 
+private:
+	// 컴포넌트 소유 객체의 주소만 등록 순서대로 빌린다. 마지막 항목 하나만 활성이다.
+	TArray<const FSkyLightSceneProxy*> skyLightStack;
+
+#pragma endregion
+
+#pragma region Rendering
+
+public:
 	/**
 	 * 시작된 프레임 안에서 같은 스레드, 같은 장치의 렌더러로 그린다.
 	 * 방향광과 활성 SkyLight를 전달한 뒤 등록 순서대로 메시를 그린다. 미등록 광원의 기여는 RGB 0이다.
@@ -87,13 +125,5 @@ public:
 	 */
 	[[nodiscard]] bool Draw(FRenderer& renderer);
 
-private:
-	// 소유 포인터만 이동하므로 배열 재할당에도 등록된 Proxy 객체의 주소는 유지된다.
-	TArray<TUniquePtr<FStaticMeshSceneProxy>> staticMeshes;
-
-	// 컴포넌트 소유 Proxy를 빌린다. nullptr는 미등록이며 해제 시 객체를 삭제하지 않는다.
-	const FDirectionalLightSceneProxy* directionalLight = nullptr;
-
-	// 컴포넌트 소유 객체의 주소만 등록 순서대로 빌린다. 마지막 항목 하나만 활성이다.
-	TArray<const FSkyLightSceneProxy*> skyLightStack;
+#pragma endregion
 };

@@ -25,6 +25,8 @@ private:
 	UMaterial* material;
 };
 
+#pragma region Lifecycle
+
 UMaterial::UMaterial()
 	: renderProxy(MakeUnique<FDefaultMaterialInstance>(this))
 {
@@ -40,6 +42,10 @@ UMaterial* UMaterial::GetDefaultMaterial()
 	return &defaultMaterial;
 }
 
+#pragma endregion
+
+#pragma region BaseColor
+
 void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture2D> texture)
 {
 	baseColorTexture = std::move(texture);
@@ -50,7 +56,13 @@ TSharedPtr<UTexture2D> UMaterial::GetBaseColorTexture() const
 	return baseColorTexture;
 }
 
+#pragma endregion
+
+#pragma region RenderProxy
+
 FMaterialRenderProxy* UMaterial::GetRenderProxy() const
 {
 	return renderProxy.get();
 }
+
+#pragma endregion

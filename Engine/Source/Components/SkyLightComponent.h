@@ -12,6 +12,8 @@ class FSkyLightSceneProxy;
 ////////////////////////////////////////////////////////////////////////////////
 class USkyLightComponent : public URenderStateComponent
 {
+#pragma region Lifecycle
+
 public:
 	/** 소속 액터와 흰색·세기 1을 준비한다. 생성만으로 액터에 추가하거나 렌더 상태를 만들지 않는다. */
 	explicit USkyLightComponent(AActor& owner);
@@ -19,6 +21,11 @@ public:
 	/** Scene 등록을 먼저 해제하고 소유 Proxy를 파괴한다. Actor와 World는 그때까지 살아 있어야 한다. */
 	~USkyLightComponent() override;
 
+#pragma endregion
+
+#pragma region Light
+
+public:
 	/** 선형 RGB 사본이다. x/y/z가 R/G/B이며 알파는 없다. */
 	FVector3 GetLightColor() const;
 
@@ -31,6 +38,15 @@ public:
 	/** 유한한 0 이상 배율을 저장한다. 1 초과도 허용하며 검사·보정·Proxy 갱신은 하지 않는다. */
 	void SetIntensity(float newIntensity);
 
+private:
+	FVector3 lightColor{1.0f, 1.0f, 1.0f};
+	float intensity = 1.0f;
+
+#pragma endregion
+
+#pragma region RenderState
+
+public:
 	/** 현재 설정으로 Proxy를 만들고 Scene에 등록한다. 중복 생성은 false다. GPU 자원은 만들지 않는다. */
 	[[nodiscard]] bool CreateRenderState() override;
 
@@ -44,9 +60,8 @@ public:
 	[[nodiscard]] bool IsRenderStateCreated() const override;
 
 private:
-	FVector3 lightColor{1.0f, 1.0f, 1.0f};
-	float intensity = 1.0f;
-
 	// 단독 소유한다. Scene 등록을 해제한 뒤 파괴하며 nullptr는 렌더 상태 미생성이다.
 	TUniquePtr<FSkyLightSceneProxy> sceneProxy{};
+
+#pragma endregion
 };

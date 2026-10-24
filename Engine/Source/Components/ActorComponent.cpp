@@ -1,5 +1,7 @@
 #include "ActorComponent.h"
 
+#pragma region Lifecycle
+
 UActorComponent::UActorComponent(AActor& owner)
 	: owner(owner)
 {
@@ -7,10 +9,18 @@ UActorComponent::UActorComponent(AActor& owner)
 
 UActorComponent::~UActorComponent() = default;
 
+#pragma endregion
+
+#pragma region ActorIntegration
+
 bool UActorComponent::AllowsMultipleComponents() const
 {
 	return false;
 }
+
+#pragma endregion
+
+#pragma region PlayLifecycle
 
 bool UActorComponent::HasBegunPlay() const
 {
@@ -30,3 +40,5 @@ void UActorComponent::EndPlay([[maybe_unused]] EEndPlayReason reason)
 void UActorComponent::TickComponent([[maybe_unused]] float deltaSeconds)
 {
 }
+
+#pragma endregion

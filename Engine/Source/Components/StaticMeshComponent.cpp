@@ -10,7 +10,8 @@
 
 #include <utility>
 
-// 생성·소멸
+#pragma region Lifecycle
+
 UStaticMeshComponent::UStaticMeshComponent(AActor& owner)
 	: URenderStateComponent(owner)
 {
@@ -21,7 +22,68 @@ UStaticMeshComponent::~UStaticMeshComponent()
 	DestroyRenderState();
 }
 
-// URenderStateComponent 계약 구현
+#pragma endregion
+
+#pragma region Mesh
+
+bool UStaticMeshComponent::SetStaticMesh(TSharedPtr<UStaticMesh> newStaticMesh)
+{
+	if (staticMesh == newStaticMesh) { return false; }
+
+	staticMesh = std::move(newStaticMesh);
+	MarkRenderStateDirty();
+
+	return true;
+}
+
+UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
+{
+	return staticMesh.get();
+}
+
+#pragma endregion
+
+#pragma region Material
+
+void UStaticMeshComponent::SetMaterial(int32 materialIndex, TSharedPtr<UMaterialInterface> newMaterial)
+{
+	if (materialIndex < 0) { return; }
+
+	const TArray<TSharedPtr<UMaterialInterface>>::size_type index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
+	if (index < overrideMaterials.size() && overrideMaterials[index] == newMaterial) { return; }
+	if (index >= overrideMaterials.size())
+	{
+		if (!newMaterial) { return; }
+
+		overrideMaterials.resize(index + 1);
+	}
+	overrideMaterials[index] = std::move(newMaterial);
+	MarkRenderStateDirty();
+}
+
+UMaterialInterface* UStaticMeshComponent::GetMaterial(int32 materialIndex) const
+{
+	return ResolveMaterial(materialIndex).get();
+}
+
+TSharedPtr<UMaterialInterface> UStaticMeshComponent::ResolveMaterial(int32 materialIndex) const
+{
+	if (materialIndex < 0) { return nullptr; }
+
+	const TArray<TSharedPtr<UMaterialInterface>>::size_type index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
+	if (index < overrideMaterials.size() && overrideMaterials[index])
+	{
+		return overrideMaterials[index];
+	}
+	if (!staticMesh) { return nullptr; }
+
+	return staticMesh->GetMaterial(materialIndex);
+}
+
+#pragma endregion
+
+#pragma region RenderState
+
 bool UStaticMeshComponent::CreateRenderState()
 {
 	if (bRenderStateCreated) { return false; }
@@ -60,51 +122,6 @@ bool UStaticMeshComponent::IsRenderStateCreated() const
 	return bRenderStateCreated;
 }
 
-// 정적 메시 설정과 조회
-bool UStaticMeshComponent::SetStaticMesh(TSharedPtr<UStaticMesh> newStaticMesh)
-{
-	if (staticMesh == newStaticMesh) { return false; }
-
-	staticMesh = std::move(newStaticMesh);
-	MarkRenderStateDirty();
-
-	return true;
-}
-
-UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
-{
-	return staticMesh.get();
-}
-
-void UStaticMeshComponent::SetMaterial(int32 materialIndex, TSharedPtr<UMaterialInterface> newMaterial)
-{
-	if (materialIndex < 0) { return; }
-
-	const TArray<TSharedPtr<UMaterialInterface>>::size_type index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
-	if (index < overrideMaterials.size() && overrideMaterials[index] == newMaterial) { return; }
-	if (index >= overrideMaterials.size())
-	{
-		if (!newMaterial) { return; }
-
-		overrideMaterials.resize(index + 1);
-	}
-	overrideMaterials[index] = std::move(newMaterial);
-	MarkRenderStateDirty();
-}
-
-UMaterialInterface* UStaticMeshComponent::GetMaterial(int32 materialIndex) const
-{
-	return ResolveMaterial(materialIndex).get();
-}
-
-FMatrix4 UStaticMeshComponent::GetLocalToWorld() const
-{
-	const UTransformComponent* transform = GetOwner().GetComponent<UTransformComponent>();
-
-	return transform->GetComponentTransform().ToMatrixWithScale();
-}
-
-// 렌더 상태 변경 표시
 void UStaticMeshComponent::MarkRenderStateDirty()
 {
 	if (bRenderStateCreated)
@@ -118,19 +135,11 @@ bool UStaticMeshComponent::IsRenderStateDirty() const
 	return bRenderStateDirty;
 }
 
-// 내부 구현
-TSharedPtr<UMaterialInterface> UStaticMeshComponent::ResolveMaterial(int32 materialIndex) const
+FMatrix4 UStaticMeshComponent::GetLocalToWorld() const
 {
-	if (materialIndex < 0) { return nullptr; }
+	const UTransformComponent* transform = GetOwner().GetComponent<UTransformComponent>();
 
-	const TArray<TSharedPtr<UMaterialInterface>>::size_type index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
-	if (index < overrideMaterials.size() && overrideMaterials[index])
-	{
-		return overrideMaterials[index];
-	}
-	if (!staticMesh) { return nullptr; }
-
-	return staticMesh->GetMaterial(materialIndex);
+	return transform->GetComponentTransform().ToMatrixWithScale();
 }
 
 bool UStaticMeshComponent::ApplyRenderState()
@@ -171,3 +180,5 @@ bool UStaticMeshComponent::ApplyRenderState()
 
 	return true;
 }
+
+#pragma endregion

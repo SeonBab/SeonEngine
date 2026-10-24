@@ -4,15 +4,7 @@
 
 #include <utility>
 
-bool UImageWidget::CollectDrawElements(FUIDrawElementList& elements)
-{
-	if (texture)
-	{
-		elements.AddImage({texture.get(), position, size});
-	}
-
-	return true;
-}
+#pragma region Texture
 
 bool UImageWidget::SetTexture(TUniquePtr<UTexture2D>& newTexture)
 {
@@ -22,6 +14,10 @@ bool UImageWidget::SetTexture(TUniquePtr<UTexture2D>& newTexture)
 
 	return true;
 }
+
+#pragma endregion
+
+#pragma region Layout
 
 void UImageWidget::SetPosition(FVector2 newPosition)
 {
@@ -42,3 +38,19 @@ FVector2 UImageWidget::GetSize() const
 {
 	return size;
 }
+
+#pragma endregion
+
+#pragma region Drawing
+
+bool UImageWidget::CollectDrawElements(FUIDrawElementList& elements)
+{
+	if (texture)
+	{
+		elements.AddImage({texture.get(), position, size});
+	}
+
+	return true;
+}
+
+#pragma endregion

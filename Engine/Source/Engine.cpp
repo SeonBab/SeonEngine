@@ -2,8 +2,15 @@
 
 #include "World.h"
 
+#pragma region Lifecycle
+
 UEngine::UEngine() = default;
+
 UEngine::~UEngine() = default;
+
+#pragma endregion
+
+#pragma region Execution
 
 bool UEngine::Initialize(FRenderer&)
 {
@@ -17,3 +24,5 @@ bool UEngine::Initialize(FRenderer&)
 void UEngine::Start()
 {
 }
+
+#pragma endregion

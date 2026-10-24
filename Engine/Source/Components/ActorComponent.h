@@ -19,6 +19,8 @@ enum class EEndPlayReason : uint8
 ////////////////////////////////////////////////////////////////////////////////
 class UActorComponent : public UObject
 {
+#pragma region Lifecycle
+
 public:
 	/** 소속 액터를 지정한다. 생성 후 소속을 변경하지 않는다. */
 	explicit UActorComponent(AActor& owner);
@@ -31,12 +33,25 @@ public:
 	UActorComponent(UActorComponent&&) = delete;
 	UActorComponent& operator=(UActorComponent&&) = delete;
 
+#pragma endregion
+
+#pragma region ActorIntegration
+
+public:
 	/** 소속 액터를 반환한다. 액터의 수명을 연장하지 않는다. */
 	AActor& GetOwner() const { return owner; }
 
 	/** 같은 실제 타입의 복수 추가 허용 정책이다. 기본은 false이며 파생 타입은 타입별 고정 정책으로 재정의한다. */
 	virtual bool AllowsMultipleComponents() const;
 
+private:
+	AActor& owner;
+
+#pragma endregion
+
+#pragma region PlayLifecycle
+
+public:
 	/** 기반 BeginPlay에서 기록한 시작 완료 상태를 반환한다. 상태 변경이나 이벤트 호출은 하지 않는다. */
 	[[nodiscard]] bool HasBegunPlay() const;
 
@@ -50,6 +65,7 @@ public:
 	virtual void TickComponent(float deltaSeconds);
 
 private:
-	AActor& owner;
 	EPlayState playState = EPlayState::NotBegun; // 현재는 NotBegun/Begun만 사용하며 기반 이벤트가 전환한다.
+
+#pragma endregion
 };

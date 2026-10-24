@@ -12,6 +12,8 @@ class FDirectionalLightSceneProxy;
 ////////////////////////////////////////////////////////////////////////////////
 class UDirectionalLightComponent : public URenderStateComponent
 {
+#pragma region Lifecycle
+
 public:
 	/** 소속 액터를 지정하고 흰색과 밝기 배율 1로 초기화한다. 생성만으로 액터에 등록하지 않는다. */
 	explicit UDirectionalLightComponent(AActor& owner);
@@ -19,6 +21,11 @@ public:
 	/** 남은 Scene 등록을 해제한다. 소속 액터와 World의 Scene은 컴포넌트보다 오래 살아 있어야 한다. */
 	~UDirectionalLightComponent() override;
 
+#pragma endregion
+
+#pragma region Light
+
+public:
 	/**
 	 * 소속 액터의 앞 방향을 빛이 진행하는 월드 방향으로 반환한다. 표면에서 광원을 향하는 방향은 이 값의 반대다.
 	 * 부모 회전, 입력 전제, 합성의 표현 한계는 UTransformComponent::GetForwardVector를 따른다.
@@ -38,6 +45,15 @@ public:
 	/** 유한한 0 이상의 밝기 배율을 저장한다. 값 검사나 보정은 하지 않으며 화면 반영을 요청하지 않는다. */
 	void SetIntensity(float newIntensity);
 
+private:
+	FVector3 lightColor{1.0f, 1.0f, 1.0f};
+	float intensity = 1.0f;
+
+#pragma endregion
+
+#pragma region RenderState
+
+public:
 	/**
 	 * 현재 설정으로 Proxy를 생성하고 Scene에 주소를 등록한다.
 	 * 이미 생성됐거나 등록에 실패하면 false이며 기존 상태를 유지한다.
@@ -59,9 +75,8 @@ public:
 	[[nodiscard]] bool IsRenderStateCreated() const override;
 
 private:
-	FVector3 lightColor{1.0f, 1.0f, 1.0f};
-	float intensity = 1.0f;
-
 	// 이 컴포넌트가 소유한다. Scene 등록을 해제한 뒤 파괴하며 nullptr는 렌더 상태 미생성이다.
 	TUniquePtr<FDirectionalLightSceneProxy> sceneProxy{};
+
+#pragma endregion
 };

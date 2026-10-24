@@ -8,6 +8,8 @@
 
 #include <utility>
 
+#pragma region Lifecycle
+
 UDirectionalLightComponent::UDirectionalLightComponent(AActor& owner)
 	: URenderStateComponent(owner)
 {
@@ -18,9 +20,13 @@ UDirectionalLightComponent::~UDirectionalLightComponent()
 	DestroyRenderState();
 }
 
+#pragma endregion
+
+#pragma region Light
+
 FVector3 UDirectionalLightComponent::GetLightDirection() const
 {
-	const auto* transform = GetOwner().GetComponent<UTransformComponent>();
+	const UTransformComponent* transform = GetOwner().GetComponent<UTransformComponent>();
 
 	return transform->GetForwardVector();
 }
@@ -45,11 +51,15 @@ void UDirectionalLightComponent::SetIntensity(float newIntensity)
 	intensity = newIntensity;
 }
 
+#pragma endregion
+
+#pragma region RenderState
+
 bool UDirectionalLightComponent::CreateRenderState()
 {
 	if (IsRenderStateCreated()) { return false; }
 
-	auto newProxy = MakeUnique<FDirectionalLightSceneProxy>(*this);
+	TUniquePtr<FDirectionalLightSceneProxy> newProxy = MakeUnique<FDirectionalLightSceneProxy>(*this);
 	if (!GetOwner().GetWorld().GetScene().AddDirectionalLight(*newProxy)) { return false; }
 
 	// 소유 포인터를 이동해도 Scene이 빌린 Proxy 객체의 주소는 유지된다.
@@ -83,3 +93,5 @@ bool UDirectionalLightComponent::IsRenderStateCreated() const
 {
 	return sceneProxy != nullptr;
 }
+
+#pragma endregion

@@ -5,10 +5,16 @@
 
 #include <utility>
 
+#pragma region Lifecycle
+
 UInputComponent::UInputComponent(AActor& owner)
 	: UActorComponent(owner)
 {
 }
+
+#pragma endregion
+
+#pragma region Input
 
 bool UInputComponent::BindKey(EKey key, EInputTrigger trigger, FInputCallback callback)
 {
@@ -82,3 +88,5 @@ void UInputComponent::ProcessInput(const FInputState& input, float deltaSeconds)
 
 	bProcessingInput = false;
 }
+
+#pragma endregion
