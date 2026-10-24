@@ -10,8 +10,9 @@
 
 #include <utility>
 
+// 생성·소멸
 UStaticMeshComponent::UStaticMeshComponent(AActor& owner)
-	: UActorComponent(owner)
+	: URenderStateComponent(owner)
 {
 }
 
@@ -20,6 +21,46 @@ UStaticMeshComponent::~UStaticMeshComponent()
 	DestroyRenderState();
 }
 
+// URenderStateComponent 계약 구현
+bool UStaticMeshComponent::CreateRenderState()
+{
+	if (bRenderStateCreated) { return false; }
+	if (!ApplyRenderState()) { return false; }
+
+	bRenderStateCreated = true;
+
+	return true;
+}
+
+bool UStaticMeshComponent::SendRenderUpdates()
+{
+	if (!bRenderStateCreated) { return false; }
+
+	if (bRenderStateDirty && !ApplyRenderState()) { return false; }
+	if (!sceneProxy) { return true; }
+
+	return GetOwner().GetWorld().GetScene().SetLocalToWorld(sceneProxy, GetLocalToWorld());
+}
+
+void UStaticMeshComponent::DestroyRenderState()
+{
+	if (sceneProxy)
+	{
+		(void)GetOwner().GetWorld().GetScene().RemoveStaticMesh(sceneProxy);
+		sceneProxy = nullptr;
+	}
+	renderStateMaterial.reset();
+	renderStateStaticMesh.reset();
+	bRenderStateCreated = false;
+	bRenderStateDirty = false;
+}
+
+bool UStaticMeshComponent::IsRenderStateCreated() const
+{
+	return bRenderStateCreated;
+}
+
+// 정적 메시 설정과 조회
 bool UStaticMeshComponent::SetStaticMesh(TSharedPtr<UStaticMesh> newStaticMesh)
 {
 	if (staticMesh == newStaticMesh) { return false; }
@@ -39,7 +80,7 @@ void UStaticMeshComponent::SetMaterial(int32 materialIndex, TSharedPtr<UMaterial
 {
 	if (materialIndex < 0) { return; }
 
-	const auto index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
+	const TArray<TSharedPtr<UMaterialInterface>>::size_type index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
 	if (index < overrideMaterials.size() && overrideMaterials[index] == newMaterial) { return; }
 	if (index >= overrideMaterials.size())
 	{
@@ -56,20 +97,6 @@ UMaterialInterface* UStaticMeshComponent::GetMaterial(int32 materialIndex) const
 	return ResolveMaterial(materialIndex).get();
 }
 
-TSharedPtr<UMaterialInterface> UStaticMeshComponent::ResolveMaterial(int32 materialIndex) const
-{
-	if (materialIndex < 0) { return nullptr; }
-
-	const auto index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
-	if (index < overrideMaterials.size() && overrideMaterials[index])
-	{
-		return overrideMaterials[index];
-	}
-	if (staticMesh) { return staticMesh->GetMaterial(materialIndex); }
-
-	return nullptr;
-}
-
 FMatrix4 UStaticMeshComponent::GetLocalToWorld() const
 {
 	const UTransformComponent* transform = GetOwner().GetComponent<UTransformComponent>();
@@ -77,30 +104,41 @@ FMatrix4 UStaticMeshComponent::GetLocalToWorld() const
 	return transform->GetComponentTransform().ToMatrixWithScale();
 }
 
-bool UStaticMeshComponent::CreateRenderState()
+// 렌더 상태 변경 표시
+void UStaticMeshComponent::MarkRenderStateDirty()
 {
-	if (bRenderStateCreated) { return false; }
-	if (!ApplyRenderState()) { return false; }
-
-	bRenderStateCreated = true;
-
-	return true;
+	if (bRenderStateCreated)
+	{
+		bRenderStateDirty = true;
+	}
 }
 
-bool UStaticMeshComponent::UpdateRenderState()
+bool UStaticMeshComponent::IsRenderStateDirty() const
 {
-	if (!bRenderStateCreated) { return false; }
-	if (!bRenderStateDirty) { return true; }
+	return bRenderStateDirty;
+}
 
-	return ApplyRenderState();
+// 내부 구현
+TSharedPtr<UMaterialInterface> UStaticMeshComponent::ResolveMaterial(int32 materialIndex) const
+{
+	if (materialIndex < 0) { return nullptr; }
+
+	const TArray<TSharedPtr<UMaterialInterface>>::size_type index = static_cast<TArray<TSharedPtr<UMaterialInterface>>::size_type>(materialIndex);
+	if (index < overrideMaterials.size() && overrideMaterials[index])
+	{
+		return overrideMaterials[index];
+	}
+	if (!staticMesh) { return nullptr; }
+
+	return staticMesh->GetMaterial(materialIndex);
 }
 
 bool UStaticMeshComponent::ApplyRenderState()
 {
 	// 후보 생성부터 교체 완료까지 새 자원을 유지한다. 기존 참조는 Scene의 이전 Proxy 제거 뒤에 놓는다.
-	auto newStaticMesh = staticMesh;
+	TSharedPtr<UStaticMesh> newStaticMesh = staticMesh;
 	// 현재 형상은 섹션 구분 없는 단일 그리기이므로 재질 슬롯 0을 사용한다.
-	auto newMaterial = ResolveMaterial(0);
+	TSharedPtr<UMaterialInterface> newMaterial = ResolveMaterial(0);
 	TUniquePtr<FStaticMeshSceneProxy> newProxy;
 	if (newStaticMesh)
 	{
@@ -132,43 +170,4 @@ bool UStaticMeshComponent::ApplyRenderState()
 	bRenderStateDirty = false;
 
 	return true;
-}
-
-bool UStaticMeshComponent::SendRenderTransform()
-{
-	if (!bRenderStateCreated) { return false; }
-	if (!sceneProxy) { return true; }
-
-	return GetOwner().GetWorld().GetScene().SetLocalToWorld(sceneProxy, GetLocalToWorld());
-}
-
-void UStaticMeshComponent::DestroyRenderState()
-{
-	if (sceneProxy)
-	{
-		(void)GetOwner().GetWorld().GetScene().RemoveStaticMesh(sceneProxy);
-		sceneProxy = nullptr;
-	}
-	renderStateMaterial.reset();
-	renderStateStaticMesh.reset();
-	bRenderStateCreated = false;
-	bRenderStateDirty = false;
-}
-
-bool UStaticMeshComponent::IsRenderStateCreated() const
-{
-	return bRenderStateCreated;
-}
-
-void UStaticMeshComponent::MarkRenderStateDirty()
-{
-	if (bRenderStateCreated)
-	{
-		bRenderStateDirty = true;
-	}
-}
-
-bool UStaticMeshComponent::IsRenderStateDirty() const
-{
-	return bRenderStateDirty;
 }

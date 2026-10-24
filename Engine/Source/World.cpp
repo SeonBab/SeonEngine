@@ -2,10 +2,8 @@
 
 #include "Actor.h"
 #include "Components/CameraComponent.h"
-#include "Components/DirectionalLightComponent.h"
 #include "Components/InputComponent.h"
-#include "Components/SkyLightComponent.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/RenderStateComponent.h"
 #include "Components/TransformComponent.h"
 #include "Input/PlayerInput.h"
 
@@ -167,27 +165,11 @@ void UWorld::EndPlay(EEndPlayReason reason)
 
 bool UWorld::CreateRenderStates()
 {
-	TArray<UStaticMeshComponent*> meshComponents;
-	TArray<UDirectionalLightComponent*> lightComponents;
-	TArray<USkyLightComponent*> skyLightComponents;
+	TArray<URenderStateComponent*> renderComponents;
 	for (const TUniquePtr<AActor>& actor : actors)
 	{
-		actor->GetComponents(meshComponents);
-		for (UStaticMeshComponent* component : meshComponents)
-		{
-			if (component->IsRenderStateCreated()) { continue; }
-			if (!component->CreateRenderState()) { return false; }
-		}
-
-		actor->GetComponents(lightComponents);
-		for (UDirectionalLightComponent* component : lightComponents)
-		{
-			if (component->IsRenderStateCreated()) { continue; }
-			if (!component->CreateRenderState()) { return false; }
-		}
-
-		actor->GetComponents(skyLightComponents);
-		for (USkyLightComponent* component : skyLightComponents)
+		actor->GetComponents(renderComponents);
+		for (URenderStateComponent* component : renderComponents)
 		{
 			if (component->IsRenderStateCreated()) { continue; }
 			if (!component->CreateRenderState()) { return false; }
@@ -199,30 +181,14 @@ bool UWorld::CreateRenderStates()
 
 bool UWorld::SendAllEndOfFrameUpdates()
 {
-	TArray<UStaticMeshComponent*> meshComponents;
-	TArray<UDirectionalLightComponent*> lightComponents;
-	TArray<USkyLightComponent*> skyLightComponents;
+	TArray<URenderStateComponent*> renderComponents;
 	for (const TUniquePtr<AActor>& actor : actors)
 	{
-		actor->GetComponents(meshComponents);
-		for (UStaticMeshComponent* component : meshComponents)
+		actor->GetComponents(renderComponents);
+		for (URenderStateComponent* component : renderComponents)
 		{
 			if (!component->IsRenderStateCreated()) { continue; }
-			if (!component->UpdateRenderState() || !component->SendRenderTransform()) { return false; }
-		}
-
-		actor->GetComponents(lightComponents);
-		for (UDirectionalLightComponent* component : lightComponents)
-		{
-			if (!component->IsRenderStateCreated()) { continue; }
-			if (!component->UpdateRenderState()) { return false; }
-		}
-
-		actor->GetComponents(skyLightComponents);
-		for (USkyLightComponent* component : skyLightComponents)
-		{
-			if (!component->IsRenderStateCreated()) { continue; }
-			if (!component->UpdateRenderState()) { return false; }
+			if (!component->SendRenderUpdates()) { return false; }
 		}
 	}
 

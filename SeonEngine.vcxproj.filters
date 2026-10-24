@@ -96,6 +96,9 @@
     <ClInclude Include="Engine\Source\Components\InputComponent.h">
       <Filter>Engine\Source\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Components\RenderStateComponent.h">
+      <Filter>Engine\Source\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Components\SkyLightComponent.h">
       <Filter>Engine\Source\Components</Filter>
     </ClInclude>
@@ -222,6 +225,9 @@
     <ClInclude Include="Engine\Source\Object.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\PlayState.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
@@ -327,6 +333,9 @@
       <Filter>Engine\Source\Components</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Components\InputComponent.cpp">
+      <Filter>Engine\Source\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Components\RenderStateComponent.cpp">
       <Filter>Engine\Source\Components</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Components\SkyLightComponent.cpp">

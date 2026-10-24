@@ -8,7 +8,7 @@
 #include <utility>
 
 USkyLightComponent::USkyLightComponent(AActor& owner)
-	: UActorComponent(owner)
+	: URenderStateComponent(owner)
 {
 }
 
@@ -50,7 +50,7 @@ bool USkyLightComponent::CreateRenderState()
 	return true;
 }
 
-bool USkyLightComponent::UpdateRenderState()
+bool USkyLightComponent::SendRenderUpdates()
 {
 	if (!IsRenderStateCreated()) { return false; }
 

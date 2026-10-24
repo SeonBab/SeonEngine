@@ -21,12 +21,12 @@ void AActor::Tick([[maybe_unused]] float deltaSeconds)
 
 bool AActor::HasActorBegunPlay() const
 {
-	return actorHasBegunPlay == EActorBeginPlayState::HasBegunPlay;
+	return actorHasBegunPlay == EPlayState::Begun;
 }
 
 bool AActor::IsActorBeginningPlay() const
 {
-	return actorHasBegunPlay == EActorBeginPlayState::BeginningPlay;
+	return actorHasBegunPlay == EPlayState::Beginning;
 }
 
 UWorld& AActor::GetWorld() const
@@ -89,29 +89,63 @@ bool AActor::AddComponent(TUniquePtr<UActorComponent>& component)
 		}
 	}
 
+	UActorComponent* addedComponent = component.get();
 	components.push_back(std::move(component));
+
+	if ((IsActorBeginningPlay() || HasActorBegunPlay()) && !addedComponent->HasBegunPlay())
+	{
+		addedComponent->BeginPlay();
+	}
 
 	return true;
 }
 
 void AActor::BeginPlay()
 {
-	actorHasBegunPlay = EActorBeginPlayState::HasBegunPlay;
+	TArray<UActorComponent*> actorComponents;
+	GetComponents(actorComponents);
+
+	for (UActorComponent* component : actorComponents)
+	{
+		if (component->HasBegunPlay())
+		{
+			continue;
+		}
+
+		component->BeginPlay();
+	}
+
+	actorHasBegunPlay = EPlayState::Begun;
 }
 
-void AActor::EndPlay([[maybe_unused]] EEndPlayReason reason)
+void AActor::EndPlay(EEndPlayReason reason)
 {
-	if (actorHasBegunPlay == EActorBeginPlayState::HasBegunPlay)
+	if (actorHasBegunPlay != EPlayState::Begun)
 	{
-		actorHasBegunPlay = EActorBeginPlayState::HasNotBegunPlay;
+		return;
+	}
+
+	actorHasBegunPlay = EPlayState::NotBegun;
+
+	TArray<UActorComponent*> actorComponents;
+	GetComponents(actorComponents);
+
+	for (UActorComponent* component : actorComponents)
+	{
+		if (!component->HasBegunPlay())
+		{
+			continue;
+		}
+
+		component->EndPlay(reason);
 	}
 }
 
 void AActor::DispatchBeginPlay()
 {
-	if (actorHasBegunPlay != EActorBeginPlayState::HasNotBegunPlay) { return; }
+	if (actorHasBegunPlay != EPlayState::NotBegun) { return; }
 
-	actorHasBegunPlay = EActorBeginPlayState::BeginningPlay;
+	actorHasBegunPlay = EPlayState::Beginning;
 	BeginPlay();
 }
 

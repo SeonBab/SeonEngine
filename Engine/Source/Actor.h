@@ -5,6 +5,7 @@
 #include "Core/CoreTypes.h"
 #include "Core/Templates/UniquePtr.h"
 #include "Object.h"
+#include "PlayState.h"
 
 #include <concepts>
 
@@ -15,13 +16,6 @@ enum class EActorTransformRule : uint8
 {
 	KeepLocal,
 	KeepWorld
-};
-
-/** 액터 종료 처리를 호출하는 이유다. 명시적 제거와 실행 종료를 구분한다. */
-enum class EEndPlayReason : uint8
-{
-	Destroyed,
-	Quit
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +83,10 @@ public:
 	 * 소속이 자신인 컴포넌트의 소유권을 받는다. 성공 시 입력 포인터는 비워진다.
 	 * 빈 포인터, 다른 소속, 복수 불허인 같은 실제 타입의 중복이면 false이며 입력과 기존 목록을 유지한다.
 	 * 복수 허용 정책은 실제 객체에서 조회한다. 서로 다른 파생 타입은 별개로 취급한다.
-	 * 메모리 부족은 false 반환으로 복구하지 않는다. 이벤트 호출은 없다.
+	 * 액터가 시작 중이거나 시작 완료면 소유권을 받은 뒤 미시작 컴포넌트의 BeginPlay를 반환 전에 호출한다.
+	 * 필요한 설정은 추가 전에 마친다. true는 소유권 이전 성공이며 콜백 후 객체의 생존을 보장하지 않는다.
+	 * 콜백 중 Destroy의 제거 시점은 World 계약을 따르며 즉시 파괴 뒤 액터/컴포넌트에 접근하면 안 된다.
+	 * 메모리 부족은 false 반환으로 복구하지 않는다.
 	 */
 	[[nodiscard]] bool AddComponent(TUniquePtr<UActorComponent>& component);
 
@@ -115,21 +112,18 @@ public:
 protected:
 	/**
 	 * 첫 World Tick 직전에 호출할 시작 처리를 재정의한다.
+	 * 기반 구현은 호출 시점 목록의 미시작 컴포넌트를 시작한 뒤 액터를 시작 완료로 표시한다.
 	 * NOTE: 기반 BeginPlay를 호출하지 않으면 시작 미완료 상태로 남아 Tick이 보류된다.
 	 */
 	virtual void BeginPlay();
 
-	/** World가 실제 제거 전에 호출할 종료 처리를 재정의한다. 기반 함수를 호출해 시작 완료 상태를 해제한다. */
+	/**
+	 * World가 실제 제거 전에 호출할 종료 처리를 재정의한다. 파생 구현은 기반 함수를 호출해야 한다.
+	 * 기반 구현은 시작 완료 상태를 먼저 해제하고 호출 시점 목록의 시작한 컴포넌트에 같은 종료 이유를 전달한다.
+	 */
 	virtual void EndPlay(EEndPlayReason reason);
 
 private:
-	enum class EActorBeginPlayState : uint8
-	{
-		HasNotBegunPlay,
-		BeginningPlay,
-		HasBegunPlay
-	};
-
 	friend class UWorld;
 
 	/** World가 등록된 액터의 첫 Tick 전에 호출한다. 시작 전일 때만 진입하며 완료 상태는 기반 BeginPlay가 설정한다. */
@@ -141,7 +135,7 @@ private:
 	UWorld* const world;
 	AActor* parent = nullptr;
 	bool bActorIsBeingDestroyed = false;
-	EActorBeginPlayState actorHasBegunPlay = EActorBeginPlayState::HasNotBegunPlay;
+	EPlayState actorHasBegunPlay = EPlayState::NotBegun;
 	TArray<TUniquePtr<UActorComponent>> components{};
 	TArray<AActor*> children{};
 };

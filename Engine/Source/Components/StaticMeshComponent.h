@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ActorComponent.h"
 #include "Core/Containers/Array.h"
 #include "Core/CoreTypes.h"
 #include "Core/Math/Matrix4.h"
 #include "Core/Templates/SharedPtr.h"
+#include "RenderStateComponent.h"
 
 class UStaticMesh;
 class UMaterialInterface;
@@ -14,15 +14,37 @@ class FStaticMeshSceneProxy;
 // 선택한 정적 메시 자산과 재질의 수명을 공유하고 렌더 상태 생성/변경/해제를 요청한다.
 // 등록된 Proxy는 Scene이 소유한다. 컴포넌트는 현재 Proxy의 자원을 사용 종료까지 유지한다.
 ////////////////////////////////////////////////////////////////////////////////
-class UStaticMeshComponent : public UActorComponent
+class UStaticMeshComponent : public URenderStateComponent
 {
 public:
+	// 생성·소멸
 	/** 소속 액터와 빈 자산 설정을 준비한다. 생성만으로 렌더 상태를 만들지 않는다. */
 	explicit UStaticMeshComponent(AActor& owner);
 
 	/** 남은 Proxy를 Scene에서 제거한 뒤 자원 참조를 해제한다. Actor와 World는 그때까지 살아 있어야 한다. */
 	~UStaticMeshComponent() override;
 
+	// URenderStateComponent 계약 구현
+	/**
+	 * 준비된 자산에서 Proxy를 만들어 Scene에 소유권을 넘긴다. nullptr 자산은 Proxy 없는 생성 상태다.
+	 * 중복 생성/미준비 자산은 false다. GPU 생성은 하지 않으며 같은 스레드에서 호출한다.
+	 */
+	[[nodiscard]] bool CreateRenderState() override;
+
+	/**
+	 * 메시와 재질의 dirty 설정을 먼저 반영한 뒤 현재 변환을 전송한다. 미생성이나 반영 실패는 false다.
+	 * 설정 반영 실패 시 기존 Proxy/자원 참조/dirty를 유지한다. 변환 전송 실패 시 앞서 반영한 설정은 되돌리지 않는다.
+	 * 표시 해제 상태는 할 일 없이 true이며 외부에서 Scene 등록을 제거한 경우 변환 전송은 false다.
+	 */
+	[[nodiscard]] bool SendRenderUpdates() override;
+
+	/** Scene 소유 Proxy를 먼저 제거하고 현재 렌더 자원 참조를 놓는다. 반복 가능하며 설정 참조는 유지한다. */
+	void DestroyRenderState() override;
+
+	/** 논리적 렌더 상태 생성 여부다. 자산 미지정이면 true여도 등록된 Proxy가 없을 수 있다. */
+	[[nodiscard]] bool IsRenderStateCreated() const override;
+
+	// 정적 메시 설정과 조회
 	/** 설정 참조가 바뀌면 true와 함께 dirty 표시한다. nullptr는 표시 해제이며 GPU 생성은 하지 않는다. */
 	bool SetStaticMesh(TSharedPtr<UStaticMesh> newStaticMesh);
 
@@ -38,24 +60,7 @@ public:
 	/** 부모 합성을 반영한 행 벡터 규칙의 로컬에서 월드로의 행렬 사본이다. 메시 정점은 변경하지 않는다. */
 	[[nodiscard]] FMatrix4 GetLocalToWorld() const;
 
-	/**
-	 * 준비된 자산에서 Proxy를 만들어 Scene에 소유권을 넘긴다. nullptr 자산은 Proxy 없는 생성 상태다.
-	 * 중복 생성/미준비 자산은 false다. GPU 생성은 하지 않으며 같은 스레드에서 호출한다.
-	 */
-	[[nodiscard]] bool CreateRenderState();
-
-	/** dirty 설정으로 Proxy를 교체한다. 실패하면 기존 Proxy/자원 참조/dirty를 유지한다. 미생성은 false다. */
-	[[nodiscard]] bool UpdateRenderState();
-
-	/** 현재 Proxy의 변환만 갱신한다. 미생성/외부 등록 제거는 false이며 표시 해제 상태는 할 일 없이 true다. */
-	[[nodiscard]] bool SendRenderTransform();
-
-	/** Scene 소유 Proxy를 먼저 제거하고 현재 렌더 자원 참조를 놓는다. 반복 가능하며 설정 참조는 유지한다. */
-	void DestroyRenderState();
-
-	/** 논리적 렌더 상태 생성 여부다. 자산 미지정이면 true여도 등록된 Proxy가 없을 수 있다. */
-	[[nodiscard]] bool IsRenderStateCreated() const;
-
+	// 렌더 상태 변경 표시
 	/** 생성된 렌더 상태만 dirty 표시한다. 자산의 기본 재질 변경을 반영할 때도 명시 호출한다. */
 	void MarkRenderStateDirty();
 
@@ -63,6 +68,7 @@ public:
 	[[nodiscard]] bool IsRenderStateDirty() const;
 
 private:
+	// 내부 구현
 	TSharedPtr<UMaterialInterface> ResolveMaterial(int32 materialIndex) const;
 	bool ApplyRenderState();
 

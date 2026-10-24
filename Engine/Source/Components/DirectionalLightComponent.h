@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ActorComponent.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Templates/UniquePtr.h"
+#include "RenderStateComponent.h"
 
 class FDirectionalLightSceneProxy;
 
@@ -10,7 +10,7 @@ class FDirectionalLightSceneProxy;
 // 방향광의 색과 세기를 보관하고 렌더용 Proxy를 소유한다.
 // 방향은 소속 액터의 앞 방향이며 Scene에는 Proxy 주소를 등록한다.
 ////////////////////////////////////////////////////////////////////////////////
-class UDirectionalLightComponent : public UActorComponent
+class UDirectionalLightComponent : public URenderStateComponent
 {
 public:
 	/** 소속 액터를 지정하고 흰색과 밝기 배율 1로 초기화한다. 생성만으로 액터에 등록하지 않는다. */
@@ -43,20 +43,20 @@ public:
 	 * 이미 생성됐거나 등록에 실패하면 false이며 기존 상태를 유지한다.
 	 * Proxy는 컴포넌트가 소유하며 GPU 자원은 만들지 않는다.
 	 */
-	[[nodiscard]] bool CreateRenderState();
+	[[nodiscard]] bool CreateRenderState() override;
 
 	/**
 	 * Scene에 등록된 소유 Proxy에 현재 방향과 세기가 반영된 색을 전달한다.
 	 * 미생성이거나 Scene 등록이 일치하지 않으면 false다.
 	 * 같은 스레드에서 사용하며 재등록이나 GPU 업로드는 수행하지 않는다.
 	 */
-	[[nodiscard]] bool UpdateRenderState();
+	[[nodiscard]] bool SendRenderUpdates() override;
 
 	/** Scene 등록을 먼저 해제한 뒤 소유 Proxy를 파괴한다. 미생성이면 아무것도 하지 않으며 반복 호출할 수 있다. */
-	void DestroyRenderState();
+	void DestroyRenderState() override;
 
 	/** 소유 Proxy가 있는지 반환한다. 외부에서 Scene 등록을 해제했는지나 GPU 준비 상태는 검사하지 않는다. */
-	[[nodiscard]] bool IsRenderStateCreated() const;
+	[[nodiscard]] bool IsRenderStateCreated() const override;
 
 private:
 	FVector3 lightColor{1.0f, 1.0f, 1.0f};

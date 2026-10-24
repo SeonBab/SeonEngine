@@ -1,8 +1,17 @@
 #pragma once
 
+#include "Core/CoreTypes.h"
 #include "Object.h"
+#include "PlayState.h"
 
 class AActor;
+
+/** 액터와 컴포넌트의 플레이 종료 이유다. 객체 파괴와 실행 종료를 구분한다. */
+enum class EEndPlayReason : uint8
+{
+	Destroyed,
+	Quit
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // 액터에 붙는 기능 객체의 공통 기반이다.
@@ -28,6 +37,19 @@ public:
 	/** 같은 실제 타입의 복수 추가 허용 정책이다. 기본은 false이며 파생 타입은 타입별 고정 정책으로 재정의한다. */
 	virtual bool AllowsMultipleComponents() const;
 
+	/** 기반 BeginPlay에서 기록한 시작 완료 상태를 반환한다. 상태 변경이나 이벤트 호출은 하지 않는다. */
+	[[nodiscard]] bool HasBegunPlay() const;
+
+	/** 시작 완료 상태를 기록한다. 파생 구현은 기반 함수를 호출해야 하며 소유 액터의 기반 BeginPlay에서 호출한다. */
+	virtual void BeginPlay();
+
+	/** 시작 완료 상태를 해제한다. 파생 구현은 기반 함수를 호출해야 하며 시작한 경우 소유 액터의 기반 EndPlay에서 호출한다. */
+	virtual void EndPlay(EEndPlayReason reason);
+
+	/** 초 단위 프레임 경과 시간을 받는 재정의 지점이다. 기본 구현은 비어 있으며 자동 호출은 아직 연결하지 않았다. */
+	virtual void TickComponent(float deltaSeconds);
+
 private:
 	AActor& owner;
+	EPlayState playState = EPlayState::NotBegun; // 현재는 NotBegun/Begun만 사용하며 기반 이벤트가 전환한다.
 };

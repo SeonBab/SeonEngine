@@ -9,7 +9,7 @@
 #include <utility>
 
 UDirectionalLightComponent::UDirectionalLightComponent(AActor& owner)
-	: UActorComponent(owner)
+	: URenderStateComponent(owner)
 {
 }
 
@@ -58,7 +58,7 @@ bool UDirectionalLightComponent::CreateRenderState()
 	return true;
 }
 
-bool UDirectionalLightComponent::UpdateRenderState()
+bool UDirectionalLightComponent::SendRenderUpdates()
 {
 	if (!IsRenderStateCreated()) { return false; }
 
