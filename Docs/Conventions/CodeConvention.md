@@ -14,6 +14,10 @@
 | 게임 코드 (`Game/`) | **권장**. 엔진과 같은 규칙을 권하지만 강제하지 않는다. 서식은 저장소 루트의 `.clang-format`이 기본으로 적용되고, 게임 폴더에 자기 `.clang-format`을 두면 그쪽이 우선한다 |
 | 서드파티 (`Engine/ThirdParty/`) | 적용하지 않는다(6.3 예외 조항) |
 
+## 규칙 변경과 기존 코드 적용
+
+이 문서는 현재 적용할 규칙을 다룬다. 과거 구현·미도입 API를 현재 사용법으로 혼합하지 않는다. 코드와 규칙이 다르면 변경 이유와 실제 계약을 먼저 확인한다. 규칙 변경만으로 기존 코드의 일괄 수정이나 미구현 기능 추가를 승인받은 것으로 보지 않는다. 구체적인 적용 범위와 검증을 제안·승인받은 뒤 수정한다. 기존 코드와의 불일치를 발견했다고 임의의 예외나 일괄 변경으로 처리하지 않는다.
+
 ## 목차
 
 - 1장. Style & Naming
@@ -112,7 +116,7 @@
   - **함수 내부의 논리 단위** — 하나의 결과를 만드는 연속된 계산·대입은 붙여 쓴다. 준비·계산, 유효성 검사·실패 처리, 실제 처리처럼 목적이 달라지는 지점에는 빈 줄 1개를 둔다. 독립된 검사 블록끼리도 빈 줄로 구분한다. 모든 문장이나 모든 `if` 앞뒤에 기계적으로 넣지는 않는다.
 
   ```cpp
-  const auto currentTime = std::chrono::steady_clock::now();
+  const std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
   const float deltaSeconds = std::chrono::duration<float>(currentTime - previousTime).count();
   previousTime = currentTime;
 
@@ -124,7 +128,7 @@
 
   if (width == 0 || height == 0) { continue; }
 
-  world.Tick(deltaSeconds, input);
+  world.Tick(deltaSeconds, input, playerInput);
   ```
 
 - **반환 전 빈 줄** — 함수 마지막의 `return` 앞에 다른 코드가 있으면 빈 줄 1개를 둔다. 본문이 `return` 한 문장뿐인 함수와 한 줄 early exit에는 적용하지 않는다.
@@ -149,11 +153,7 @@
 | static 멤버 변수 | 일반 멤버 변수와 동일 (접두사 없음) | `liveCount` |
 | Macro | UPPER_SNAKE_CASE. 역할·모듈 접두사는 필요에 따라 사용 | `ASSERT`, `PLATFORM_WINDOWS`, `WITH_EDITOR` |
 
-- **렌더러의 Unreal 대응 이름** — 직접 확인한 Unreal 코드와 역할이 대응하는 렌더러 변수 / 매개변수는 원본 이름을 우선한다. 이 범위에서는 PascalCase와 입력 매개변수의 `In` 접두사를 허용한다(예: `Direct3DDevice`, `SizeX`, `InSizeX`). 역할이 다르면 이름을 억지로 맞추지 않고 차이를 설명한다. 다른 시스템에는 위 기본 표기를 유지한다.
-
-- **월드 시간 멤버의 Unreal 대응 이름** — `FWorld`의 `DeltaTimeSeconds`와 `TimeSeconds`는 직접 확인한 `UWorld`의 대응 이름과 자료형을 그대로 사용한다. 이 두 멤버에 한해 PascalCase를 허용하며, 다른 월드 멤버는 기본 표기를 유지한다.
-
-- **액터 Tick의 Unreal 대응 인수 이름** — `FActor::Tick`의 시간 인수는 직접 확인한 `AActor::Tick`과 같은 `DeltaSeconds`를 사용한다. 이 인수에 한해 PascalCase를 허용하며, 빈 기본 본문에서도 이름을 유지하고 `[[maybe_unused]]`로 미사용을 표시한다.
+- **외부 구현과 대응하는 이름** — 기본 표기는 위 표를 따른다. 공개 API의 의미와 대응이 확인되어 원본 이름을 유지하기로 정한 경우에만 해당 타입·함수의 좁은 범위에 적용한다. 특정 엔진과 이름이 같다는 이유로 기존 심벌을 개명하지 않는다.
 
 - **타입 접두사** — 모든 타입에 접두사를 붙이며, 각 글자는 타입의 종류를 나타낸다. 표기는 Unreal 관례를 따른다.
 
@@ -353,9 +353,8 @@
   ```
 
   - 예외: 대소문자를 무시했을 때 C / C++ 표준 헤더나 Windows SDK 헤더와 같아지는 이름(`String.h`, `Math.h`, `Memory.h` 등)이면 엔진 이름 `Seon`을 앞에 붙인다(`SeonString.h` → `FString`). Windows는 파일 이름의 대소문자를 구분하지 않아서, 표준 헤더를 찾을 때 엔진 헤더가 대신 잡힐 수 있다.
-  - 렌더러 계약 예외: `IRenderer`는 `RendererInterface.h`, 기본 구현 `FRenderer`는 `Renderer.h`에 둔다. Public / Private include 경로에서 같은 파일 이름이 겹치지 않도록 계약과 구현을 구분한다. 다른 인터페이스에 일괄 적용하는 규칙은 아니다.
 
-- **파일 단위** — 타입을 정의하는 파일에는 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다. WindowsApplication.h/.cpp는 단일 창의 수명을 관리하는 FWindowsApplication과 실행 조합 함수를 제공한다(2026-10-16 정정).
+- **파일 단위** — 타입을 정의하는 파일에는 파일 이름과 같은 주 타입을 하나 둔다. 그 타입에서만 쓰는 작은 보조 타입(Desc 구조체, enum 등)은 같은 파일에 둘 수 있다. WindowsApplication.h/.cpp는 단일 창의 수명과 메시지 처리를 관리하는 FWindowsApplication을 둔다.
 - **현재 디렉터리 구조 (2026-10-23 정정)** — 루트 SeonEngine.vcxproj 하나에서 엔진은 Engine/Source, 게임은 Game/Source 아래에 둔다. 엔진은 Windows 등 역할별 폴더를 사용하고 Public/Private·별도 모듈 계층은 아직 나누지 않는다. 이 헤더 중 게임이 호출하는 함수를 공개 API로 보고 1.4의 문서 규칙을 적용한다.
 
   ```text
@@ -371,8 +370,8 @@
   Game/Source/                        # 게임 전용 소스
   ```
 
-- **이전 규칙의 적용 범위** — 엔진 모듈마다 Public/Private를 필수로 두던 규칙은 재시작 후 적용하지 않는다. 향후 공개·내부 경계가 필요해지면 별도 검토한다. 현재 프로젝트 배치는 [빌드·개발 설정](../BuildSetup.md)의 현재 구성을 따른다.
-- **종료 코드 타입** — 표준 main의 종료 코드는 int를 쓴다. 기존 RunWindowsApplication은 실행 순서를 main으로 옮기며 제거했다(2026-10-16). 현재 실행 경계를 위한 선택이며 일반 엔진 데이터의 정수 타입 규칙을 일괄 변경하지 않는다.
+- **공개·내부 경계** — 현재는 Public/Private 모듈 계층을 필수로 두지 않는다. 향후 공개·내부 경계를 나눌 요구가 생기면 프로젝트 구성과 함께 별도로 제안한다.
+- **종료 코드 타입** — 표준 main의 종료 코드는 int를 쓴다. 일반 엔진 데이터의 정수 타입 규칙과 구분한다.
 
 ### 2.2 Header 규칙 `필수`
 
@@ -404,17 +403,25 @@
 
 ### 2.3 Class 구성 `필수`
 
-- **선언 순서** — 접근 지정자는 `public` → `protected` → `private` 순서로 각각 한 번씩만 쓴다. 각 구역 안에서는 타입(`using`, 중첩 타입) → 생성자 / 소멸자 → 함수 → 변수 순서로 선언한다.
+- **기능별 구역** — 관련 함수와 상태를 `#pragma region 기능명` / `#pragma endregion`으로 함께 묶는다. 생성·소멸은 첫 `Lifecycle` 구역에 둔다. 나머지 구역 이름은 `Mesh`, `Material`, `RenderState`처럼 실제 책임을 드러내는 PascalCase로 정한다. 함수 하나마다 구역을 만들거나 구역을 중첩하지 않는다. 구분할 기능이 없는 작은 클래스와 단순 데이터 struct에는 불필요한 구역을 만들지 않는다.
+- **구역 안의 선언 순서** — 필요한 타입 별칭·중첩 타입을 사용하는 선언보다 앞에 두고, 함수 블록 다음에 변수 블록을 둔다. 함수 블록은 `public` → `protected` → `private`, 변수 블록은 `protected` → `private` 순서로 배치한다. 아래 멤버 변수 접근 규칙에서 허용한 공개 이벤트·상수가 있으면 변수 블록의 `public`을 먼저 둔다. 멤버가 없는 접근 단계는 생략한다. 생성자·소멸자는 Lifecycle의 해당 접근 단계에서 다른 함수보다 먼저 둔다.
+- **접근 지정자 반복** — 각 기능 구역과 함수·변수 블록의 시작에 필요한 접근 지정자를 명시한다. 같은 구역에서도 private 함수 뒤에 private 변수가 이어지면 `private:`를 다시 써서 경계를 나타낸다. `#pragma endregion`은 접근 권한을 초기화하지 않으며, 접근 권한 자체를 바꾸기 위해 멤버를 공개하지 않는다.
+- **선언과 정의 대응** — `.cpp`에서도 같은 기능 구역 이름과 순서로 정의를 묶고 구역 안의 함수 순서를 헤더에 맞춘다. 헤더에만 있는 타입·변수나 inline 정의 때문에 `.cpp`에 빈 구역을 만들지는 않는다. 기존 함수 계약·변수 수명 주석은 유지하고, 구역 이름을 반복하는 구분용 주석은 덧붙이지 않는다. 기존 코드의 일괄 재배치는 별도 작업으로 다루며, 멤버 변수 순서 변경 시 초기화·역순 파괴·레이아웃 영향을 확인한다.
 
   ```cpp
   class FRenderer
   {
-  public:
-    using Callback = void(*)();
+  #pragma region Lifecycle
 
+  public:
     FRenderer();
     ~FRenderer();
 
+  #pragma endregion
+
+  #pragma region Rendering
+
+  public:
     void Render();
 
   protected:
@@ -423,7 +430,10 @@
   private:
     void CreateDevice();
 
+  private:
     FRenderDevice* device = nullptr;
+
+  #pragma endregion
   };
   ```
 
@@ -537,7 +547,7 @@
 ### 3.2 함수 작성 `필수`
 
 - **길이 / 매개변수 개수** — 강제하지 않는다. 함수가 한 화면(약 50줄)을 넘으면 나눌 수 있는지, 매개변수가 5개를 넘으면 Desc struct로 묶을 수 있는지(`CreateTexture(const FTextureDesc& desc)`) 검토한다.
-- **인자 전달** — 기본형, enum, 포인터, 16바이트 이하의 작은 struct는 값으로 받는다. 그 외에는 `const&`로 받는다. 소유권을 넘겨받을 때는 값으로 받고 `std::move`한다.
+- **인자 전달** — 기본형, enum, 포인터, 16바이트 이하의 작은 struct는 값으로 받는다. 그 외에는 `const&`로 받는다. 소유권을 무조건 넘겨받을 때는 값으로 받고 `std::move`한다. 실패 시 호출자의 소유를 유지하는 API는 스마트 포인터를 비const 레퍼런스로 받아 성공한 경우에만 이동하며, 입력 비움과 실패 보존 계약을 명시한다.
 
   ```cpp
   void SetPosition(FVector3 newPosition);
@@ -552,7 +562,7 @@
   void CollectVisibleObjects(TArray<FRenderObject*>& outObjects) const;
   ```
 
-- **`[[nodiscard]]`** — 반환값을 버리면 버그가 되는 함수에만 붙인다. 성공 / 실패를 돌려주는 함수, 새로 만든 리소스를 돌려주는 함수가 해당한다. getter에는 붙이지 않는다.
+- **`[[nodiscard]]`** — 실패 확인이나 반환 자원 처리를 빠뜨리기 쉬운 함수에 사용한다. 성공/실패와 새 자원을 반환하는 함수가 대표 대상이다. getter에는 일괄 강제하거나 금지하지 않으며 반환값을 사용하는 계약에 따라 판단한다. 기존 표기를 바꿀 때는 실제 호출과 의미를 확인하고 승인 범위에 포함한다.
 - **`noexcept`** — 이동 생성자, 이동 대입 연산자, swap에만 붙인다. STL 컨테이너는 이동 생성자가 `noexcept`여야 재할당할 때 복사 대신 이동한다.
 - **기본 인자** — 허용한다. 가상 함수에 기본 인자를 둘 때는 재정의에서도 같은 값을 쓴다. 기본값은 호출하는 포인터 타입 기준으로 정해지므로, 값이 다르면 부모의 값이 들어간다.
 - **`inline`** — 헤더에 정의하는 비멤버 함수와 변수에만 붙인다(중복 정의 링크 에러 방지). 클래스 안에서 정의한 함수는 이미 inline이므로 붙이지 않는다. 헤더에는 짧은 함수만 정의하고 나머지는 `.cpp`에 둔다.
@@ -576,7 +586,7 @@
 
 - **Nullable 표시** — `*` 자체가 "없을 수 있음"을 뜻하므로 추가로 표시하지 않는다. 포인터가 아닌 값이 없을 수 있을 때는 `std::optional`을 쓴다.
 - **`nullptr`** — 널 포인터는 항상 `nullptr`로 쓴다. `NULL`과 `0`은 쓰지 않는다.
-- **레퍼런스 멤버 금지** — 멤버 변수는 레퍼런스로 두지 않고 포인터로 둔다. 레퍼런스 멤버가 있으면 대입 연산자가 삭제되어 컨테이너에 넣거나 다시 대입할 수 없다. 대상이 반드시 있어야 하면 생성자에서 레퍼런스로 받아 주소를 저장한다.
+- **비소유 멤버 표현** — 기본은 포인터로 저장하며 필수 대상은 생성자에서 레퍼런스로 받아 주소를 보관한다. 현재 UActorComponent.owner와 FWindowsApplication.inputState는 생성 시 고정되는 필수 비소유 관계이므로 레퍼런스 멤버를 유지한다. 두 타입은 복사와 대입을 금지하며, 이 좁은 예외를 다른 타입에 자동 확대하지 않는다. 레퍼런스 멤버는 재결합할 수 없고 기본 대입 연산자에 제약을 주지만, 레퍼런스 멤버만을 이유로 모든 컨테이너 보관이 불가능하다고 판단하지 않는다.
 
   ```cpp
   class FRenderPass
@@ -750,7 +760,7 @@
 
 ### 3.12 STL 사용 정책 `중요`
 
-- **새 엔진의 좁은 예외 — 2026-10-15:** WindowsApplication.h의 FWindowDescription.title은 승인한 창 설정 형태에 따라 std::wstring을 직접 소유한다. Windows 전용 실행 경계에만 적용하며 엔진 공통 문자열·UTF-8 변환 계층을 도입했다는 뜻이 아니다. 아래 이전 FString/FWindowsString의 미구현 경로를 이 설정을 위해 복원하지 않는다.
+- **Windows 문자열 경계** — Windows 전용 설정의 FWindowDescription.title은 std::wstring으로 소유한다. 엔진 공통 문자열과 인코딩 변환 계층을 자동 도입하는 근거로 삼지 않는다.
 
 - **컨테이너 / 문자열** — STL을 내부 구현으로 쓰고, 코드에서는 엔진 타입을 사용한다.
   - `TArray` / `FString`은 STL 별칭이며 멤버 함수는 STL 이름(`push_back`, `size` 등)을 그대로 쓴다. 이 부분은 1.2 Naming의 예외다.
@@ -760,7 +770,7 @@
   template<typename T>
   using TArray = std::vector<T>;
 
-  // Containers/HashMap.h의 래퍼를 사용한다.
+  // Core/Containers/HashMap.h의 래퍼를 사용한다.
   THashMap<uint32, FString> names;
   names.Add(1, "One");
   const FString* name = names.Find(1);
@@ -772,26 +782,8 @@
   meshes.push_back(mesh);
   ```
 
-- **정수 타입** — `int`, `unsigned`, `long` 대신 크기를 명시한 타입(`int8` ~ `int64`, `uint8` ~ `uint64`)을 쓴다. 별칭은 `<cstdint>`를 거치지 않고 기본 타입(`signed int` 등)에 직접 정의하며, 크기는 `static_assert`로 확인한다(`Engine/Source/Core/CoreTypes.h`, 2026-10-15 새 배치). 실수는 `float` / `double`을 그대로 사용하며 별칭을 추가하지 않는다. 표준 라이브러리가 쓰는 `size_t`는 예외로 허용한다.
-- **문자열 별칭과 인코딩 — 2026-10-15 현재 규칙:** `Core/Containers/SeonString.h`의 `FString = std::string`, `FStringView = std::string_view`를 사용한다. FString은 소유, FStringView는 비소유이며 원본 수명을 연장하지 않는다. 엔진 문자열은 UTF-8로 취급하되 별칭 자체는 인코딩을 검사하거나 변환하지 않는다. std::format 반환값은 FString과 같은 타입이므로 그대로 사용할 수 있다. 기존 Windows 경계의 std::wstring 사용 예외는 유지한다.
-  - 이전 최소 로그 단계의 std::string_view 직접 사용 예외를 종료하고 로그 인자에 FStringView를 사용한다. TCHAR·문자 별칭·UTF-8/UTF-16 변환 계층은 이번에 추가하지 않는다.
-- **이전 엔진의 문자열 변환 기록 — 현재 미구현:** 아래 FWindowsString 경로와 변환 API는 보관본의 정책이며 현재 새 엔진의 구현을 뜻하지 않는다. 엔진 안의 문자열은 모두 UTF-8(`FString`)로 다룬다. Windows API를 호출하는 Platform 코드에서만 UTF-16(`std::wstring`)으로 변환한다. 변환은 `Platform/Windows/WindowsString.h`의 `FWindowsString`으로 한다.
-  - `FWindowsString::UTF8ToWide`는 깨진 UTF-8 바이트를 U+FFFD로 바꾸고 계속한다. 변환 자체가 실패하면 `std::nullopt`를 돌려주므로 값이 있는지 확인하고 쓴다.
-  - `FWindowsString::WideToUTF8`은 Windows API가 돌려준 UTF-16을 엔진 문자열로 받을 때 쓴다. 깨진 UTF-16(짝이 없는 서로게이트)을 만났을 때 할 일은 부르는 쪽이 `EInvalidCharacter`로 고른다. 사람이 읽을 글자는 `Replace`(기본, U+FFFD로 바꾸고 계속), 경로처럼 OS에 다시 넘길 값은 `Fail`(`std::nullopt`)이다. Windows는 파일 이름에 깨진 UTF-16을 허용하므로, 바꿔서 쓰면 다른 파일을 가리킨다.
-  - 엔진의 UTF-8 경로를 UTF-16으로 바꿀 때 깨진 바이트를 어떻게 다룰지는 정하지 않았다.
-
-  ```cpp
-  FString message = "창 생성 완료";
-
-  // Platform/Windows 내부
-  if (const std::optional<std::wstring> wideMessage = FWindowsString::UTF8ToWide(message))
-  {
-    OutputDebugStringW(wideMessage->c_str());
-  }
-
-  // 경로는 OS에 다시 넘기므로 깨진 글자가 있으면 실패시킨다
-  const std::optional<FString> path = FWindowsString::WideToUTF8(modulePath, EInvalidCharacter::Fail);
-  ```
+- **정수 타입** — 엔진 데이터에는 크기를 명시한 int8부터 int64, uint8부터 uint64를 사용한다. Core/CoreTypes.h가 기본 정수 타입의 별칭과 크기 검사를 제공한다. 실수는 float/double을 그대로 쓰고 표준 라이브러리의 size_t와 표준 main·외부 API의 인수/반환 타입은 해당 계약을 따른다.
+- **문자열 별칭과 인코딩** — Core/Containers/SeonString.h의 FString = std::string, FStringView = std::string_view를 사용한다. FString은 소유, FStringView는 비소유이며 원본 수명을 연장하지 않는다. 엔진 문자열은 UTF-8로 취급하되 별칭 자체가 인코딩을 검사하거나 변환하지는 않는다. std::format 결과는 FString과 같은 타입이다. Windows의 wide 문자열은 해당 플랫폼 API 경계에서 사용하며, 현재 없는 FWindowsString 변환 API를 호출하거나 새로 추가하지 않는다.
 
 ---
 
@@ -803,7 +795,7 @@
 
   ```cpp
   template<typename T>
-  using TUniquePtr = std::unique_ptr<T>;   // TSharedPtr, TWeakPtr도 같은 방식
+  using TUniquePtr = std::unique_ptr<T>;   // TSharedPtr도 표준 스마트 포인터의 별칭
 
   // MakeUnique / MakeShared는 std::make_unique / std::make_shared를 호출하는 함수로 정의한다.
   ```
@@ -827,61 +819,16 @@
 - **일반 C++ 객체의 할당** — 엔진 / 게임 위치가 아니라 객체의 수명 관리 방식으로 구분한다. 일반 C++ 객체는 양쪽 모두 `new` / `delete`를 사용할 수 있다. 기본은 `MakeUnique`(공유가 필요하면 `MakeShared`)이며, private 생성자 팩토리에서는 `new` 결과를 즉시 스마트 포인터에 넘길 수 있다. 직접 수명을 관리할 때는 생성 / 해제 담당과 모든 종료 / 실패 경로를 명확히 한다. `delete`는 해당 할당의 소유자만 수행하며 스마트 포인터 소유 객체나 빌린 포인터를 직접 삭제하지 않는다. 컨테이너 / 할당자 내부의 placement new는 해당 저장 공간의 수명 계약을 따른다. D3D11 같은 COM 객체는 계속 `ComPtr`로 관리한다.
 - **엔진 관리 객체** — 등록과 수명을 관리하는 시스템의 생성 / 제거 계약을 우회하지 않는다. 현재 월드 액터는 `SpawnActor` / `DestroyActor`를 사용하며, 반환받은 비소유 주소를 직접 삭제하지 않는다. 컴포넌트 등 소유권을 이전한 객체도 해당 소유자가 정리한다.
 - **Unreal UObject 규칙과 현재 한계** — Unreal의 GC 관리 UObject는 엔진 / 게임 모두 직접 `new` / `delete`하지 않고 전용 생성 API와 GC로 관리한다. 자체 엔진에는 아직 GC / NewObject가 없으므로 U 접두사만으로 이 규칙을 일괄 적용하지 않는다. 현재는 각 타입의 스마트 포인터 / 생성 / 제거 계약을 따르고, GC 도입 시 관리 대상 타입의 규칙을 갱신한다.
-- **`TSharedPtr`** — 여러 시스템이 함께 소유하고 누가 마지막인지 정할 수 없는 경우에만 쓴다. 편의를 위해 쓰지 않는다. 공유 객체를 관찰만 할 때는 `TWeakPtr`를 쓴다.
-- **핸들** — 텍스처, 메시, 게임 오브젝트처럼 여러 곳에서 참조하고 수명이 따로 관리되는 객체는 포인터 대신 핸들(인덱스 + 세대 번호)로 가리키는 것을 원칙으로 한다.
-  - **초기 메시 연결 예외 (2026-10-13)** — 자원 관리자·핸들은 후속으로 미루고 현재 FStaticMeshComponent는 UStaticMesh를 TSharedPtr로 공유 소유한다. SetStaticMesh는 변경이면 true, 같은 객체 재지정이면 false이며 nullptr로 해당 참조를 해제한다. 마지막 공유 소유자 해제 시 자산을 파괴하고 Outer의 수명은 유지하지 않는다. GetStaticMesh는 const 컴포넌트에서도 수정 가능한 비소유 UStaticMesh*를 반환하며 빈 상태는 nullptr다. 조회는 자산 수명을 연장하지 않으며 직접 삭제하지 않고 교체·해제 뒤 이전 주소의 유효성을 가정하지 않는다. GetRenderData는 지정 자산의 정점·규칙을 값으로 복사하며 자산 없음은 빈 형상으로 처리한다. 컴포넌트에는 형상 배열·규칙 API를 두지 않고 UStaticMesh에서 형상을 구성·조회한다. 자원 관리자·핸들 도입 시 메시 참조·해제 계약을 이전하며 이 예외를 재검토한다.
-
-  ```cpp
-  FTextureHandle texture = resourceManager.LoadTexture(path);
-
-  if (FTexture* resolved = resourceManager.Resolve(texture))
-  {
-    ...
-  }
-  ```
+- **`TSharedPtr`** — 여러 시스템이 함께 소유하고 누가 마지막인지 정할 수 없는 경우에만 쓴다. 편의를 위해 쓰지 않는다. 관찰만 할 때는 비소유 수명 보장이나 약한 참조가 필요한지 먼저 판단한다. 현재 TWeakPtr 별칭은 없으므로 제공된다고 가정하지 않고, 약한 참조가 필요하면 해당 수명 계약과 구현을 별도 제안한다.
+- **참조와 핸들** — 현재 타입의 실제 소유·반환 계약을 따른다. 공유 자산은 TSharedPtr로 수명을 유지하고 일반 조회 포인터는 비소유로 취급한다. 자산이 살아 있어도 내부 RenderData 교체로 기존 주소가 무효가 될 수 있으므로 해당 사용을 먼저 끝낸다. 자원 관리자·세대 번호 핸들은 현재 공통 구현이 아니며, 참조가 여러 곳에 있다는 이유만으로 미구현 핸들 API를 사용하거나 기존 참조를 바꾸지 않는다. 핸들이 필요한 요구가 생기면 생성·조회·무효화·해제 경로를 함께 설계한다.
 
 ### 4.2 객체 생명주기 `매우 중요`
 
-- **재시작 후 D3D11 장치 계약 (2026-10-16)** — FD3D11Device는 승인한 Initialize()/Shutdown() 이름을 사용한다. Initialize는 bool로 중복 준비·하드웨어 장치 생성 실패를 보고하고 HRESULT를 로그에 남긴다. main이 실패를 종료 코드 1로 전달하며 Fatal 처리로 바꾸지 않는다. Shutdown은 void이며 context/device ComPtr를 Reset한다. COM 참조는 소멸 시에도 자동 정리한다. 아래의 이전 InitD3DDevice·Fatal·일반 Initialize/Deinitialize 이름 설명은 이 새 클래스에 적용하지 않는다. 이 예외를 다른 API의 이름·실패 계약으로 확대하지 않는다.
-
-
-- **생성 / 파괴 책임** — 객체는 소유자가 만들고 파괴하며 단독 소유의 기본 표현은 `TUniquePtr`다. 직접 수명 관리는 4.1의 할당 정책을 따른다. 소유 관계는 나무 모양이 되며, 실행 엔진 객체는 FEngineLoop가 소유하며, 엔진 내부 객체는 각 담당 소유자가 만들고 파괴한다.
-
-  ```text
-  UEngine
-   └─ FRenderer              (Engine이 소유)
-       ├─ FRenderDevice      (Renderer가 소유)
-       └─ FShaderCache       (Renderer가 소유)
-  ```
-
-- **초기화 방식** — 무거운 객체는 2단계로 초기화하고, 함수 이름과 검사 방식을 통일한다.
-  - 서브시스템과 무거운 객체(GPU 리소스 등): 생성자에서는 실패하지 않는 가벼운 작업만 한다. 실제 초기화와 정리는 별도 함수에서 한다(이름은 아래 규칙).
-  - D3D11 장치 준비(Unreal 이름): `void InitD3DDevice()`는 Unreal 대응 이름과 역할을 사용한다. 현재 본문과 FRenderer의 직접 호출 연결을 구현했다. 창 출력은 Viewport가 준비하며 기존 Device Init은 제거했다. 정상 반환은 장치 준비 완료, 최종 생성 실패는 부분 자원 정리 후 Fatal 계약이며 다른 초기화 API의 반환형을 일반화하지 않는다.
-  - 작은 보조 타입(락 가드, 타이머 등): 생성자와 소멸자로 처리한다(RAII).
-  - 이름: 시작과 정리 함수 이름은 지금은 참고하는 Unreal 코드의 짝을 그대로 쓴다(예: `Init` – `Shutdown`, `StartupModule` – `ShutdownModule`). 대응하는 Unreal 이름이 없는 자체 객체는 단어가 대칭인 짝 `Initialize()` – `Deinitialize()`를 쓴다. 엔진 전체를 대칭 짝으로 맞추는 작업은 정한 시점에 한 번에 한다(DeferredTasks "초기화 / 정리 함수 이름의 대칭 짝").
-  - 엔진 실행 객체: `UEngine` 계열은 공통 실행 계약을 통한 가상 호출을 사용한다. 함수 인자와 수명, 실패, 정리 계약은 [Engine.h](../../Engine/Source/Engine.h)와 구현 타입의 공개 선언을 따른다. UObject 생성과 파괴를 실행 초기화와 정리와 구분하며, 소멸자의 실행 훅 자동 호출 여부는 타입 계약에 명시한다.
-  - 게임 세션 훅(Unreal 짝): `UGameInstance`의 `virtual void Init()` / `virtual void Shutdown()`은 Unreal과 같은 이름·역할로 둔다(기본 준비 / 조회 / 정리 구현 완료·게임 실행 연결 전). 기본 Init은 빈 훅이고 Shutdown은 비소유 연결을 해제한다. 성공 / 실패를 반환하는 자원 준비 API와 구분한다. 실패 가능한 실행 준비는 별도의 결과 전달 경로로 처리한다. 초기 컨텍스트 / 빈 월드 준비는 구현했으며 중복 준비는 Fatal로 처리한다. 맵 / GPU 등 실패 가능한 실행 준비와 부분 실패 정리는 후속이다. 같은 클래스의 일반 실행 준비 진입점은 non-virtual `void InitializeStandalone()`으로 두고 준비 절차 안에서 `Init()`을 호출한다(초기 단일 컨텍스트 / 빈 월드 준비 구현 완료, UGameEngine Init / PreExit 호출 연결 구현 완료, FEngineLoop 준비 / 종료 호출 연결 완료, 실제 진입점 / 프레임은 후속). 다른 객체의 이름 규칙에 영향을 주지 않는다.
-  - 초기화 함수 전에 다른 함수를 호출하거나, 정리 함수 없이 소멸되면 assert로 잡는다(5.2 Assert 참고).
-
-  ```cpp
-  class FTexture
-  {
-  public:
-    FTexture() = default;
-    ~FTexture();                  // Deinitialize()를 호출하지 않았으면 assert
-
-    [[nodiscard]] bool Initialize(const FTextureDesc& desc);
-    void Deinitialize();
-
-    bool IsInitialized() const { return bInitialized; }
-
-  private:
-    bool bInitialized = false;
-  };
-  ```
-
-- **서브시스템 초기화 순서** — 의존 대상부터 준비하고, 종료할 때는 의존하는 쪽부터 정리한다. 초기화 도중 실패하면 성공한 단계에서 확보한 자원만 정리한다. 전역 / static 객체의 생성자에서 파일 열기 등 외부 자원을 초기화하지 않는다.
-- **비소유 참조** — 비소유 포인터는 대상이 자신보다 오래 산다는 것이 보장될 때만 쓴다(부모, 소유자, 먼저 초기화된 서브시스템 등). 보장되지 않으면 핸들이나 `TWeakPtr`를 쓴다.
+- **생성 / 파괴 책임** — 소유자가 객체를 만들고 파괴하며 단독 소유의 기본 표현은 TUniquePtr다. 실행 루프는 창·Renderer·실행 엔진을, 실행 엔진은 자신의 World와 필요한 하위 객체를 소유한다. 빌린 참조 대상보다 참조 사용을 먼저 끝내고 정리한다. 공유 소유와 비소유를 소유 트리로 잘못 표현하지 않는다.
+- **초기화 방식** — 실패 가능한 무거운 준비는 생성과 분리하고 결과·부분 실패·재호출·정리 계약을 공개 선언에 명시한다. 작은 가드 등 실패 없는 보조 타입은 RAII를 사용한다. 소멸자가 명시적 종료 훅을 자동 호출하는지는 타입마다 확인한다.
+- **준비·정리 이름** — 현재 타입의 공개 API를 사용하고 이름을 일괄 변경하지 않는다. FD3D11Device는 bool Initialize()/void Shutdown(), UEngine은 Initialize/Start/Tick/PreExit, UGameInstance는 bool Initialize(UWorld&, FGameClient&, FRenderer&)를 제공한다. 제거된 InitD3DDevice·InitializeStandalone·Init/Shutdown 게임 훅을 현재 API로 사용하지 않는다. 새 API는 실제 역할과 기존 호출 흐름을 확인해 제안한다.
+- **서브시스템 순서** — 의존 대상부터 준비하고 의존하는 쪽부터 정리한다. 준비 실패 시 해당 단계에서 확보한 자원만 정리하며 성공한 부분의 보존·롤백 여부는 API 계약에 따른다. 전역/static 생성자에서 파일·장치 같은 외부 자원을 준비하지 않는다.
+- **비소유 참조** — 대상이 사용 종료까지 살아 있음을 보장한다. 보장할 수 없으면 참조 방식을 다시 설계하고, 이미 제공되는 TWeakPtr나 핸들이 있을 때 그 계약을 따른다. 미구현 수명 관리 기능을 가정하지 않는다.
 
 ---
 
@@ -908,53 +855,17 @@
 
   | 종류 | 예 | 처리 |
   |---|---|---|
-  | 프로그래머 실수 | 잘못된 인자, 호출 순서 위반, 불변 조건 위반 | assert로 잡는다(5.2 Assert 참고) |
+  | 프로그래머 실수 | 잘못된 인자, 호출 순서 위반, 불변 조건 위반 | 현재 API의 검사·반환 계약을 따른다. 미구현 진단 매크로를 호출하지 않는다(5.2 참고) |
   | 외부 요인 | 파일 없음, 잘못된 에셋, 사용자 입력 오류 | 에러를 돌려주고 로그를 남긴다. 가능하면 대체물(기본 텍스처 등)로 계속 진행한다 |
-  | 복구 불가 | 그래픽스 장치 생성 실패, 메모리 부족 | 치명 로그를 남기고 종료한다 |
+  | 실행 지속 불가 | 장치 준비 실패 등 | API의 실패를 호출부로 전달하고 부분 자원 정리 후 실행을 종료한다. 메모리 부족 복구와 치명 로그 API가 자동 제공된다고 가정하지 않는다 |
 
-### 5.2 Assert `매우 중요`
+### 5.2 Assert `중요`
 
-- **종류** — 네 가지를 둔다.
-
-  | 매크로 | 실패하면 | 쓰는 곳 |
-  |---|---|---|
-  | `ASSERT(condition)` | 중단 | 프로그래머 실수(5.1 에러 처리 참고) |
-  | `ASSERTF(condition, format, ...)` | 메시지와 함께 중단 | 원인 설명이 필요한 프로그래머 실수 |
-  | `VERIFY(condition)` | 중단 | 식이 반드시 실행되어야 하는 검사 |
-  | `ENSURE(condition)` | 로그를 남기고 계속 진행. 결과를 `bool`로 돌려준다 | 버그지만 안전하게 빠져나갈 수 있는 경우 |
-
-  ```cpp
-  ASSERT(device != nullptr);
-  ASSERTF(index < count, "index {} out of range", index);
-
-  VERIFY(sound.Initialize());
-
-  if (!ENSURE(texture != nullptr))
-  {
-    return;
-  }
-  ```
-
-- **부작용 금지** — `ASSERT` / `ASSERTF`의 조건식에는 함수 호출이나 대입처럼 반드시 실행되어야 하는 코드를 넣지 않는다. Release에서는 식까지 제거된다. 실행되어야 하면서 결과도 검사해야 하면 `VERIFY`를 쓴다.
-
-  ```cpp
-  // 금지: Release에서 Initialize가 호출되지 않음
-  ASSERT(sound.Initialize());
-  ```
-
-- **빌드 구성별 동작**
-
-  | 매크로 | Debug | Release (배포용) |
-  |---|---|---|
-  | `ASSERT`, `ASSERTF` | 검사 | 식까지 제거 |
-  | `VERIFY` | 검사 | 식은 실행, 검사만 제거 |
-  | `ENSURE` | 검사 | 식은 실행, 보고만 제거 |
-
-- **실패 동작** — 파일 이름, 줄 번호, 조건식, 메시지를 치명 로그로 남긴다. 디버거가 연결되어 있으면 그 자리에서 멈추고(`__debugbreak`), 아니면 종료한다. `ENSURE`는 로그와 디버거 중단만 하고 계속 진행하며, 같은 위치는 처음 한 번만 보고한다.
+현재 엔진에는 ASSERT/ASSERTF/VERIFY/ENSURE 공통 매크로 구현이 없다. static_assert처럼 실제 제공되는 C++ 기능과 각 API의 검사·로그·반환 계약을 사용한다. 과거 매크로 정책을 현재 사용법으로 적용하거나 규칙 정리를 이유로 매크로를 추가하지 않는다. 공통 진단 기능을 도입할 때는 조건식 부작용, Debug/Release 평가 여부, 로그·중단·종료 동작과 호출부를 함께 제안한다.
 
 ### 5.3 Logging `중요`
 
-#### 새 엔진 현재 규칙 — 2026-10-15
+#### 현재 로깅 API
 
 - `Core/Logging/Log.h`의 `ELogLevel::Info`, `Warning`, `Error`와 `WriteLog(category, level, format, args...)`를 사용한다. 세 레벨은 모두 stderr에 `[카테고리][레벨] 메시지`와 마지막 줄바꿈 하나를 출력한다. Debug/Release의 출력 정책은 같다.
 - 공개 WriteLog는 std::format_string으로 형식 문자열과 인자 타입을 컴파일할 때 검사하고 내부에서 std::format으로 메시지를 만든다. 완성된 FString/FStringView나 실행 중 생성한 문자열은 `WriteLog(category, level, "{}", message)`로 전달한다. 이때 message 안의 중괄호·%는 다시 해석하지 않는다. 리터럴 자체의 중괄호는 `{{`·`}}`로 쓴다.
@@ -966,38 +877,6 @@
 ```cpp
 WriteLog("Windows", ELogLevel::Error, "CreateWindowExW failed (error {})", errorCode);
 ```
-
-2026-10-15 정정: 최소 함수의 두 인자(level, message)에서 문자열 카테고리를 앞에 받는 세 인자로 확장했다. 레벨과 출력 목적지는 유지한다.
-
-2026-10-15 정정: 메시지 조립을 호출부 std::format에서 WriteLog 템플릿으로 옮겼다. 출력 전용 함수는 SE::Private::WriteLogMessage로 분리했으며 메시지 출력 형식은 유지한다.
-
-#### 이전 엔진 규칙 — 현재 미적용
-
-아래는 재시작 이전의 SE_LOG·카테고리 설계 기록이다. 새 엔진에 자동 적용하지 않으며 2026-10-15부터 위 현재 규칙을 따른다. 이전 내용은 변경 이유를 비교할 수 있도록 유지한다.
-
-- **레벨** — 로그 메시지에는 아래 7단계(`Fatal` ~ `VeryVerbose`)를 쓴다. 맨 앞의 `NoLogging`은 카테고리의 기준 레벨로만 쓴다.
-
-  | 레벨 | 용도 |
-  |---|---|
-  | `NoLogging` | 카테고리 기준 레벨 전용. 그 카테고리의 로그를 모두 끈다(`Fatal`은 항상 출력한다). 메시지 레벨로 쓰면 컴파일 에러다 |
-  | `Fatal` | 복구할 수 없는 오류. 로그를 남기고 종료한다 |
-  | `Error` | 기능이 실패함 |
-  | `Warning` | 동작은 하지만 문제가 있음 |
-  | `Display` | 콘솔과 로그 파일에 모두 남길 주요 정보 |
-  | `Log` | 로그 파일에만 남길 일반 정보 |
-  | `Verbose` | 자세한 디버깅 정보. 카테고리에서 켰을 때만 출력 |
-  | `VeryVerbose` | 매우 자세한 정보(매 프레임 출력 등). 카테고리에서 켰을 때만 출력 |
-
-- **카테고리** — 모든 로그에 카테고리를 붙인다. 카테고리 이름은 `Log` + PascalCase로 쓴다(1.2 Naming의 타입 접두사 규칙의 예외다). 카테고리마다 출력할 레벨을 따로 정할 수 있다.
-
-  ```cpp
-  SE_DECLARE_LOG_CATEGORY(LogRenderer);
-
-  SE_LOG(LogRenderer, Warning, "Texture {} not found", path);
-  ```
-
-- **메시지 형식** — `std::format`과 같은 `{}` 형식을 쓴다. 인자 타입을 컴파일 시간에 검사한다. `ASSERTF`의 메시지도 같은 형식을 쓴다.
-- **빌드 구성별 출력** — Debug에서는 모든 레벨을 남긴다. Release(배포용)에서는 `Error`와 `Fatal`만 남기고 나머지는 컴파일 단계에서 제거한다.
 
 ---
 
@@ -1058,4 +937,4 @@ WriteLog("Windows", ELogLevel::Error, "CreateWindowExW failed (error {})", error
   // clang-format on
   ```
 
-- **컨벤션 변경** — 컨벤션을 바꾸면 기존 코드도 바로 일괄 수정한다. 일괄 수정은 기능 변경과 섞지 않고 별도 커밋으로 나눈다.
+- **컨벤션 변경** — 변경한 규칙과 기존 코드 적용 범위를 구분한다. 일괄 적용은 대상·영향·검증을 별도로 제안·승인받아 진행하며 기능 변경과 섞지 않는다. 문서 정리만 승인받았다면 제품 코드는 유지한다. 커밋은 요청받은 경우에만 수행하고 기존 코드의 남은 적용 범위는 별도 작업으로 명시한다.
