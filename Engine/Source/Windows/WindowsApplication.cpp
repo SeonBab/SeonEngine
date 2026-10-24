@@ -5,61 +5,18 @@
 #include "Windows/WindowsInput.h"
 #include "WindowsHWrapper.h"
 
+#include <utility>
+
 namespace
 {
 	constexpr wchar_t WindowClassName[] = L"SeonEngineWindow";
 
-	LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
-	{
-		switch (message)
-		{
-			case WM_NCCREATE:
-			{
-				const auto* create = reinterpret_cast<const CREATESTRUCTW*>(lParam);
-				auto* input = static_cast<FInputState*>(create->lpCreateParams);
-				if (input == nullptr) { return FALSE; }
-
-				SetLastError(ERROR_SUCCESS);
-				const LONG_PTR previous = SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(input));
-				if (previous == 0 && GetLastError() != ERROR_SUCCESS) { return FALSE; }
-
-				return TRUE;
-			}
-
-			case WM_KILLFOCUS:
-			{
-				auto* input = reinterpret_cast<FInputState*>(GetWindowLongPtrW(window, GWLP_USERDATA));
-				if (input != nullptr)
-				{
-					input->Reset();
-				}
-				return 0;
-			}
-
-			case WM_NCDESTROY:
-				SetWindowLongPtrW(window, GWLP_USERDATA, 0);
-				return DefWindowProcW(window, message, wParam, lParam);
-
-			case WM_CLOSE:
-				// 창 파괴는 루프 정리에 맡겨 UI와 Renderer가 빌린 창보다 먼저 종료되게 한다.
-				PostQuitMessage(0);
-				return 0;
-
-			case WM_DESTROY:
-				PostQuitMessage(0);
-				return 0;
-
-			default:
-				return DefWindowProcW(window, message, wParam, lParam);
-		}
-	}
-
-	bool RegisterWindowClass(HINSTANCE instance, const wchar_t* className)
+	bool RegisterWindowClass(HINSTANCE instance, const wchar_t* className, WNDPROC windowProc)
 	{
 		WNDCLASSEXW windowClass{};
 		windowClass.cbSize = sizeof(windowClass);
 		windowClass.style = CS_HREDRAW | CS_VREDRAW;
-		windowClass.lpfnWndProc = WindowProc;
+		windowClass.lpfnWndProc = windowProc;
 		windowClass.hInstance = instance;
 		windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
 		if (windowClass.hCursor == nullptr)
@@ -84,9 +41,74 @@ namespace
 
 }
 
+LRESULT CALLBACK FWindowsApplication::WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (message == WM_NCCREATE)
+	{
+		const CREATESTRUCTW* create = reinterpret_cast<const CREATESTRUCTW*>(lParam);
+		// CreateWindowExW가 반환하기 전부터 메시지가 오므로 생성 메시지에서 객체를 연결한다.
+		FWindowsApplication* application = static_cast<FWindowsApplication*>(create->lpCreateParams);
+		if (application == nullptr) { return FALSE; }
+
+		SetLastError(ERROR_SUCCESS);
+		const LONG_PTR previous = SetWindowLongPtrW(windowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(application));
+		if (previous == 0 && GetLastError() != ERROR_SUCCESS) { return FALSE; }
+
+		return TRUE;
+	}
+
+	FWindowsApplication* application = reinterpret_cast<FWindowsApplication*>(GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
+	LRESULT handlerResult = 0;
+	bool bHandled = false;
+	if (application != nullptr && application->messageHandler)
+	{
+		bHandled = application->messageHandler(windowHandle, message, wParam, lParam, handlerResult);
+	}
+
+	// 외부 처리자가 true를 반환해도 창 수명과 입력 초기화의 필수 처리는 유지한다.
+	switch (message)
+	{
+		case WM_KILLFOCUS:
+		{
+			if (application != nullptr)
+			{
+				application->inputState.Reset();
+			}
+			return 0;
+		}
+
+		case WM_NCDESTROY:
+			SetWindowLongPtrW(windowHandle, GWLP_USERDATA, 0);
+			return DefWindowProcW(windowHandle, message, wParam, lParam);
+
+		case WM_CLOSE:
+			// 창 파괴는 루프 정리에 맡겨 UI와 Renderer가 빌린 창보다 먼저 종료되게 한다.
+			PostQuitMessage(0);
+			return 0;
+
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			return 0;
+
+		default:
+			if (bHandled) { return handlerResult; }
+			return DefWindowProcW(windowHandle, message, wParam, lParam);
+	}
+}
+
 FWindowsApplication::FWindowsApplication(FInputState& input)
 	: inputState(input)
 {
+}
+
+void FWindowsApplication::SetMessageHandler(FWindowsMessageHandler handler)
+{
+	messageHandler = std::move(handler);
+}
+
+void FWindowsApplication::ClearMessageHandler()
+{
+	messageHandler = nullptr;
 }
 
 bool FWindowsApplication::Initialize(const FWindowDescription& description)
@@ -105,7 +127,7 @@ bool FWindowsApplication::Initialize(const FWindowDescription& description)
 		return false;
 	}
 
-	if (!RegisterWindowClass(instance, WindowClassName))
+	if (!RegisterWindowClass(instance, WindowClassName, WindowProc))
 	{
 		return false;
 	}
@@ -126,7 +148,7 @@ bool FWindowsApplication::Initialize(const FWindowDescription& description)
 	const int windowHeight = static_cast<int>(windowRectangle.bottom - windowRectangle.top);
 	WriteLog("Windows", ELogLevel::Info, "Requested client area: {} x {}; window size: {} x {}", description.width, description.height, windowWidth, windowHeight);
 
-	window = CreateWindowExW(windowExStyle, WindowClassName, description.title.c_str(), windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, &inputState);
+	window = CreateWindowExW(windowExStyle, WindowClassName, description.title.c_str(), windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, this);
 	if (window == nullptr)
 	{
 		const DWORD errorCode = GetLastError();

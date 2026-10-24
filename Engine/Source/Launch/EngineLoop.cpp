@@ -79,7 +79,18 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 		engine = std::move(editorEngine);
 
 		// 초기화 실패도 Exit -> PreExit에서 정리하도록 호출 전에 소유권을 옮긴다.
-		return editor.Initialize(renderer) && editor.InitializeEditorUI(application.GetWindowHandle());
+		if (!editor.Initialize(renderer) || !editor.InitializeEditorUI(application.GetWindowHandle()))
+		{
+			return false;
+		}
+
+		// Editor 객체를 빌려 연결하며 Exit에서 UI 정리 전에 콜백을 해제한다.
+		application.SetMessageHandler([&editor](HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, LRESULT& outResult)
+		{
+			return editor.HandleWindowMessage(windowHandle, message, wParam, lParam, outResult);
+		});
+
+		return true;
 	}
 	else
 	{
@@ -109,6 +120,9 @@ bool FEngineLoop::Tick(float deltaSeconds)
 
 bool FEngineLoop::Exit()
 {
+	// 캡처한 엔진 객체와 그 UI가 정리되기 전에 메시지 연결을 끊는다.
+	application.ClearMessageHandler();
+
 	if (engine)
 	{
 		engine->PreExit();

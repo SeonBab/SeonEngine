@@ -20,6 +20,9 @@ public:
 	/** 같은 스레드의 유효한 창을 빌려 context와 Win32 백엔드를 준비한다. 중복 초기화/기존 current context는 거부한다. */
 	[[nodiscard]] bool Initialize(HWND windowHandle);
 
+	/** 초기화한 창의 메시지를 같은 스레드에서 전달한다. true일 때만 outResult가 유효하다. */
+	[[nodiscard]] bool HandleWindowMessage(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, LRESULT& outResult);
+
 	/** 빌린 창이 살아 있을 때 Win32 백엔드와 소유 context를 순서대로 해제한다. 빈 상태/반복 호출을 허용한다. */
 	void Shutdown();
 

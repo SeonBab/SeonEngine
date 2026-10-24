@@ -5,6 +5,9 @@
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 
+// 백엔드 헤더가 Windows 타입 의존을 피하려고 제외한 함수 선언이다.
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 FEditorUI::~FEditorUI()
 {
 	Shutdown();
@@ -40,6 +43,22 @@ bool FEditorUI::Initialize(HWND windowHandle)
 	}
 	bWin32Initialized = true;
 
+	return true;
+}
+
+bool FEditorUI::HandleWindowMessage(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, LRESULT& outResult)
+{
+	if (context == nullptr || !bWin32Initialized) { return false; }
+
+	// 백엔드는 current context를 사용하므로 소유 대상을 선택하고 기존 선택을 복원한다.
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(context);
+	const LRESULT result = ImGui_ImplWin32_WndProcHandler(windowHandle, message, wParam, lParam);
+	ImGui::SetCurrentContext(previousContext);
+
+	if (result == 0) { return false; }
+
+	outResult = result;
 	return true;
 }
 

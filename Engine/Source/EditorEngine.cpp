@@ -8,6 +8,11 @@ bool UEditorEngine::InitializeEditorUI(HWND windowHandle)
 	return editorUI.Initialize(windowHandle);
 }
 
+bool UEditorEngine::HandleWindowMessage(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, LRESULT& outResult)
+{
+	return editorUI.HandleWindowMessage(windowHandle, message, wParam, lParam, outResult);
+}
+
 bool UEditorEngine::Tick(float, const FInputState&, FRenderer& renderer, int width, int height)
 {
 	if (!world || width <= 0 || height <= 0) { return false; }
