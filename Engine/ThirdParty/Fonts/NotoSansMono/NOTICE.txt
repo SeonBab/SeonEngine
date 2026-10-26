@@ -1,0 +1,19 @@
+DebugMono.spritefont
+
+Generated from Noto Sans Mono Regular, Version 2.007.
+Original font copyright metadata:
+Copyright 2015-2021 Google LLC. All Rights Reserved.
+
+Upstream repository license notice:
+Copyright 2018 The Noto Project Authors (github.com/googlei18n/noto-fonts)
+
+The original TTF and the derived DebugMono.spritefont are licensed under
+the SIL Open Font License, Version 1.1. The full license is in OFL.txt.
+
+DebugMono is the engine asset name. It contains rasterized glyphs for
+U+0020 through U+007E, generated at 16pt (96 DPI), with '?' as fallback.
+The original TTF is preserved without modification in the source package.
+
+Source repository: https://github.com/notofonts/noto-fonts
+Source commit: ffebf8c1ee449e544955a7e813c54f9b73848eac
+Source path: hinted/ttf/NotoSansMono/NotoSansMono-Regular.ttf

@@ -131,6 +131,8 @@ tools 기능은 `x64-windows-static-md/tools/directxtk/makespritefont.exe`와 `x
 
 빌드 후 `Engine/Content/Textures/Checker.png`를 `$(OutDir)Content/Textures/`에 복사한다. 런타임 셰이더를 준비할 때는 실행 파일과 Shaders 출력을 함께 둔다.
 
+폰트는 `SECopyEngineFont`가 `Engine/Content/Fonts/DebugMono.spritefont`와 `Engine/ThirdParty/Fonts/NotoSansMono/`의 `OFL.txt`, `NOTICE.txt`를 `$(OutDir)Content/Fonts/`로 함께 복사한다. 생성 자산과 저작권·라이선스 고지는 함께 배포한다. 원본 TTF와 생성 조건은 [폰트 자산 안내](../Engine/ThirdParty/Fonts/NotoSansMono/README.md)에 보관하며, 일반 빌드에서는 폰트를 생성하거나 원본 TTF를 출력으로 복사하지 않는다. 생성 스크립트는 제공하지 않는다.
+
 ## 소스 인코딩과 서식
 
 - `.editorconfig`: UTF-8 BOM 없음, CRLF, 파일 끝 newline. C++·HLSL·C#의 들여쓰기는 Tab, 폭 4다.

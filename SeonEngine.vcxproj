@@ -252,11 +252,19 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <Content Include="Engine\Content\Textures\Checker.png" />
+    <Content Include="Engine\Content\Fonts\DebugMono.spritefont" />
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\OFL.txt" />
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\NOTICE.txt" />
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\README.md" />
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\NotoSansMono-Regular.ttf" />
   </ItemGroup>
   <Target Name="SEPrepareShaderOutput" BeforeTargets="FxCompile">
     <MakeDir Directories="$(OutDir)Shaders" />
   </Target>
   <Target Name="SECopyEngineTexture" AfterTargets="Build">
     <Copy SourceFiles="$(SERootDir)Engine\Content\Textures\Checker.png" DestinationFolder="$(OutDir)Content\Textures" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="SECopyEngineFont" AfterTargets="Build">
+    <Copy SourceFiles="$(SERootDir)Engine\Content\Fonts\DebugMono.spritefont;$(SERootDir)Engine\ThirdParty\Fonts\NotoSansMono\OFL.txt;$(SERootDir)Engine\ThirdParty\Fonts\NotoSansMono\NOTICE.txt" DestinationFolder="$(OutDir)Content\Fonts" SkipUnchangedFiles="true" />
   </Target>
 </Project>

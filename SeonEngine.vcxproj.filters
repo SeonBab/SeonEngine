@@ -7,6 +7,9 @@
     <Filter Include="Engine\Content">
       <UniqueIdentifier>{14A25BAC-0F42-32F3-9780-5D67E49B1D44}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Content\Fonts">
+      <UniqueIdentifier>{4301C43E-E56D-32D2-8CD5-E5A7B6848A4E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Content\Textures">
       <UniqueIdentifier>{23A87D43-2294-37E3-8F06-369A86205354}</UniqueIdentifier>
     </Filter>
@@ -75,6 +78,15 @@
     </Filter>
     <Filter Include="Engine\Source\Windows">
       <UniqueIdentifier>{1D509D59-91BD-3DCC-826B-CD1C751DCB39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ThirdParty">
+      <UniqueIdentifier>{F520CCED-5486-31D7-960E-5F388253DB7A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ThirdParty\Fonts">
+      <UniqueIdentifier>{14E907DA-2A22-3BE8-9C58-F7A3F91D98A8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ThirdParty\Fonts\NotoSansMono">
+      <UniqueIdentifier>{A947BC6C-841C-3DFE-B8B4-6EAF93C33619}</UniqueIdentifier>
     </Filter>
     <Filter Include="Game">
       <UniqueIdentifier>{87E0608F-F84A-3AA0-9801-3BD1314F7A78}</UniqueIdentifier>
@@ -572,6 +584,21 @@
   <ItemGroup>
     <Content Include="Engine\Content\Textures\Checker.png">
       <Filter>Engine\Content\Textures</Filter>
+    </Content>
+    <Content Include="Engine\Content\Fonts\DebugMono.spritefont">
+      <Filter>Engine\Content\Fonts</Filter>
+    </Content>
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\OFL.txt">
+      <Filter>Engine\ThirdParty\Fonts\NotoSansMono</Filter>
+    </Content>
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\NOTICE.txt">
+      <Filter>Engine\ThirdParty\Fonts\NotoSansMono</Filter>
+    </Content>
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\README.md">
+      <Filter>Engine\ThirdParty\Fonts\NotoSansMono</Filter>
+    </Content>
+    <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\NotoSansMono-Regular.ttf">
+      <Filter>Engine\ThirdParty\Fonts\NotoSansMono</Filter>
     </Content>
   </ItemGroup>
 </Project>
