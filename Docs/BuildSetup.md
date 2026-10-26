@@ -87,7 +87,7 @@ SeonEngine/
 | 소스·실행 문자 집합 | `/utf-8` |
 | 경고 | `/W4`, `/WX`, `/w14668`, `/w14265` |
 | 외부 헤더 | 꺾쇠 include를 외부 헤더로 취급하고 외부 경고 끔 |
-| C++ 예외 | 끔, `_HAS_EXCEPTIONS=0` |
+| C++ 예외 | 표준 C++ 예외 지원 `/EHsc` (`ExceptionHandling=Sync`), `_HAS_EXCEPTIONS` 별도 재정의 없음 |
 | RTTI·SDL 검사 | 켬 |
 | 플랫폼 정의 | `SE_PLATFORM_WINDOWS=1`, `SE_PLATFORM_HEADER_NAME=Windows` |
 | Debug 정의 | `SE_BUILD_DEBUG=1`, `SE_BUILD_RELEASE=0`, `_DEBUG` |
@@ -99,7 +99,7 @@ SeonEngine 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 
 ## 외부 라이브러리
 
-`Engine/ThirdParty/vcpkg.json`의 manifest 모드를 사용한다. 현재 manifest 목록은 DirectXMath, Assimp, RapidJSON, ImGui이며 ImGui에는 docking-experimental·win32-binding·dx11-binding 기능을 지정한다. RapidJSON은 헤더 전용 JSON 라이브러리이며 별도 링크 라이브러리는 없다. manifest 등록은 제품 코드에서 해당 기능을 사용한다는 뜻은 아니다. 버전 기준은 manifest의 `builtin-baseline`이다.
+`Engine/ThirdParty/vcpkg.json`의 manifest 모드를 사용한다. 현재 manifest 목록은 DirectXMath, Assimp, RapidJSON, ImGui, DirectXTK이며 ImGui에는 docking-experimental·win32-binding·dx11-binding, DirectXTK에는 tools 기능을 지정한다. RapidJSON은 헤더 전용 JSON 라이브러리이며 별도 링크 라이브러리는 없다. manifest 등록은 제품 코드에서 해당 기능을 사용한다는 뜻은 아니다. 버전 기준은 manifest의 `builtin-baseline`이다.
 
 - 사용자 전역 classic 통합은 `VCPkgLocalAppDataDisabled=true`로 끈다.
 - `VcpkgEnableManifest=true`, manifest 루트는 `Engine/ThirdParty/`다.
@@ -111,7 +111,19 @@ SeonEngine 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 - 선택한 overlay triplet과 `Directory.Build.targets`도 vcpkg 설치 단계의 입력이다. 이 파일이 설치 완료 기록보다 새로우면 의존성을 다시 검사하며, 변경이 없으면 설치 단계를 생략한다. vcpkg 자체의 ABI 검사에 따라 필요한 패키지만 재빌드하거나 캐시에서 복원한다.
 - vcpkg 명령을 직접 실행할 때는 manifest 루트뿐 아니라 `--x-install-root`에 도구별 설치 루트, `--overlay-triplets`에 해당 v143/v145 폴더를 지정한다. 명령을 실행할 VS의 설치 경로를 `VCPKG_VISUAL_STUDIO_PATH`에도 지정한다. IDE 빌드는 경로 인자와 설치 선택을 자동으로 전달한다.
 
-배포 시의 고지 파일은 [Assimp와 의존 라이브러리 고지](../Engine/ThirdParty/Assimp/README.md)를 따른다.
+배포 시의 고지 파일은 [Assimp와 의존 라이브러리 고지](../Engine/ThirdParty/Assimp/README.md)와 [DirectXTK 고지](../Engine/ThirdParty/DirectXTK/README.md)를 따른다.
+
+### DirectXTK와 폰트 생성 도구
+
+DirectXTK는 D3D11용 라이브러리이며 현재 baseline에서 2026-05-07#1(may2026)을 사용한다. 헤더는 `<directxtk/SpriteFont.h>`, `<directxtk/SpriteBatch.h>`로 포함한다. 도구별 설치 루트의 `x64-windows-static-md/lib/DirectXTK.lib`와 `debug/lib/DirectXTK.lib`가 각각 Release와 Debug용이다. 기존 vcpkg MSBuild 통합의 헤더·라이브러리 경로와 자동 링크를 사용하며 프로젝트에 별도 경로를 하드코딩하지 않는다.
+
+tools 기능은 `x64-windows-static-md/tools/directxtk/makespritefont.exe`와 `xwbtool.exe`를 설치한다. 폰트 생성에는 MakeSpriteFont를 사용하고 XWBTool은 오디오용 별도 도구다. VS2026 기본 폰트 도구 경로는 `Intermediate/vcpkg_installed/v145/x64-windows-static-md/tools/directxtk/makespritefont.exe`이며 VS2022는 v143 설치 루트를 사용한다. 도구는 필요할 때 명시적으로 실행하며 일반 엔진 빌드에서 폰트를 자동 생성하지 않는다.
+
+```powershell
+& './Intermediate/vcpkg_installed/v145/x64-windows-static-md/tools/directxtk/makespritefont.exe' '<설치된 폰트 이름>' '<출력 경로>.spritefont' /FontSize:16 /CharacterRegion:0x20-0x7e /DefaultCharacter:0x3f
+```
+
+위 예시는 영문·숫자·기호와 미지원 문자 대체용 `?`를 포함한다. 제품에 사용할 폰트와 생성 파일의 배포 조건은 폰트별로 확인한다. 이 버전은 `/?`를 도움말 옵션으로 지원하지 않으며, 인수가 잘못되면 사용법을 출력하고 실패 코드를 반환한다.
 
 ## 셰이더와 콘텐츠 출력
 

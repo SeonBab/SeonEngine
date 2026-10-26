@@ -4,6 +4,12 @@
     "assimp",
     "rapidjson",
     {
+      "name": "directxtk",
+      "features": [
+        "tools"
+      ]
+    },
+    {
       "name": "imgui",
       "features": [
         "docking-experimental",
