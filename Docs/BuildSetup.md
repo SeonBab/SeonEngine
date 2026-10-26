@@ -99,7 +99,7 @@ SeonEngine 프로젝트는 PCH를 사용하지 않으며 `_CONSOLE`, Console 서
 
 ## 외부 라이브러리
 
-`Engine/ThirdParty/vcpkg.json`의 manifest 모드를 사용한다. 현재 manifest 목록은 DirectXMath, Assimp, ImGui이며 ImGui에는 docking-experimental·win32-binding·dx11-binding 기능을 지정한다. manifest 등록은 제품 코드에서 해당 기능을 사용한다는 뜻은 아니다. 버전 기준은 manifest의 `builtin-baseline`이다.
+`Engine/ThirdParty/vcpkg.json`의 manifest 모드를 사용한다. 현재 manifest 목록은 DirectXMath, Assimp, RapidJSON, ImGui이며 ImGui에는 docking-experimental·win32-binding·dx11-binding 기능을 지정한다. RapidJSON은 헤더 전용 JSON 라이브러리이며 별도 링크 라이브러리는 없다. manifest 등록은 제품 코드에서 해당 기능을 사용한다는 뜻은 아니다. 버전 기준은 manifest의 `builtin-baseline`이다.
 
 - 사용자 전역 classic 통합은 `VCPkgLocalAppDataDisabled=true`로 끈다.
 - `VcpkgEnableManifest=true`, manifest 루트는 `Engine/ThirdParty/`다.

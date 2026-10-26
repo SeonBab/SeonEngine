@@ -108,8 +108,14 @@
     <ClInclude Include="Engine\Source\Input\Key.h" />
     <ClInclude Include="Engine\Source\Input\PlayerInput.h" />
     <ClInclude Include="Engine\Source\Launch\EngineLoop.h" />
+    <ClInclude Include="Engine\Source\Maps\ActorTypeRegistry.h" />
+    <ClInclude Include="Engine\Source\Maps\ComponentTypeRegistry.h" />
+    <ClInclude Include="Engine\Source\Maps\MapActorData.h" />
+    <ClInclude Include="Engine\Source\Maps\MapLoader.h" />
     <ClInclude Include="Engine\Source\Object.h" />
     <ClInclude Include="Engine\Source\PlayState.h" />
+    <ClInclude Include="Engine\Source\Properties\ComponentPropertyInfo.h" />
+    <ClInclude Include="Engine\Source\Properties\PropertyValue.h" />
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h" />
     <ClInclude Include="Engine\Source\Renderer\Material.h" />
     <ClInclude Include="Engine\Source\Renderer\MaterialInterface.h" />
@@ -175,6 +181,9 @@
     <ClCompile Include="Engine\Source\Input\PlayerInput.cpp" />
     <ClCompile Include="Engine\Source\Launch\EngineLoop.cpp" />
     <ClCompile Include="Engine\Source\Launch\EngineMain.cpp" />
+    <ClCompile Include="Engine\Source\Maps\ActorTypeRegistry.cpp" />
+    <ClCompile Include="Engine\Source\Maps\ComponentTypeRegistry.cpp" />
+    <ClCompile Include="Engine\Source\Maps\MapLoader.cpp" />
     <ClCompile Include="Engine\Source\Renderer\DirectionalLightSceneProxy.cpp" />
     <ClCompile Include="Engine\Source\Renderer\Material.cpp" />
     <ClCompile Include="Engine\Source\Renderer\MaterialInterface.cpp" />

@@ -61,6 +61,12 @@
     <Filter Include="Engine\Source\Launch">
       <UniqueIdentifier>{19BE2028-CD81-3346-A82F-1CF5B3B75542}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Maps">
+      <UniqueIdentifier>{D59CBC47-1A26-3B57-87F6-AB276BC4932B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Properties">
+      <UniqueIdentifier>{9A5128A1-D311-3A7F-80E7-4CAD8FE7CB62}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Renderer">
       <UniqueIdentifier>{3DD56110-A9F9-35E9-A9F4-FF041D235E55}</UniqueIdentifier>
     </Filter>
@@ -222,11 +228,29 @@
     <ClInclude Include="Engine\Source\Launch\EngineLoop.h">
       <Filter>Engine\Source\Launch</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Maps\ActorTypeRegistry.h">
+      <Filter>Engine\Source\Maps</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Maps\ComponentTypeRegistry.h">
+      <Filter>Engine\Source\Maps</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Maps\MapActorData.h">
+      <Filter>Engine\Source\Maps</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Maps\MapLoader.h">
+      <Filter>Engine\Source\Maps</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Object.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\PlayState.h">
       <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Properties\ComponentPropertyInfo.h">
+      <Filter>Engine\Source\Properties</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Properties\PropertyValue.h">
+      <Filter>Engine\Source\Properties</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
@@ -418,6 +442,15 @@
     </ClCompile>
     <ClCompile Include="Engine\Source\Launch\EngineMain.cpp">
       <Filter>Engine\Source\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Maps\ActorTypeRegistry.cpp">
+      <Filter>Engine\Source\Maps</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Maps\ComponentTypeRegistry.cpp">
+      <Filter>Engine\Source\Maps</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Maps\MapLoader.cpp">
+      <Filter>Engine\Source\Maps</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\DirectionalLightSceneProxy.cpp">
       <Filter>Engine\Source\Renderer</Filter>

@@ -2,6 +2,7 @@
   "dependencies": [
     "directxmath",
     "assimp",
+    "rapidjson",
     {
       "name": "imgui",
       "features": [
