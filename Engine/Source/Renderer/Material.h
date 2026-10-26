@@ -5,7 +5,7 @@
 #include "MaterialInterface.h"
 
 class FMaterialRenderProxy;
-class UTexture2D;
+class UTexture;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 고정 셰이더에서 사용할 색상 텍스처를 공유 참조하는 구체 재질이다.
@@ -44,14 +44,14 @@ public:
 
 public:
 	/** 색상 텍스처의 공유 참조를 교체한다. nullptr는 미지정이며 GPU 검사나 렌더 상태 갱신은 하지 않는다. */
-	void SetBaseColorTexture(TSharedPtr<UTexture2D> texture);
+	void SetBaseColorTexture(TSharedPtr<UTexture> texture);
 
 	/** 공유 참조의 사본을 반환한다. 미지정이면 nullptr이며 사본을 유지하는 동안 텍스처 객체가 살아 있다. */
-	TSharedPtr<UTexture2D> GetBaseColorTexture() const;
+	TSharedPtr<UTexture> GetBaseColorTexture() const;
 
 private:
 	// 텍스처 객체의 수명을 공유한다. 기본 nullptr는 색상 텍스처 미지정 상태다.
-	TSharedPtr<UTexture2D> baseColorTexture;
+	TSharedPtr<UTexture> baseColorTexture;
 
 #pragma endregion
 

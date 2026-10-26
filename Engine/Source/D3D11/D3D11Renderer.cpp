@@ -1,15 +1,21 @@
-#include "Renderer.h"
+#include "D3D11Renderer.h"
 
 #include "Core/Containers/Array.h"
 #include "Core/CoreTypes.h"
 #include "Core/Logging/Log.h"
 #include "Core/Math/Matrix4.h"
 #include "Core/Misc/Paths.h"
+#include "Core/Templates/SharedPtr.h"
+#include "D3D11/D3D11ImGuiRendererBackend.h"
 #include "D3D11/D3D11Shader.h"
+#include "D3D11/D3D11StaticMeshRenderData.h"
+#include "D3D11/D3D11TextureRenderData.h"
 #include "Image/Image.h"
-#include "Renderer/MaterialRenderProxy.h"
+#include "Renderer/SceneRenderData.h"
 #include "Renderer/StaticMeshData.h"
+#include "Renderer/Texture.h"
 #include "Renderer/Texture2D.h"
+#include "Renderer/TextureRenderTarget2D.h"
 #include "UI/UIDrawElementList.h"
 #include "UI/UIImageDrawElement.h"
 
@@ -73,8 +79,9 @@ namespace
 
 #pragma region Lifecycle
 
-bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
+bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 height)
 {
+	const HWND windowHandle = static_cast<HWND>(nativeWindowHandle);
 	if (bInitialized || graphics.GetDevice())
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Renderer is already initialized.");
@@ -264,6 +271,8 @@ bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 
 	bufferWidth = width;
 	bufferHeight = height;
+	outputWidth = width;
+	outputHeight = height;
 	localToWorld = initialLocalToWorld;
 	worldToClip = initialWorldToClip;
 	bInitialized = true;
@@ -284,7 +293,13 @@ bool FRenderer::Initialize(HWND windowHandle, int32 width, int32 height)
 	return true;
 }
 
-void FRenderer::Shutdown()
+TUniquePtr<IImGuiRendererBackend> FD3D11Renderer::CreateImGuiRendererBackend()
+{
+	if (!bInitialized) { return nullptr; }
+	return MakeUnique<FD3D11ImGuiRendererBackend>(graphics.GetDevice(), graphics.GetContext());
+}
+
+void FD3D11Renderer::Shutdown()
 {
 	if (graphics.GetContext())
 	{
@@ -296,6 +311,7 @@ void FRenderer::Shutdown()
 		graphics.SetVertexShaderConstantBuffer(0, nullptr);
 		graphics.SetVertexShaderConstantBuffer(1, nullptr);
 		graphics.SetVertexShaderConstantBuffer(2, nullptr);
+		graphics.SetVertexShaderConstantBuffer(3, nullptr);
 		graphics.SetVertexBuffer(nullptr);
 		graphics.SetInputLayout(nullptr);
 		graphics.SetRenderTarget(nullptr);
@@ -303,12 +319,15 @@ void FRenderer::Shutdown()
 		graphics.SetVertexShader(nullptr);
 	}
 
+	activeRenderTargetResource.Reset();
+	captureDepthStencilView.Reset();
+	captureDepthStencilTexture.Reset();
 	depthStencilView.Reset();
 	depthStencilTexture.Reset();
 	worldDepthStencilState.Reset();
 	uiDepthStencilState.Reset();
 	swapChain.Shutdown();
-	imageQuad = FStaticMeshRenderData{};
+	imageQuad.reset();
 	for (std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>& samplersForU : samplerStates)
 	{
 		for (Microsoft::WRL::ComPtr<ID3D11SamplerState>& sampler : samplersForU)
@@ -330,17 +349,24 @@ void FRenderer::Shutdown()
 	graphics.Shutdown();
 	localToWorld = FMatrix4{};
 	worldToClip = FMatrix4{};
+	savedLocalToWorld = FMatrix4{};
+	savedWorldToClip = FMatrix4{};
+	captureDepthWidth = 0;
+	captureDepthHeight = 0;
 	bufferWidth = 0;
 	bufferHeight = 0;
+	outputWidth = 0;
+	outputHeight = 0;
 	bInitialized = false;
 	bFrameActive = false;
+	bRenderTargetActive = false;
 }
 
 #pragma endregion
 
 #pragma region ResourceCreation
 
-bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh)
+bool FD3D11Renderer::CreateMesh(const FStaticMeshData& meshData, TUniquePtr<FStaticMeshRenderData>& outMesh)
 {
 	if (!bInitialized)
 	{
@@ -349,21 +375,21 @@ bool FRenderer::CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderDat
 	}
 	if (!ValidateTriangleMesh(meshData.vertices.size(), meshData.indices)) { return false; }
 
-	FStaticMeshRenderData newMesh;
-	if (!graphics.CreateVertexBuffer(meshData.vertices, newMesh.vertexBuffer) ||
-		!graphics.CreateIndexBuffer(meshData.indices, newMesh.indexBuffer))
+	TUniquePtr<FD3D11StaticMeshRenderData> newMesh = MakeUnique<FD3D11StaticMeshRenderData>();
+	if (!graphics.CreateVertexBuffer(meshData.vertices, newMesh->vertexBuffer) ||
+		!graphics.CreateIndexBuffer(meshData.indices, newMesh->indexBuffer))
 	{
 		return false;
 	}
 
 	// 두 형상 버퍼가 모두 준비된 뒤에만 기존 메시를 교체한다.
-	newMesh.indexCount = static_cast<uint32>(meshData.indices.size());
+	newMesh->indexCount = static_cast<uint32>(meshData.indices.size());
 	outMesh = std::move(newMesh);
 
 	return true;
 }
 
-bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
+bool FD3D11Renderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 {
 	if (!bInitialized)
 	{
@@ -377,12 +403,39 @@ bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 	}
 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-	UTexture2D newTexture;
+	TUniquePtr<FD3D11TextureRenderData> newTexture = MakeUnique<FD3D11TextureRenderData>(image.sizeX, image.sizeY);
 	if (!graphics.CreateTexture2D(static_cast<uint32>(image.sizeX), static_cast<uint32>(image.sizeY), image.rawData, texture)) { return false; }
-	if (!graphics.CreateShaderResourceView(texture.Get(), newTexture.textureView)) { return false; }
-	if (!graphics.GenerateMips(newTexture.textureView.Get())) { return false; }
+	if (!graphics.CreateShaderResourceView(texture.Get(), newTexture->textureView)) { return false; }
+	if (!graphics.GenerateMips(newTexture->textureView.Get())) { return false; }
 
-	outTexture.textureView = std::move(newTexture.textureView);
+	outTexture.SetRenderData(std::move(newTexture));
+
+	return true;
+}
+
+bool FD3D11Renderer::CreateRenderTarget2D(int32 width, int32 height, UTextureRenderTarget2D& outTexture)
+{
+	if (!bInitialized || bFrameActive)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Creating a render target requires an initialized renderer outside an active frame.");
+		return false;
+	}
+	if (width <= 0 || height <= 0)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "A render target requires positive dimensions.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+	TUniquePtr<FD3D11TextureRenderData> newTexture = MakeUnique<FD3D11TextureRenderData>(width, height);
+	if (!graphics.CreateRenderTargetTexture2D(static_cast<uint32>(width), static_cast<uint32>(height), texture, newTexture->renderTargetView)) { return false; }
+	if (!graphics.CreateShaderResourceView(texture.Get(), newTexture->textureView)) { return false; }
+
+	const float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+	graphics.ClearRenderTargetView(newTexture->renderTargetView.Get(), clearColor);
+
+	// 두 뷰와 실제 크기를 함께 교체해 공유 객체의 주소와 기존 주소 설정을 유지한다.
+	outTexture.SetRenderData(std::move(newTexture));
 
 	return true;
 }
@@ -391,7 +444,7 @@ bool FRenderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture)
 
 #pragma region ViewTransform
 
-bool FRenderer::SetLocalToWorld(const FMatrix4& matrix)
+bool FD3D11Renderer::SetLocalToWorld(const FMatrix4& matrix)
 {
 	if (!bInitialized)
 	{
@@ -410,7 +463,7 @@ bool FRenderer::SetLocalToWorld(const FMatrix4& matrix)
 	return true;
 }
 
-bool FRenderer::SetWorldToClip(const FMatrix4& matrix)
+bool FD3D11Renderer::SetWorldToClip(const FMatrix4& matrix)
 {
 	if (!bInitialized)
 	{
@@ -432,7 +485,7 @@ bool FRenderer::SetWorldToClip(const FMatrix4& matrix)
 
 #pragma region Lighting
 
-bool FRenderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor)
+bool FD3D11Renderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor)
 {
 	if (!bInitialized)
 	{
@@ -445,7 +498,7 @@ bool FRenderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor
 	return graphics.UpdateConstantBuffer(directionalLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
 }
 
-bool FRenderer::SetSkyLight(FVector3 lightColor)
+bool FD3D11Renderer::SetSkyLight(FVector3 lightColor)
 {
 	if (!bInitialized)
 	{
@@ -462,7 +515,7 @@ bool FRenderer::SetSkyLight(FVector3 lightColor)
 
 #pragma region Frame
 
-bool FRenderer::BeginFrame(int32 width, int32 height)
+bool FD3D11Renderer::BeginFrame(int32 width, int32 height)
 {
 	if (!bInitialized || bFrameActive || width <= 0 || height <= 0)
 	{
@@ -491,6 +544,8 @@ bool FRenderer::BeginFrame(int32 width, int32 height)
 
 	graphics.SetRenderTarget(swapChain.GetBackBufferRenderTargetView(), depthStencilView.Get());
 	graphics.SetViewport(bufferWidth, bufferHeight);
+	outputWidth = bufferWidth;
+	outputHeight = bufferHeight;
 	graphics.SetDepthStencilState(worldDepthStencilState.Get());
 
 	graphics.ClearRenderTargetView(swapChain.GetBackBufferRenderTargetView(), clearColor);
@@ -501,38 +556,168 @@ bool FRenderer::BeginFrame(int32 width, int32 height)
 	return true;
 }
 
-bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRenderProxy& material)
+bool FD3D11Renderer::BeginRenderTarget(const UTextureRenderTarget2D& target)
 {
-	if (!bFrameActive)
+	if (!bInitialized || !bFrameActive || bRenderTargetActive)
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing a mesh requires an active frame.");
+		WriteLog("Renderer", ELogLevel::Error, "Beginning a render target requires an initialized renderer, an active frame and no active render target.");
 		return false;
 	}
 
-	if (!mesh.vertexBuffer || !mesh.indexBuffer || mesh.indexCount == 0)
+	const FD3D11TextureRenderData* targetData = dynamic_cast<const FD3D11TextureRenderData*>(target.GetRenderData());
+	if (!targetData || !targetData->textureView || !targetData->renderTargetView || target.GetWidth() <= 0 || target.GetHeight() <= 0)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Beginning a render target requires D3D11 texture views and positive dimensions.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Device> shaderResourceDevice;
+	Microsoft::WRL::ComPtr<ID3D11Device> renderTargetDevice;
+	targetData->textureView->GetDevice(shaderResourceDevice.GetAddressOf());
+	targetData->renderTargetView->GetDevice(renderTargetDevice.GetAddressOf());
+	if (shaderResourceDevice.Get() != graphics.GetDevice() || renderTargetDevice.Get() != graphics.GetDevice())
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Beginning a render target requires texture views from the current renderer device.");
+		return false;
+	}
+
+	const int32 targetWidth = target.GetWidth();
+	const int32 targetHeight = target.GetHeight();
+
+	if (!captureDepthStencilTexture || !captureDepthStencilView || captureDepthWidth != targetWidth || captureDepthHeight != targetHeight)
+	{
+		if (!graphics.CreateDepthStencilBuffer(static_cast<uint32>(targetWidth), static_cast<uint32>(targetHeight), captureDepthStencilTexture, captureDepthStencilView))
+		{
+			return false;
+		}
+
+		captureDepthWidth = targetWidth;
+		captureDepthHeight = targetHeight;
+	}
+
+	savedLocalToWorld = localToWorld;
+	savedWorldToClip = worldToClip;
+
+	targetData->renderTargetView->GetResource(activeRenderTargetResource.ReleaseAndGetAddressOf());
+
+	graphics.SetPixelShaderResourceView(nullptr);
+
+	graphics.SetRenderTarget(targetData->renderTargetView.Get(), captureDepthStencilView.Get());
+	graphics.SetViewport(targetWidth, targetHeight);
+	outputWidth = targetWidth;
+	outputHeight = targetHeight;
+	graphics.SetDepthStencilState(worldDepthStencilState.Get());
+	graphics.SetBlendState(nullptr);
+
+	const float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+	graphics.ClearRenderTargetView(targetData->renderTargetView.Get(), clearColor);
+	graphics.ClearDepthStencilView(captureDepthStencilView.Get(), 1.0f);
+
+	bRenderTargetActive = true;
+
+	return true;
+}
+
+bool FD3D11Renderer::EndRenderTarget()
+{
+	if (!bInitialized || !bFrameActive || !bRenderTargetActive)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Ending a render target requires an initialized renderer, an active frame and an active render target.");
+		return false;
+	}
+
+	const FTransformConstants constants{savedLocalToWorld * savedWorldToClip, savedLocalToWorld.Inverse().Transpose()};
+
+	if (!graphics.UpdateConstantBuffer(transformConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants))))
+	{
+		return false;
+	}
+
+	graphics.SetRenderTarget(swapChain.GetBackBufferRenderTargetView(), depthStencilView.Get());
+	graphics.SetViewport(bufferWidth, bufferHeight);
+	outputWidth = bufferWidth;
+	outputHeight = bufferHeight;
+	graphics.SetDepthStencilState(worldDepthStencilState.Get());
+	graphics.SetBlendState(nullptr);
+
+	localToWorld = savedLocalToWorld;
+	worldToClip = savedWorldToClip;
+
+	activeRenderTargetResource.Reset();
+
+	bRenderTargetActive = false;
+
+	return true;
+}
+
+bool FD3D11Renderer::DrawScene(const FSceneRenderData& data)
+{
+	if (!bFrameActive)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing a scene requires an active frame.");
+		return false;
+	}
+
+	if (!SetWorldToClip(data.view.worldToView * data.view.viewToClip) ||
+		!SetDirectionalLight(data.lightDirection, data.lightColor) ||
+		!SetSkyLight(data.skyLightColor))
+	{
+		return false;
+	}
+
+	for (const FMeshDrawItem& item : data.meshes)
+	{
+		if (!SetLocalToWorld(item.localToWorld) || !DrawMesh(item)) { return false; }
+	}
+
+	return true;
+}
+
+bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item)
+{
+	const FD3D11StaticMeshRenderData* d3d11Mesh = dynamic_cast<const FD3D11StaticMeshRenderData*>(item.mesh);
+	if (!d3d11Mesh)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing requires D3D11 mesh data.");
+		return false;
+	}
+	if (!d3d11Mesh->vertexBuffer || !d3d11Mesh->indexBuffer || d3d11Mesh->indexCount == 0)
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing requires a nonempty GPU mesh.");
 		return false;
 	}
 	Microsoft::WRL::ComPtr<ID3D11Device> vertexDevice;
 	Microsoft::WRL::ComPtr<ID3D11Device> indexDevice;
-	mesh.vertexBuffer->GetDevice(vertexDevice.GetAddressOf());
-	mesh.indexBuffer->GetDevice(indexDevice.GetAddressOf());
+	d3d11Mesh->vertexBuffer->GetDevice(vertexDevice.GetAddressOf());
+	d3d11Mesh->indexBuffer->GetDevice(indexDevice.GetAddressOf());
 	if (vertexDevice.Get() != graphics.GetDevice() || indexDevice.Get() != graphics.GetDevice())
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing requires mesh buffers from the current renderer device.");
 		return false;
 	}
 
-	// 조회 사본이 그리기 요청이 끝날 때까지 텍스처 객체를 유지한다.
-	const TSharedPtr<UTexture2D> texture = material.GetBaseColorTexture();
-	if (texture && texture->textureView)
+	// 요청이 보관한 공유 참조가 그리기 요청이 끝날 때까지 텍스처 객체를 유지한다.
+	const TSharedPtr<UTexture>& texture = item.baseColorTexture;
+	const FTextureRenderData* textureData = texture ? texture->GetRenderData() : nullptr;
+	const FD3D11TextureRenderData* d3d11Texture = dynamic_cast<const FD3D11TextureRenderData*>(textureData);
+	if (textureData && !d3d11Texture)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing requires D3D11 material texture data.");
+		return false;
+	}
+	if (d3d11Texture && d3d11Texture->textureView)
 	{
 		Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
-		texture->textureView->GetDevice(textureDevice.GetAddressOf());
+		d3d11Texture->textureView->GetDevice(textureDevice.GetAddressOf());
 		if (textureDevice.Get() != graphics.GetDevice())
 		{
 			WriteLog("Renderer", ELogLevel::Error, "Drawing requires a material texture from the current renderer device.");
+			return false;
+		}
+
+		if (IsActiveRenderTargetResource(d3d11Texture->textureView.Get()))
+		{
+			WriteLog("Renderer", ELogLevel::Error, "Drawing cannot sample the active render target.");
 			return false;
 		}
 	}
@@ -540,26 +725,26 @@ bool FRenderer::DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRende
 	graphics.SetVertexShader(staticMeshVertexShader.Get());
 	graphics.SetPixelShader(staticMeshPixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
-	graphics.SetVertexBuffer(mesh.vertexBuffer.Get());
-	graphics.SetPixelShaderResourceView(texture && texture->textureView ? texture->textureView.Get() : whiteTextureView.Get());
+	graphics.SetVertexBuffer(d3d11Mesh->vertexBuffer.Get());
+	graphics.SetPixelShaderResourceView(d3d11Texture && d3d11Texture->textureView ? d3d11Texture->textureView.Get() : whiteTextureView.Get());
 	const size_t addressU = texture && texture->GetTextureAddressX() == ETextureAddress::Wrap ? 1 : 0;
 	const size_t addressV = texture && texture->GetTextureAddressY() == ETextureAddress::Wrap ? 1 : 0;
 	graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get());
 	graphics.SetVertexShaderConstantBuffer(0, transformConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(2, skyLightConstantBuffer.Get());
-	graphics.SetIndexBuffer(mesh.indexBuffer.Get());
+	graphics.SetIndexBuffer(d3d11Mesh->indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	graphics.DrawIndexed(mesh.indexCount, 0, 0);
+	graphics.DrawIndexed(d3d11Mesh->indexCount, 0, 0);
 
 	return true;
 }
 
-bool FRenderer::EndFrame()
+bool FD3D11Renderer::EndFrame()
 {
-	if (!bFrameActive)
+	if (!bFrameActive || bRenderTargetActive)
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Ending a frame requires an active frame.");
+		WriteLog("Renderer", ELogLevel::Error, "Ending a frame requires an active frame and no active render target.");
 		return false;
 	}
 	bFrameActive = false;
@@ -567,11 +752,21 @@ bool FRenderer::EndFrame()
 	return swapChain.Present();
 }
 
+bool FD3D11Renderer::IsActiveRenderTargetResource(ID3D11ShaderResourceView* view) const
+{
+	if (!bRenderTargetActive || !view) { return false; }
+
+	Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+	view->GetResource(resource.GetAddressOf());
+
+	return resource.Get() == activeRenderTargetResource.Get();
+}
+
 #pragma endregion
 
 #pragma region UI
 
-bool FRenderer::DrawUI(const FUIDrawElementList& elements)
+bool FD3D11Renderer::DrawUI(const FUIDrawElementList& elements)
 {
 	if (elements.GetImageElements().empty()) { return true; }
 	if (!bFrameActive)
@@ -599,29 +794,42 @@ bool FRenderer::DrawUI(const FUIDrawElementList& elements)
 	return true;
 }
 
-bool FRenderer::DrawImage(const FUIImageDrawElement& element)
+bool FD3D11Renderer::DrawImage(const FUIImageDrawElement& element)
 {
 	if (!bFrameActive)
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires an active frame.");
 		return false;
 	}
-	if (!element.texture || !element.texture->textureView || !std::isfinite(element.position.x) || !std::isfinite(element.position.y) ||
+	const FD3D11StaticMeshRenderData* d3d11Quad = dynamic_cast<const FD3D11StaticMeshRenderData*>(imageQuad.get());
+	if (!d3d11Quad || !d3d11Quad->vertexBuffer || !d3d11Quad->indexBuffer || d3d11Quad->indexCount == 0)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a nonempty D3D11 quad.");
+		return false;
+	}
+	const FD3D11TextureRenderData* textureData = element.texture ? dynamic_cast<const FD3D11TextureRenderData*>(element.texture->GetRenderData()) : nullptr;
+	if (!textureData || !textureData->textureView || !std::isfinite(element.position.x) || !std::isfinite(element.position.y) ||
 		!std::isfinite(element.size.x) || !std::isfinite(element.size.y) || element.size.x <= 0.0f || element.size.y <= 0.0f)
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture, finite position and positive finite size.");
+		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a D3D11 texture, finite position and positive finite size.");
 		return false;
 	}
 	Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
-	element.texture->textureView->GetDevice(textureDevice.GetAddressOf());
+	textureData->textureView->GetDevice(textureDevice.GetAddressOf());
 	if (textureDevice.Get() != graphics.GetDevice())
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture from the current renderer device.");
 		return false;
 	}
 
-	const float width = static_cast<float>(bufferWidth);
-	const float height = static_cast<float>(bufferHeight);
+	if (IsActiveRenderTargetResource(textureData->textureView.Get()))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing an image cannot sample the active render target.");
+		return false;
+	}
+
+	const float width = static_cast<float>(outputWidth);
+	const float height = static_cast<float>(outputHeight);
 	FMatrix4 imageToClip{};
 	imageToClip.m[0][0] = 2.0f * (element.size.x / width);
 	imageToClip.m[1][1] = -2.0f * (element.size.y / height);
@@ -645,13 +853,13 @@ bool FRenderer::DrawImage(const FUIImageDrawElement& element)
 	graphics.SetVertexShader(imageVertexShader.Get());
 	graphics.SetPixelShader(imagePixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
-	graphics.SetVertexBuffer(imageQuad.vertexBuffer.Get());
-	graphics.SetPixelShaderResourceView(element.texture->textureView.Get());
+	graphics.SetVertexBuffer(d3d11Quad->vertexBuffer.Get());
+	graphics.SetPixelShaderResourceView(textureData->textureView.Get());
 	graphics.SetPixelShaderSamplerState(samplerStates[0][0].Get());
 	graphics.SetVertexShaderConstantBuffer(0, imageTransformConstantBuffer.Get());
-	graphics.SetIndexBuffer(imageQuad.indexBuffer.Get());
+	graphics.SetIndexBuffer(d3d11Quad->indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	graphics.DrawIndexed(imageQuad.indexCount, 0, 0);
+	graphics.DrawIndexed(d3d11Quad->indexCount, 0, 0);
 
 	return true;
 }

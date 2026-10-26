@@ -4,6 +4,7 @@
 #include "Components/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/RenderStateComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "Components/TransformComponent.h"
 #include "Input/PlayerInput.h"
 
@@ -63,6 +64,23 @@ bool UWorld::SendAllEndOfFrameUpdates()
 		{
 			if (!component->IsRenderStateCreated()) { continue; }
 			if (!component->SendRenderUpdates()) { return false; }
+		}
+	}
+
+	return true;
+}
+
+bool UWorld::CaptureScenes(IRenderer& renderer)
+{
+	TArray<USceneCaptureComponent2D*> captureComponents;
+	for (const TUniquePtr<AActor>& actor : actors)
+	{
+		actor->GetComponents(captureComponents);
+		for (USceneCaptureComponent2D* capture : captureComponents)
+		{
+			if (!capture->IsCaptureEveryFrameEnabled()) { continue; }
+			if (!capture->GetTextureTarget()) { continue; }
+			if (!capture->CaptureScene(renderer)) { return false; }
 		}
 	}
 

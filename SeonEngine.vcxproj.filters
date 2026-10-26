@@ -105,6 +105,9 @@
     <ClInclude Include="Engine\Source\Components\RenderStateComponent.h">
       <Filter>Engine\Source\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Components\SceneCaptureComponent2D.h">
+      <Filter>Engine\Source\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Components\SkyLightComponent.h">
       <Filter>Engine\Source\Components</Filter>
     </ClInclude>
@@ -159,10 +162,22 @@
     <ClInclude Include="Engine\Source\D3D11\D3D11Device.h">
       <Filter>Engine\Source\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\D3D11\D3D11ImGuiRendererBackend.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\D3D11\D3D11Renderer.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\D3D11\D3D11Shader.h">
       <Filter>Engine\Source\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\D3D11\D3D11StaticMeshRenderData.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\D3D11\D3D11SwapChain.h">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\D3D11\D3D11TextureRenderData.h">
       <Filter>Engine\Source\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\EditorEngine.h">
@@ -255,6 +270,9 @@
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\ImGuiRendererBackend.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\Material.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
@@ -276,6 +294,9 @@
     <ClInclude Include="Engine\Source\Renderer\Scene.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\SceneRenderData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\SkyLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
@@ -294,10 +315,19 @@
     <ClInclude Include="Engine\Source\Renderer\StaticMeshSceneProxyDesc.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\Texture.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\Texture2D.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\TextureAddressMode.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\TextureRenderData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\TextureRenderTarget2D.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\Vertex.h">
@@ -362,6 +392,9 @@
     <ClCompile Include="Engine\Source\Components\RenderStateComponent.cpp">
       <Filter>Engine\Source\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Components\SceneCaptureComponent2D.cpp">
+      <Filter>Engine\Source\Components</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Components\SkyLightComponent.cpp">
       <Filter>Engine\Source\Components</Filter>
     </ClCompile>
@@ -393,6 +426,12 @@
       <Filter>Engine\Source\Core\Time</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\D3D11\D3D11Device.cpp">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\D3D11\D3D11ImGuiRendererBackend.cpp">
+      <Filter>Engine\Source\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\D3D11\D3D11Renderer.cpp">
       <Filter>Engine\Source\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\D3D11\D3D11Shader.cpp">
@@ -467,9 +506,6 @@
     <ClCompile Include="Engine\Source\Renderer\ModelLoader.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Renderer\Renderer.cpp">
-      <Filter>Engine\Source\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\Scene.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
@@ -479,10 +515,19 @@
     <ClCompile Include="Engine\Source\Renderer\StaticMesh.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Renderer\StaticMeshRenderData.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\StaticMeshSceneProxy.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\StaticMeshSceneProxyDesc.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Renderer\Texture.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Renderer\TextureRenderData.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\UI\GameWidgetSubsystem.cpp">

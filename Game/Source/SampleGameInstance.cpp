@@ -35,7 +35,7 @@ TUniquePtr<UGameInstance> CreateGameInstance()
 	return MakeUnique<USampleGameInstance>();
 }
 
-bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRenderer& renderer)
+bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, IRenderer& renderer)
 {
 	// 월드 콘텐츠를 준비한다. 초기화 실패의 정리는 엔진이 맡는다.
 	{
@@ -54,8 +54,8 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 				{0, 1, 2, 0, 2, 3}};
 
 		// 형상/재질을 한 번 준비한다. 컴포넌트가 자산을 공유하고 자산이 GPU 형상을 단독 소유한다.
-		TUniquePtr<FStaticMeshRenderData> renderData = MakeUnique<FStaticMeshRenderData>();
-		if (!renderer.CreateMesh(meshData, *renderData)) { return false; }
+		TUniquePtr<FStaticMeshRenderData> renderData;
+		if (!renderer.CreateMesh(meshData, renderData)) { return false; }
 
 		TSharedPtr<UTexture2D> meshTexture = MakeShared<UTexture2D>();
 		if (!renderer.CreateTexture2D(checkerImage, *meshTexture)) { return false; }
@@ -142,7 +142,7 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 	FImage image;
 	if (!FImageUtils::LoadImageFile(*baseDir / L"Content" / L"Textures" / L"Checker.png", image)) { return false; }
 
-	TUniquePtr<UTexture2D> texture = MakeUnique<UTexture2D>();
+	TSharedPtr<UTexture2D> texture = MakeShared<UTexture2D>();
 	if (!renderer.CreateTexture2D(image, *texture)) { return false; }
 
 	TUniquePtr<UImageWidget> imageWidget = MakeUnique<UImageWidget>();

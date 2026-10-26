@@ -12,7 +12,7 @@ UEngine::~UEngine() = default;
 
 #pragma region Execution
 
-bool UEngine::Initialize(FRenderer&)
+bool UEngine::Initialize(IRenderer&)
 {
 	if (world) { return false; }
 

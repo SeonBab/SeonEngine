@@ -3,9 +3,9 @@
 #include "Core/CoreTypes.h"
 #include "Core/Templates/UniquePtr.h"
 #include "Input/InputState.h"
-#include "Renderer/Renderer.h"
 #include "Windows/WindowsApplication.h"
 
+class IRenderer;
 class UEngine;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +56,8 @@ private:
 
 	FWindowsApplication application;
 
-	FRenderer renderer;
+	// Initialize에서 구현을 생성해 단독 소유하며 Engine과 UI보다 오래 유지한다.
+	TUniquePtr<IRenderer> renderer;
 
 	TUniquePtr<UEngine> engine;
 

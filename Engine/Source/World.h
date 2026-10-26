@@ -10,6 +10,7 @@
 #include <utility>
 
 class FInputState;
+class IRenderer;
 class UCameraComponent;
 class UPlayerInput;
 
@@ -62,6 +63,15 @@ public:
 	 * Tick과 생성 및 제거 콜백 밖에서 명시 호출한다. 빈 월드와 갱신 대상이 없는 경우는 true다.
 	 */
 	[[nodiscard]] bool SendAllEndOfFrameUpdates();
+
+	/**
+	 * 렌더 상태 갱신을 마친 같은 스레드의 활성 프레임에서 자동 캡처를 실행한다.
+	 * 등록 액터·컴포넌트 순서로 조회하고 매 프레임 설정이 꺼졌거나 타겟 미지정이면 건너뛴다.
+	 * Tick 활성과 플레이 시작 여부는 조건으로 사용하지 않는다. 대상이 없으면 true다.
+	 * 첫 촬영 실패 시 false로 중단하고 앞선 결과는 유지한다. 호출자는 렌더링을 중단하고 Renderer를 Shutdown해야 한다.
+	 * 호출 중 액터·컴포넌트·자원의 교체/제거와 재진입은 허용하지 않는다. 조회한 주소를 보관하지 않는다.
+	 */
+	[[nodiscard]] bool CaptureScenes(IRenderer& renderer);
 
 private:
 	// NOTE: 액터, 컴포넌트 정리 중 Scene을 사용하므로 actors보다 먼저 선언해야 한다.

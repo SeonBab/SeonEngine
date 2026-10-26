@@ -2,6 +2,7 @@
 
 #include "Renderer/Renderer.h"
 #include "Renderer/Scene.h"
+#include "Renderer/SceneRenderData.h"
 
 FVector3 FViewportCameraTransform::GetLocation() const
 {
@@ -109,18 +110,17 @@ void FEditorViewportClient::SetFarClipDistance(float newFarClipDistance)
 
 #pragma region Drawing
 
-bool FEditorViewportClient::Draw(FScene& scene, FRenderer& renderer, int width, int height) const
+bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer, int width, int height) const
 {
 	if (width <= 0 || height <= 0) { return false; }
 
 	const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	const FCameraViewInfo view = GetCameraView();
-	if (!renderer.SetWorldToClip(view.CalculateWorldToClipMatrix(aspectRatio)))
-	{
-		return false;
-	}
+	FRenderView renderView;
+	renderView.worldToView = view.CalculateViewMatrix();
+	renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
 
-	return scene.Draw(renderer);
+	return scene.Draw(renderer, renderView);
 }
 
 #pragma endregion

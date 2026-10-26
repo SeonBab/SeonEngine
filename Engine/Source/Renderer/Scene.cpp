@@ -1,7 +1,9 @@
 #include "Scene.h"
 
 #include "Renderer/DirectionalLightSceneProxy.h"
+#include "Renderer/MaterialRenderProxy.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/SceneRenderData.h"
 #include "Renderer/SkyLightSceneProxy.h"
 #include "Renderer/StaticMeshSceneProxy.h"
 
@@ -152,38 +154,41 @@ const FSkyLightSceneProxy* FScene::GetSkyLight() const
 
 #pragma region Rendering
 
-bool FScene::Draw(FRenderer& renderer)
+bool FScene::Draw(IRenderer& renderer, const FRenderView& view)
 {
+	FSceneRenderData data;
+	data.view = view;
 	// 미등록 프레임에도 유효한 기본 방향과 광량 0을 전달해 이전 광량을 지운다.
-	FVector3 lightDirection{0.0f, 0.0f, 1.0f};
-	FVector3 lightColor{};
-
 	if (directionalLight)
 	{
-		lightDirection = directionalLight->GetLightDirection();
-		lightColor = directionalLight->GetLightColor();
+		data.lightDirection = directionalLight->GetLightDirection();
+		data.lightColor = directionalLight->GetLightColor();
 	}
-	if (!renderer.SetDirectionalLight(lightDirection, lightColor)) { return false; }
 
 	// Scene 전환과 마지막 SkyLight 해제 뒤에도 이전 값이 남지 않도록 매번 전달한다.
-	FVector3 ambientLightColor{};
 	if (const FSkyLightSceneProxy* proxy = GetSkyLight())
 	{
-		ambientLightColor = proxy->GetLightColor();
+		data.skyLightColor = proxy->GetLightColor();
 	}
-	if (!renderer.SetSkyLight(ambientLightColor)) { return false; }
 
+	data.meshes.reserve(staticMeshes.size());
 	for (const TUniquePtr<FStaticMeshSceneProxy>& proxy : staticMeshes)
 	{
 		const FStaticMeshRenderData* renderData = proxy->GetRenderData();
 		const FMaterialRenderProxy* materialProxy = proxy->GetMaterialRenderProxy();
-		if (!renderData || !materialProxy || !renderer.SetLocalToWorld(proxy->GetLocalToWorld()) || !renderer.DrawMesh(*renderData, *materialProxy))
+		if (!renderData || !materialProxy)
 		{
 			return false;
 		}
+
+		FMeshDrawItem item;
+		item.mesh = renderData;
+		item.localToWorld = proxy->GetLocalToWorld();
+		item.baseColorTexture = materialProxy->GetBaseColorTexture();
+		data.meshes.push_back(std::move(item));
 	}
 
-	return true;
+	return renderer.DrawScene(data);
 }
 
 #pragma endregion

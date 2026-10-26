@@ -31,13 +31,13 @@ public:
 
 public:
 	/** 게임 제공 CreateGameInstance로 실행 객체를 만들고 World와 Client 초기화 뒤 렌더 상태를 준비한다. 기존 소유 객체는 거부하고 부분 실패는 PreExit로 정리한다. 종료 콜백에서 호출하지 않는다. */
-	[[nodiscard]] bool Initialize(FRenderer& renderer) override;
+	[[nodiscard]] bool Initialize(IRenderer& renderer) override;
 
 	/** 초기화 성공 후 프레임 밖에서 월드 플레이를 시작한다. 반복 호출은 월드의 시작 상태로 무시한다. */
 	void Start() override;
 
-	/** 초기화와 Start 완료 상태 및 양수 화면 크기가 필요하다. 입력 평가, 월드 갱신, 시점과 렌더 상태 전달, 장면과 UI 그리기를 수행한다. */
-	[[nodiscard]] bool Tick(float deltaSeconds, const FInputState& input, FRenderer& renderer, int width, int height) override;
+	/** 초기화와 Start 완료 상태 및 양수 화면 크기가 필요하다. 입력·월드·렌더 상태 갱신 뒤 프레임을 시작하고 자동 캡처, 기본 장면, UI 순서로 그린다. 실패하면 반복을 중단하고 정리한다. */
+	[[nodiscard]] bool Tick(float deltaSeconds, const FInputState& input, IRenderer& renderer, int width, int height) override;
 
 	/** 루프가 프레임 밖에서 World의 플레이를 끝낸 뒤 GameInstance, Client, World를 해제한다. 초기화 실패와 반복 호출을 허용하며 종료 콜백에서 재호출하지 않는다. */
 	void PreExit() override;

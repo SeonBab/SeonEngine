@@ -18,7 +18,7 @@ public:
 	}
 
 	/** 같은 스레드에서 재질의 현재 색상 텍스처 공유 참조를 얻는다. GPU 유효성은 검사하지 않는다. */
-	TSharedPtr<UTexture2D> GetBaseColorTexture() const override { return material->GetBaseColorTexture(); }
+	TSharedPtr<UTexture> GetBaseColorTexture() const override { return material->GetBaseColorTexture(); }
 
 private:
 	// 비소유 주소다. 재질을 파괴하거나 이동한 뒤에는 조회할 수 없다.
@@ -46,12 +46,12 @@ UMaterial* UMaterial::GetDefaultMaterial()
 
 #pragma region BaseColor
 
-void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture2D> texture)
+void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture> texture)
 {
 	baseColorTexture = std::move(texture);
 }
 
-TSharedPtr<UTexture2D> UMaterial::GetBaseColorTexture() const
+TSharedPtr<UTexture> UMaterial::GetBaseColorTexture() const
 {
 	return baseColorTexture;
 }

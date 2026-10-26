@@ -12,8 +12,11 @@ class UEditorEngine : public UEngine
 #pragma region EditorUI
 
 public:
-	/** 기존 창을 빌려 편집 UI를 준비한다. 루프는 World 초기화 뒤 호출하고 실패 시 PreExit로 정리한다. */
-	[[nodiscard]] bool InitializeEditorUI(HWND windowHandle);
+	/**
+	 * 기존 창과 초기화된 Renderer가 만든 ImGui backend를 UI에 전달한다. UI가 backend를 소유하고 Renderer는 보관하지 않는다.
+	 * 루프는 World 초기화 뒤 같은 스레드에서 호출하고 실패 시 PreExit로 정리한다.
+	 */
+	[[nodiscard]] bool InitializeEditorUI(HWND windowHandle, IRenderer& renderer);
 
 	/** 초기화한 창의 메시지를 소유 UI로 전달한다. 같은 스레드에서 호출하며 true일 때만 outResult가 유효하다. */
 	[[nodiscard]] bool HandleWindowMessage(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, LRESULT& outResult);
@@ -26,8 +29,11 @@ private:
 #pragma region Execution
 
 public:
-	/** 초기화된 World와 양수 화면 크기로 렌더 상태 전달과 편집 그리기를 수행한다. 게임 플레이와 입력 평가는 하지 않으며 실패는 false다. */
-	[[nodiscard]] bool Tick(float deltaSeconds, const FInputState& input, FRenderer& renderer, int width, int height) override;
+	/**
+	 * 초기화된 World, UI와 양수 화면 크기로 렌더 상태 갱신·프레임 시작 뒤 자동 캡처, 기본 장면, UI 순서로 그리고 Present한다.
+	 * 게임 플레이와 입력 평가는 하지 않으며 실패는 false다.
+	 */
+	[[nodiscard]] bool Tick(float deltaSeconds, const FInputState& input, IRenderer& renderer, int width, int height) override;
 
 	/** 창이 살아 있을 때 UI와 World 순서로 해제한다. 초기화 전, 부분 실패 후, 반복 호출도 허용한다. */
 	void PreExit() override;

@@ -1,204 +1,75 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Core/Math/Matrix4.h"
-#include "Core/Math/Vector3.h"
-#include "D3D11/D3D11Device.h"
-#include "D3D11/D3D11SwapChain.h"
-#include "Renderer/StaticMeshRenderData.h"
-#include "Windows/WindowsHWrapper.h"
+#include "Core/Templates/UniquePtr.h"
 
-#include <d3d11.h>
-#include <wrl/client.h>
-
-#include <array>
-
-struct FStaticMeshData;
 struct FImage;
-struct FUIImageDrawElement;
+struct FSceneRenderData;
+struct FStaticMeshData;
+class FStaticMeshRenderData;
 class FUIDrawElementList;
-class FMaterialRenderProxy;
+class IImGuiRendererBackend;
 class UTexture2D;
+class UTextureRenderTarget2D;
 
-////////////////////////////////////////////////////////////////////////////////
-// 단일 Windows 창의 공통 D3D11 자원과 프레임 그리기를 관리한다. 그릴 GPU 메시는 호출자가 제공한다.
-// 창의 생성과 메시지 처리는 호출자가 맡고 종료 전 Shutdown을 명시적으로 호출한다.
-////////////////////////////////////////////////////////////////////////////////
-class FRenderer
+/**
+ * 자원 생성·장면 및 UI 제출·출력과 프레임의 공통 계약이다. 생성한 구현과 장치의 자원만 사용한다.
+ * 초기화·사용·정리는 같은 스레드에서 수행한다. 창과 이 객체의 소유는 호출자가 맡고 종료 전 Shutdown을 호출한다.
+ * 미지원 요청은 실패로 반환하며 다른 구현으로 자동 대체하지 않는다. 성공도 GPU 완료나 화면 표시를 보장하지 않는다.
+ */
+class IRenderer
 {
-#pragma region Lifecycle
-
 public:
-	FRenderer() = default;
+	virtual ~IRenderer() = default;
+	IRenderer(const IRenderer&) = delete;
+	IRenderer& operator=(const IRenderer&) = delete;
+	IRenderer(IRenderer&&) = delete;
+	IRenderer& operator=(IRenderer&&) = delete;
 
-	FRenderer(const FRenderer&) = delete;
+	/** 구현에 맞는 플랫폼 창 포인터와 양수 실제 클라이언트 크기로 준비한다. 창은 Shutdown까지 유지한다. 중복 초기화는 거부한다. */
+	[[nodiscard]] virtual bool Initialize(void* nativeWindowHandle, int32 width, int32 height) = 0;
 
-	FRenderer& operator=(const FRenderer&) = delete;
-
-	FRenderer(FRenderer&&) = delete;
-
-	FRenderer& operator=(FRenderer&&) = delete;
-
-	/** 유효한 창과 양수 클라이언트 크기로 준비한다. 중복 초기화는 거부하며 자원 생성 실패 시 부분 자원을 정리하고 false를 반환한다. */
-	[[nodiscard]] bool Initialize(HWND windowHandle, int32 width, int32 height);
-
-	/** 바인딩, 스왑 체인, 텍스처/샘플러/버퍼/셰이더, 장치 순서로 정리한다. 빈 상태나 부분 초기화 후에도 반복 호출할 수 있다. */
-	void Shutdown();
-
-#pragma endregion
-
-#pragma region ResourceCreation
-
-public:
-	/**
-	 * 초기화 후 같은 스레드에서 CPU 데이터를 GPU로 복사한다.
-	 * 비어 있지 않은 정점/인덱스와 정점 범위 안의 인덱스를 요구하며 인덱스 개수는 3의 배수여야 한다.
-	 * 두 버퍼가 모두 준비된 뒤 출력의 소유권을 교체한다. 실패하면 기존 출력은 유지한다.
-	 * 호출자가 자원을 소유하며 CPU 입력은 호출 후 보관할 필요가 없다. 장치가 바뀌면 다시 생성해야 한다.
-	 * 형상만 생성한다. CPU 입력의 재질 번호와 주소 설정은 사용하지 않으며 텍스처는 CreateTexture2D로 별도 준비한다.
-	 */
-	[[nodiscard]] bool CreateMesh(const FStaticMeshData& meshData, FStaticMeshRenderData& outMesh);
+	/** UI backend·장면 사용을 끝낸 뒤 구현의 남은 요청과 소유 자원을 정리한다. 빈 상태·부분 실패·반복 호출을 허용한다. */
+	virtual void Shutdown() = 0;
 
 	/**
-	 * 초기화 후 같은 스레드에서 양수 크기의 RGBA8 이미지를 GPU로 복사하고 전체 하위 밉 생성을 요청한다.
-	 * 텍스처와 SRV 모두 준비된 뒤 출력의 GPU 자원 참조만 교체하며 AddressX/Y 설정은 유지한다.
-	 * 실패하면 기존 GPU 자원 참조와 주소 설정을 모두 유지한다.
-	 * 호출자가 자원을 소유하며 CPU 입력은 성공 후 해제할 수 있다. 장치가 바뀌면 다시 생성해야 한다.
+	 * 초기화 후 CPU 삼각형 목록을 복사해 형상을 만든다. 인덱스는 정점 범위 안이고 개수는 3의 배수여야 한다.
+	 * 성공하면 출력 객체를 교체하고 실패하면 이전 출력을 유지한다. 교체 전 기존 비소유 사용을 끝내야 한다.
+	 * 호출 후 CPU 입력은 보관할 필요가 없다. 재질 번호와 CPU 주소 설정은 사용하지 않는다.
 	 */
-	[[nodiscard]] bool CreateTexture2D(const FImage& image, UTexture2D& outTexture);
+	[[nodiscard]] virtual bool CreateMesh(const FStaticMeshData& meshData, TUniquePtr<FStaticMeshRenderData>& outMesh) = 0;
 
-#pragma endregion
+	/** 양수 크기의 RGBA8 CPU 이미지로 전체 밉 텍스처를 준비한다. 성공 시 데이터·크기만 교체하고 실패 시 기존 출력을 유지한다. 주소 설정과 자산 주소는 유지한다. */
+	[[nodiscard]] virtual bool CreateTexture2D(const FImage& image, UTexture2D& outTexture) = 0;
 
-#pragma region ViewTransform
+	/** 활성 프레임 밖에서 양수 크기의 RGBA8 UNORM 단일 밉·샘플 색상 타겟을 검정/알파1로 준비한다. 성공 시 데이터·크기를 함께 교체하고 실패 시 이전 출력을 유지한다. */
+	[[nodiscard]] virtual bool CreateRenderTarget2D(int32 width, int32 height, UTextureRenderTarget2D& outTexture) = 0;
 
-public:
-	/**
-	 * 초기화 후 같은 스레드에서 객체를 로컬에서 월드로 변환하는 행렬을 값으로 설정한다. 다음 DrawMesh부터 적용한다.
-	 * 보관한 WorldToClip과 합성해 GPU 갱신을 요청하며 실패하면 기존 보관 값을 유지한다.
-	 * true는 갱신 요청 성공이며 GPU 완료를 뜻하지 않는다. 행렬 성분의 유효성은 검사하지 않는다.
-	 */
-	[[nodiscard]] bool SetLocalToWorld(const FMatrix4& matrix);
+	/** 초기화 후 양수 실제 크기로 프레임을 시작하고 창 출력을 준비·지운다. 이미 활성인 프레임은 거부한다. */
+	[[nodiscard]] virtual bool BeginFrame(int32 width, int32 height) = 0;
 
-	/**
-	 * 초기화 후 같은 스레드에서 월드에서 클립 공간으로 변환하는 행렬을 값으로 설정한다. 다음 DrawMesh부터 적용한다.
-	 * 보관한 LocalToWorld와 합성해 GPU 갱신을 요청하며 실패하면 기존 보관 값을 유지한다.
-	 * true는 갱신 요청 성공이며 GPU 완료를 뜻하지 않는다. 행렬 성분의 유효성은 검사하지 않는다.
-	 */
-	[[nodiscard]] bool SetWorldToClip(const FMatrix4& matrix);
+	/** 활성 프레임에서 준비된 타겟 출력으로 전환하고 색상·깊이를 지운다. 중첩은 거부하며 실패 시 기존 출력·행렬을 유지한다. */
+	[[nodiscard]] virtual bool BeginRenderTarget(const UTextureRenderTarget2D& target) = 0;
 
-#pragma endregion
-
-#pragma region Lighting
-
-public:
-	/**
-	 * 초기화 후 같은 스레드에서 방향광 버퍼 갱신을 요청한다.
-	 * 방향은 빛이 진행하는 월드 단위 방향이며 색은 세기가 반영된 유한한 0 이상 선형 RGB다.
-	 * 입력 검사나 정규화는 하지 않는다. RGB가 0이면 방향광 기여가 없다.
-	 */
-	[[nodiscard]] bool SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor);
+	/** 활성 타겟을 끝내고 창 출력·기존 행렬을 복원한다. clear·Present는 하지 않는다. 실패하면 활성 상태를 유지한다. */
+	[[nodiscard]] virtual bool EndRenderTarget() = 0;
 
 	/**
-	 * 초기화 후 같은 스레드에서 SkyLight의 균일 주변광 버퍼 갱신을 요청한다.
-	 * 색은 세기가 반영된 유한한 0 이상 선형 RGB다. 검사/clamp/세기 재곱셈은 하지 않는다.
-	 * RGB 0은 주변광 기여 없음이며 다음 DrawMesh부터 적용한다. UI에는 적용하지 않는다.
+	 * 활성 프레임에 한 시점의 장면을 제출한다. 출력 선택·clear·Present는 하지 않는다. 실패 전 제출을 롤백하지 않는다.
+	 * 호출 중 자원 교체·파괴와 재진입 변경은 금지한다. 지연 구현은 반환 전에 CPU 값과 필요한 GPU 자원 수명을 확보한다.
+	 * 요청 배열·Proxy·빌린 형상 주소를 반환 후 사용하려고 저장하면 안 된다. 미준비 텍스처는 흰색을 사용한다.
 	 */
-	[[nodiscard]] bool SetSkyLight(FVector3 lightColor);
+	[[nodiscard]] virtual bool DrawScene(const FSceneRenderData& data) = 0;
 
-#pragma endregion
+	/** 활성 프레임에 이미지 목록을 비선행곱 알파로 제출한다. 입력은 호출 동안만 빌리며 지연 구현은 값과 GPU 수명을 반환 전에 확보한다. 빈 목록은 상태 변경 없이 성공한다. */
+	[[nodiscard]] virtual bool DrawUI(const FUIDrawElementList& elements) = 0;
 
-#pragma region Frame
+	/** 프레임을 닫고 표시를 요청한다. 타겟 활성 중에는 상태를 유지하고 거부한다. 표시 요청 실패 시에도 프레임은 이미 종료됐을 수 있다. */
+	[[nodiscard]] virtual bool EndFrame() = 0;
 
-public:
-	/** 초기화 후 양수 크기로 프레임을 시작한다. 크기 변화 처리와 화면 지우기를 수행하며 이미 시작한 프레임은 거부한다. */
-	[[nodiscard]] bool BeginFrame(int32 width, int32 height);
+	/** 초기화된 구현에 맞는 미초기화 ImGui backend를 만든다. 미지원/미초기화는 nullptr다. 반환 객체는 이 Renderer보다 먼저 정리해야 한다. */
+	[[nodiscard]] virtual TUniquePtr<IImGuiRendererBackend> CreateImGuiRendererBackend() = 0;
 
-	/**
-	 * 활성 프레임에서 현재 장치의 형상과 별도 재질 Proxy를 호출 동안 빌려 그린다.
-	 * 재질에서 얻은 텍스처 공유 참조는 호출이 끝날 때까지 유지하고 X/Y 설정으로 샘플러를 선택한다.
-	 * 텍스처 또는 GPU 뷰가 없으면 흰색을 사용한다. 텍스처 미지정이면 주소 설정은 Clamp/Clamp다.
-	 * 현재 장치와 다른 버퍼/텍스처 뷰는 거부한다. 재질과 형상 자체를 소유하거나 변경하지 않는다.
-	 */
-	[[nodiscard]] bool DrawMesh(const FStaticMeshRenderData& mesh, const FMaterialRenderProxy& material);
-
-	/** 시작한 프레임을 닫고 Present한다. 그리기 없는 프레임도 허용하며 Present 실패 시 false를 반환한다. */
-	[[nodiscard]] bool EndFrame();
-
-#pragma endregion
-
-#pragma region UI
-
-public:
-	/** 전용 이미지 픽셀 셰이더로 목록의 이미지를 비선행곱 알파 합성한다. 성공과 실패 모두 불투명 기본 상태로 복원하며 빈 목록은 상태 변경 없이 true다. */
-	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements);
-
-private:
-	/**
-	 * 활성 프레임에서 현재 장치의 텍스처를 클라이언트 영역 왼쪽 위 기준 픽셀 위치, 크기로 그린다.
-	 * 위치, 크기는 유한하고 크기는 양수여야 하며 행렬 성분의 유한 범위를 넘는 변환은 false다. 음수 위치는 허용하고 화면 밖은 GPU가 자른다.
-	 * 월드 변환 데이터는 유지하며 셰이더/버퍼 바인딩은 변경한다. 알파 블렌드 상태는 DrawUI가 설정한다.
-	 * true는 그리기 요청 성공이며 GPU 작업 완료나 화면 표시를 뜻하지 않는다.
-	 * 요소의 텍스처 포인터가 비어 있으면 false다. 요소와 텍스처는 호출 동안만 빌린다.
-	 */
-	[[nodiscard]] bool DrawImage(const FUIImageDrawElement& element);
-
-#pragma endregion
-
-#pragma region RenderResources
-
-private:
-	FD3D11Device graphics;
-
-	FD3D11SwapChain swapChain;
-
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilTexture;
-
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
-
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> staticMeshVertexShader;
-
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> imageVertexShader;
-
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> staticMeshPixelShader;
-
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> imagePixelShader;
-
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> transformConstantBuffer;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> directionalLightConstantBuffer;
-
-	// VS b2. 세기 반영 RGB와 패딩을 포함한 16바이트이며 초기값은 주변광 기여 0이다.
-	Microsoft::WRL::ComPtr<ID3D11Buffer> skyLightConstantBuffer;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
-
-	Microsoft::WRL::ComPtr<ID3D11BlendState> uiBlendState;
-
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> worldDepthStencilState;
-
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> uiDepthStencilState;
-
-	// [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. UI는 [0][0]을 사용한다.
-	std::array<std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>, 2> samplerStates;
-
-	// TODO(seon): UI 배칭, 전용 정점 도입 시 공통 사각형의 보관 형식을 재검토한다.
-	FStaticMeshRenderData imageQuad;
-
-	FMatrix4 localToWorld{};
-
-	FMatrix4 worldToClip{};
-
-	int32 bufferWidth = 0;
-
-	int32 bufferHeight = 0;
-
-	bool bInitialized = false;
-
-	bool bFrameActive = false;
-
-#pragma endregion
+protected:
+	IRenderer() = default;
 };

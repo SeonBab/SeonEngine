@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core/Math/Vector2.h"
-#include "Core/Templates/UniquePtr.h"
-#include "Renderer/Texture2D.h"
+#include "Core/Templates/SharedPtr.h"
+#include "Renderer/Texture.h"
 #include "Widget.h"
 
 /** 이미지 한 장을 표시하는 UI 요소의 기반이다. */
@@ -12,13 +12,14 @@ class UImageWidget : public UWidget
 
 public:
 	/**
-	 * 새 텍스처의 소유권을 받고 기존 텍스처 객체를 즉시 파괴한다. 성공하면 입력 포인터를 비운다.
-	 * 빈 입력은 false이며 기존 텍스처를 유지한다. 교체 후 이전 텍스처의 포인터는 사용할 수 없다.
+	 * 새 텍스처의 공유 참조를 저장한다. 입력 포인터는 유지하며 이전 텍스처는 마지막 공유 참조가 해제될 때 파괴된다.
+	 * 빈 입력은 false이며 기존 텍스처를 유지한다. 수집한 그리기 요소의 사용이 끝나기 전에는 텍스처를 교체하지 않는다.
 	 */
-	[[nodiscard]] bool SetTexture(TUniquePtr<UTexture2D>& newTexture);
+	[[nodiscard]] bool SetTexture(TSharedPtr<UTexture> newTexture);
 
 private:
-	TUniquePtr<UTexture2D> texture;
+	// 그리기 요소가 빌리는 텍스처 객체의 수명을 유지한다.
+	TSharedPtr<UTexture> texture;
 
 #pragma endregion
 

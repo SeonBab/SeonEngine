@@ -4,7 +4,7 @@
 #include "Core/Math/Rotator.h"
 #include "Core/Math/Vector3.h"
 
-class FRenderer;
+class IRenderer;
 class FScene;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +110,7 @@ public:
 	 * 호출자는 Renderer 초기화, 장면 렌더 상태 준비, 출력과 viewport 설정 및 BeginFrame을 완료하고 프레임 종료를 담당한다.
 	 * Scene과 Renderer는 호출 동안만 빌린다. 월드 갱신이나 프레임 시작/종료는 하지 않으며 실패하면 false다.
 	 */
-	[[nodiscard]] bool Draw(FScene& scene, FRenderer& renderer, int width, int height) const;
+	[[nodiscard]] bool Draw(FScene& scene, IRenderer& renderer, int width, int height) const;
 
 #pragma endregion
 };

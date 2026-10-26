@@ -3,7 +3,7 @@
 #include "Object.h"
 
 class FGameClient;
-class FRenderer;
+class IRenderer;
 class UWorld;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -21,5 +21,5 @@ public:
 	 * 기본 구현은 아무 작업 없이 true를 반환한다. false이면 호출자는 플레이를 시작하지 않고 부분 생성 객체를 정리한다.
 	 * 실패한 초기화를 자동 롤백하지 않는다.
 	 */
-	[[nodiscard]] virtual bool Initialize(UWorld& world, FGameClient& gameClient, FRenderer& renderer);
+	[[nodiscard]] virtual bool Initialize(UWorld& world, FGameClient& gameClient, IRenderer& renderer);
 };

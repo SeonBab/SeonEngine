@@ -36,6 +36,12 @@ bool FD3D11Device::Initialize()
 
 void FD3D11Device::Shutdown()
 {
+	if (context)
+	{
+		context->ClearState();
+		context->Flush();
+	}
+
 	context.Reset();
 	device.Reset();
 }
@@ -415,6 +421,61 @@ bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uin
 	// 원본은 밉 0에만 올린다. 하위 밉은 SRV를 준비한 뒤 GenerateMips로 채워야 한다.
 	context->UpdateSubresource(createdTexture.Get(), 0, nullptr, rgbaPixels.data(), rowPitch, 0);
 	outTexture = std::move(createdTexture);
+
+	return true;
+}
+
+bool FD3D11Device::CreateRenderTargetTexture2D(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outView)
+{
+	if (!device)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating a render target texture requires an initialized device.");
+		return false;
+	}
+	if (width == 0 || height == 0 || width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Render target dimensions are outside the D3D11 2D range.");
+		return false;
+	}
+
+	UINT formatSupport = 0;
+	const HRESULT supportResult = device->CheckFormatSupport(DXGI_FORMAT_R8G8B8A8_UNORM, &formatSupport);
+	constexpr UINT RequiredSupport = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
+	if (FAILED(supportResult) || (formatSupport & RequiredSupport) != RequiredSupport)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "RGBA8 render targets with shader sampling are not supported (HRESULT 0x{:08X}).", static_cast<unsigned long>(supportResult));
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC description{};
+	description.Width = width;
+	description.Height = height;
+	description.MipLevels = 1;
+	description.ArraySize = 1;
+	description.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	description.SampleDesc.Count = 1;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+
+	// 후보 자원은 지역 참조로 보관해 RTV 생성까지 성공한 뒤에만 기존 출력을 교체한다.
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdTexture;
+	const HRESULT result = device->CreateTexture2D(&description, nullptr, createdTexture.GetAddressOf());
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Render target texture creation failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> createdView;
+	const HRESULT viewResult = device->CreateRenderTargetView(createdTexture.Get(), nullptr, createdView.GetAddressOf());
+	if (FAILED(viewResult))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "CreateRenderTargetView failed (HRESULT 0x{:08X})", static_cast<unsigned long>(viewResult));
+		return false;
+	}
+
+	outTexture = std::move(createdTexture);
+	outView = std::move(createdView);
 
 	return true;
 }

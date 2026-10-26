@@ -2,15 +2,17 @@
 
 #include "Core/Math/Vector2.h"
 
-class UTexture2D;
+class UTexture;
 
 ////////////////////////////////////////////////////////////////////////////////
-// 화면에 표시할 이미지 한 개의 그리기 정보다.
+// 현재 출력 영역에 표시할 이미지 한 개의 그리기 정보다.
 // 텍스처를 소유하지 않으므로 사용하는 동안 참조 대상이 살아 있어야 한다.
 ////////////////////////////////////////////////////////////////////////////////
 struct FUIImageDrawElement
 {
-	const UTexture2D* texture = nullptr;
+	const UTexture* texture = nullptr;
+	// 현재 출력 영역 왼쪽 위를 원점으로 하는 픽셀 위치다.
 	FVector2 position{};
+	// 현재 출력 영역의 픽셀 단위 크기다. 확대와 축소 정책은 호출부에서 적용한다.
 	FVector2 size{};
 };

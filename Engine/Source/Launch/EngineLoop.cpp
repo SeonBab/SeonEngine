@@ -1,8 +1,10 @@
 #include "EngineLoop.h"
 
 #include "Core/Time/FrameTimer.h"
+#include "D3D11/D3D11Renderer.h"
 #include "EditorEngine.h"
 #include "GameEngine.h"
+#include "Renderer/Renderer.h"
 
 #include <utility>
 
@@ -72,9 +74,9 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 		return false;
 	}
 
-	if (!renderer.Initialize(application.GetWindowHandle(), clientWidth, clientHeight))
+	renderer = MakeUnique<FD3D11Renderer>();
+	if (!renderer->Initialize(application.GetWindowHandle(), clientWidth, clientHeight))
 	{
-		application.Shutdown();
 		return false;
 	}
 
@@ -85,7 +87,7 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 		engine = std::move(editorEngine);
 
 		// 초기화 실패도 Exit -> PreExit에서 정리하도록 호출 전에 소유권을 옮긴다.
-		if (!editor.Initialize(renderer) || !editor.InitializeEditorUI(application.GetWindowHandle()))
+		if (!editor.Initialize(*renderer) || !editor.InitializeEditorUI(application.GetWindowHandle(), *renderer))
 		{
 			return false;
 		}
@@ -103,7 +105,7 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 		engine = MakeUnique<UGameEngine>();
 	}
 
-	return engine->Initialize(renderer);
+	return engine->Initialize(*renderer);
 }
 
 bool FEngineLoop::Tick(float deltaSeconds)
@@ -121,7 +123,7 @@ bool FEngineLoop::Tick(float deltaSeconds)
 		return true;
 	}
 
-	return engine->Tick(deltaSeconds, input, renderer, clientWidth, clientHeight);
+	return engine->Tick(deltaSeconds, input, *renderer, clientWidth, clientHeight);
 }
 
 bool FEngineLoop::Exit()
@@ -134,7 +136,11 @@ bool FEngineLoop::Exit()
 		engine->PreExit();
 		engine.reset();
 	}
-	renderer.Shutdown();
+	if (renderer)
+	{
+		renderer->Shutdown();
+		renderer.reset();
+	}
 
 	bool bSuccess = true;
 	if (!application.Shutdown())

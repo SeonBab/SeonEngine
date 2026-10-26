@@ -7,6 +7,7 @@
 #include "GameInstanceFactory.h"
 #include "Input/PlayerInput.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/SceneRenderData.h"
 #include "World.h"
 
 #pragma region Lifecycle
@@ -19,7 +20,7 @@ UGameEngine::~UGameEngine() = default;
 
 #pragma region Execution
 
-bool UGameEngine::Initialize(FRenderer& renderer)
+bool UGameEngine::Initialize(IRenderer& renderer)
 {
 	if (world || gameClient || gameInstance) { return false; }
 
@@ -48,7 +49,7 @@ void UGameEngine::Start()
 	world->BeginPlay();
 }
 
-bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, FRenderer& renderer, int width, int height)
+bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, IRenderer& renderer, int width, int height)
 {
 	if (!bInitialized || !world->HasBegunPlay() || width <= 0 || height <= 0) { return false; }
 
@@ -60,18 +61,13 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, FRenderer& 
 
 	world->Tick(deltaSeconds, input, playerInput);
 
-	FMatrix4 worldToClip;
-	worldToClip.SetIdentity();
+	FRenderView renderView;
 	if (const UCameraComponent* camera = world->GetActiveCamera())
 	{
 		const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 		const FCameraViewInfo view = camera->GetCameraView();
-		worldToClip = view.CalculateWorldToClipMatrix(aspectRatio);
-	}
-
-	if (!renderer.SetWorldToClip(worldToClip))
-	{
-		return false;
+		renderView.worldToView = view.CalculateViewMatrix();
+		renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
 	}
 
 	if (!world->SendAllEndOfFrameUpdates())
@@ -84,7 +80,12 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, FRenderer& 
 		return false;
 	}
 
-	if (!world->GetScene().Draw(renderer))
+	if (!world->CaptureScenes(renderer))
+	{
+		return false;
+	}
+
+	if (!world->GetScene().Draw(renderer, renderView))
 	{
 		return false;
 	}

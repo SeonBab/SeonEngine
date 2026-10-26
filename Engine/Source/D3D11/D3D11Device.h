@@ -23,7 +23,11 @@ public:
 	/** 하드웨어 장치를 준비한다. 이미 준비됐거나 생성에 실패하면 false다. */
 	bool Initialize();
 
-	/** 즉시 컨텍스트, 장치 순서로 참조를 해제한다. 빈 상태에서도 호출할 수 있다. */
+	/**
+	 * 컨텍스트의 바인딩을 초기화하고 Flush로 명령 제출과 지연된 자원 파괴를 처리한 뒤 컨텍스트, 장치 참조를 해제한다.
+	 * 재생성할 스왑 체인과 호출자가 소유한 관련 뷰는 먼저 해제해야 한다. GPU 작업 완료를 기다리는 함수는 아니다.
+	 * 빈 상태나 부분 초기화 후에도 반복 호출할 수 있다. 외부에서 보관한 자원 참조를 강제로 해제하지 않는다.
+	 */
 	void Shutdown();
 
 	/** 비소유 장치 포인터다. 참조를 추가하지 않으며 Shutdown/소멸 후에는 사용할 수 없다. */
@@ -134,6 +138,15 @@ public:
 	 * 입력, 포맷 지원 검사나 생성 API 실패는 로그/false이며 기존 출력은 유지한다. true는 GPU 완료를 뜻하지 않는다.
 	 */
 	[[nodiscard]] bool CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture);
+
+	/**
+	 * RGBA8 UNORM 색상 텍스처와 RTV를 만든다. 단일 밉, 단일 샘플이며 셰이더 읽기도 허용한다.
+	 * 초기화한 장치의 소유 스레드에서 호출하고 가로, 세로는 각각 1~16384를 요구한다.
+	 * 두 자원이 모두 준비된 뒤 출력 참조를 교체한다. 검사나 API 실패는 로그와 false이며 기존 출력은 모두 유지한다.
+	 * 반환 자원은 호출자가 소유한다. 초기 픽셀 내용은 미정이며 사용 전에 clear나 그리기로 준비해야 한다.
+	 * SRV 생성, 픽셀 초기화, 출력 바인딩은 수행하지 않는다.
+	 */
+	[[nodiscard]] bool CreateRenderTargetTexture2D(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outView);
 
 	/** D32_FLOAT 깊이 텍스처와 DSV를 만든다. 장치 미준비, 잘못된 크기, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateDepthStencilBuffer(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView);

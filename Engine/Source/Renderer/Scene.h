@@ -6,7 +6,8 @@
 #include "Core/Templates/UniquePtr.h"
 
 class FDirectionalLightSceneProxy;
-class FRenderer;
+class IRenderer;
+struct FRenderView;
 class FStaticMeshSceneProxy;
 class FSkyLightSceneProxy;
 
@@ -118,12 +119,13 @@ private:
 public:
 	/**
 	 * 시작된 프레임 안에서 같은 스레드, 같은 장치의 렌더러로 그린다.
-	 * 방향광과 활성 SkyLight를 전달한 뒤 등록 순서대로 메시를 그린다. 미등록 광원의 기여는 RGB 0이다.
+	 * 시점, 광원과 등록 순서의 메시 요청을 구성해 DrawScene에 한 번 전달한다. 미등록 광원의 기여는 RGB 0이다.
 	 * 방향광의 미등록 방향은 유효한 기본값을 사용한다. SkyLight는 현재 균일 주변광으로 적용한다.
+	 * 요청 처리 동안 관련 자원 교체·파괴나 재진입 변경을 하지 않는다. Scene과 Proxy의 소유 관계는 유지한다.
 	 * 실패하면 false이며 호출자는 반복을 중단하고 Renderer를 Shutdown해야 한다.
 	 * 화면 지우기나 EndFrame/Present는 수행하지 않는다.
 	 */
-	[[nodiscard]] bool Draw(FRenderer& renderer);
+	[[nodiscard]] bool Draw(IRenderer& renderer, const FRenderView& view);
 
 #pragma endregion
 };

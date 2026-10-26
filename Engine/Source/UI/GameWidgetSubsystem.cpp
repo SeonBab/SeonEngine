@@ -37,7 +37,7 @@ bool FGameWidgetSubsystem::RemoveWidget(UUserWidget* widget)
 
 #pragma region Drawing
 
-bool FGameWidgetSubsystem::Draw(FRenderer& renderer)
+bool FGameWidgetSubsystem::Draw(IRenderer& renderer)
 {
 	FUIDrawElementList elements;
 

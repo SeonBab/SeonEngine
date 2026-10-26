@@ -6,7 +6,7 @@
 
 #pragma region Texture
 
-bool UImageWidget::SetTexture(TUniquePtr<UTexture2D>& newTexture)
+bool UImageWidget::SetTexture(TSharedPtr<UTexture> newTexture)
 {
 	if (!newTexture) { return false; }
 
