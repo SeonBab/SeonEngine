@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Math/Vector3.h"
 #include "Core/Templates/SharedPtr.h"
 #include "Core/Templates/UniquePtr.h"
 #include "MaterialInterface.h"
@@ -8,7 +9,7 @@ class FMaterialRenderProxy;
 class UTexture;
 
 ////////////////////////////////////////////////////////////////////////////////
-// 고정 셰이더에서 사용할 색상 텍스처를 공유 참조하는 구체 재질이다.
+// 고정 셰이더용 색상 텍스처를 공유 참조하고 정반사 색·광택 지수를 보관하는 구체 재질이다.
 // 설정과 조회는 같은 스레드에서 사용하며 GPU 생성이나 그리기를 수행하지 않는다.
 ////////////////////////////////////////////////////////////////////////////////
 class UMaterial : public UMaterialInterface
@@ -52,6 +53,30 @@ public:
 private:
 	// 텍스처 객체의 수명을 공유한다. 기본 nullptr는 색상 텍스처 미지정 상태다.
 	TSharedPtr<UTexture> baseColorTexture;
+
+#pragma endregion
+
+#pragma region Specular
+
+public:
+	/** 선형 RGB 각 성분을 0~1로 보정해 저장한다. 비유한 성분이 있으면 전체 입력을 무시한다. GPU 갱신은 하지 않는다. */
+	void SetSpecularColor(FVector3 color);
+
+	/** 정반사 색·세기의 선형 RGB 사본을 반환한다. 기본 검정은 정반사 기여 없음이다. */
+	FVector3 GetSpecularColor() const;
+
+	/** 유한한 광택 지수를 최솟값 1로 보정해 저장한다. 비유한 입력은 기존 값을 유지한다. GPU 갱신은 하지 않는다. */
+	void SetShininess(float shininess);
+
+	/** 하이라이트 집중도를 반환한다. 기본 32이며 높을수록 좁아진다. PBR의 Roughness와 다른 값이다. */
+	float GetShininess() const;
+
+private:
+	// 정반사 색·세기의 선형 RGB 반사율이다. 알파는 없으며 각 성분 범위는 0~1이다.
+	FVector3 specularColor{};
+
+	// Blinn-Phong의 거듭제곱 지수다. 단위가 없으며 유한한 1 이상 값을 보관한다.
+	float shininess = 32.0f;
 
 #pragma endregion
 

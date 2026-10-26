@@ -173,8 +173,8 @@ public:
 	[[nodiscard]] bool EndFrame() override;
 
 private:
-	/** 준비된 프레임에서 형상·텍스처의 구현·장치를 검사하고 그린다. 미준비 텍스처는 흰색으로 대체한다. */
-	[[nodiscard]] bool DrawMesh(const FMeshDrawItem& item);
+	/** 준비된 프레임에서 형상·텍스처의 구현·장치를 검사하고 재질·시점 값을 VS b3에 업로드한 뒤 그린다. 텍스처 X/Y로 샘플러를 선택하며 미준비는 흰색 대체다. 시점은 스케일 없는 뷰를 요구한다. */
+	[[nodiscard]] bool DrawMesh(const FMeshDrawItem& item, const FRenderView& view);
 
 	/** SRV가 활성 렌더 타겟과 같은 원본 자원을 가리키면 true다. 비활성 상태나 nullptr 입력은 false다. */
 	[[nodiscard]] bool IsActiveRenderTargetResource(ID3D11ShaderResourceView* view) const;
@@ -240,6 +240,9 @@ private:
 
 	// VS b2. 세기 반영 RGB와 패딩을 포함한 16바이트이며 초기값은 주변광 기여 0이다.
 	Microsoft::WRL::ComPtr<ID3D11Buffer> skyLightConstantBuffer;
+
+	// VS b3. 월드 변환·시점·정반사 RGB·광택 지수를 담는 112바이트이며 메시마다 갱신한다.
+	Microsoft::WRL::ComPtr<ID3D11Buffer> specularConstantBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
 

@@ -122,6 +122,8 @@ bool USceneCaptureComponent2D::CaptureScene(IRenderer& renderer) const
 	FRenderView renderView;
 	renderView.worldToView = view.CalculateViewMatrix();
 	renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
+	renderView.location = view.location;
+	renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
 
 	if (!renderer.BeginRenderTarget(*textureTarget)) { return false; }
 	if (!GetOwner().GetWorld().GetScene().Draw(renderer, renderView)) { return false; }

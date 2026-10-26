@@ -56,6 +56,28 @@ namespace
 	static_assert(offsetof(FSkyLightConstants, color) == 0);
 	static_assert(offsetof(FSkyLightConstants, padding) == 12);
 
+	struct FSpecularConstants
+	{
+		FMatrix4 localToWorld;
+		FVector3 viewLocation{};
+		float viewLocationPadding = 0.0f;
+		// 스케일 없는 WorldToView의 세 번째 열을 반전한 월드 방향이다. 직교 시 표면에서 카메라를 향한다.
+		FVector3 orthographicViewDirection{0.0f, 0.0f, -1.0f};
+		// HLSL uint와 맞춘 32비트 플래그다. 0은 원근, 1은 직교다.
+		uint32 bOrthographic = 0;
+		FVector3 specularColor{};
+		float shininess = 32.0f;
+	};
+
+	static_assert(sizeof(FSpecularConstants) == 112);
+	static_assert(offsetof(FSpecularConstants, localToWorld) == 0);
+	static_assert(offsetof(FSpecularConstants, viewLocation) == 64);
+	static_assert(offsetof(FSpecularConstants, viewLocationPadding) == 76);
+	static_assert(offsetof(FSpecularConstants, orthographicViewDirection) == 80);
+	static_assert(offsetof(FSpecularConstants, bOrthographic) == 92);
+	static_assert(offsetof(FSpecularConstants, specularColor) == 96);
+	static_assert(offsetof(FSpecularConstants, shininess) == 108);
+
 	bool ValidateTriangleMesh(size_t vertexCount, const TArray<uint32>& indices)
 	{
 		// TODO(seon): 인덱스 없는 삼각형 목록 지원 시 정점 개수 검증과 GPU 생성과 Draw 경로를 함께 추가한다.
@@ -171,6 +193,16 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	const FSkyLightConstants initialSkyLightConstants{};
 	if (!graphics.CreateConstantBuffer(SkyLightBufferByteSize, skyLightConstantBuffer) ||
 		!graphics.UpdateConstantBuffer(skyLightConstantBuffer.Get(), &initialSkyLightConstants, SkyLightBufferByteSize))
+	{
+		Shutdown();
+		return false;
+	}
+
+	constexpr uint32 SpecularBufferByteSize = static_cast<uint32>(sizeof(FSpecularConstants));
+	FSpecularConstants initialSpecularConstants;
+	initialSpecularConstants.localToWorld.SetIdentity();
+	if (!graphics.CreateConstantBuffer(SpecularBufferByteSize, specularConstantBuffer) ||
+		!graphics.UpdateConstantBuffer(specularConstantBuffer.Get(), &initialSpecularConstants, SpecularBufferByteSize))
 	{
 		Shutdown();
 		return false;
@@ -340,6 +372,7 @@ void FD3D11Renderer::Shutdown()
 	transformConstantBuffer.Reset();
 	directionalLightConstantBuffer.Reset();
 	skyLightConstantBuffer.Reset();
+	specularConstantBuffer.Reset();
 	imageTransformConstantBuffer.Reset();
 	inputLayout.Reset();
 	staticMeshPixelShader.Reset();
@@ -667,13 +700,13 @@ bool FD3D11Renderer::DrawScene(const FSceneRenderData& data)
 
 	for (const FMeshDrawItem& item : data.meshes)
 	{
-		if (!SetLocalToWorld(item.localToWorld) || !DrawMesh(item)) { return false; }
+		if (!SetLocalToWorld(item.localToWorld) || !DrawMesh(item, data.view)) { return false; }
 	}
 
 	return true;
 }
 
-bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item)
+bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view)
 {
 	const FD3D11StaticMeshRenderData* d3d11Mesh = dynamic_cast<const FD3D11StaticMeshRenderData*>(item.mesh);
 	if (!d3d11Mesh)
@@ -722,6 +755,18 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item)
 		}
 	}
 
+	const FSpecularConstants specularConstants{
+		.localToWorld = item.localToWorld,
+		.viewLocation = view.location,
+		.orthographicViewDirection = {-view.worldToView.m[0][2], -view.worldToView.m[1][2], -view.worldToView.m[2][2]},
+		.bOrthographic = view.bOrthographic ? 1u : 0u,
+		.specularColor = item.specularColor,
+		.shininess = item.shininess};
+	if (!graphics.UpdateConstantBuffer(specularConstantBuffer.Get(), &specularConstants, static_cast<uint32>(sizeof(specularConstants))))
+	{
+		return false;
+	}
+
 	graphics.SetVertexShader(staticMeshVertexShader.Get());
 	graphics.SetPixelShader(staticMeshPixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
@@ -733,6 +778,7 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item)
 	graphics.SetVertexShaderConstantBuffer(0, transformConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(2, skyLightConstantBuffer.Get());
+	graphics.SetVertexShaderConstantBuffer(3, specularConstantBuffer.Get());
 	graphics.SetIndexBuffer(d3d11Mesh->indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(d3d11Mesh->indexCount, 0, 0);

@@ -185,6 +185,8 @@ bool FScene::Draw(IRenderer& renderer, const FRenderView& view)
 		item.mesh = renderData;
 		item.localToWorld = proxy->GetLocalToWorld();
 		item.baseColorTexture = materialProxy->GetBaseColorTexture();
+		item.specularColor = materialProxy->GetSpecularColor();
+		item.shininess = materialProxy->GetShininess();
 		data.meshes.push_back(std::move(item));
 	}
 

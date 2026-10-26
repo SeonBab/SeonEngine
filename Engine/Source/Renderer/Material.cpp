@@ -2,6 +2,8 @@
 
 #include "MaterialRenderProxy.h"
 
+#include <algorithm>
+#include <cmath>
 #include <utility>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +21,12 @@ public:
 
 	/** 같은 스레드에서 재질의 현재 색상 텍스처 공유 참조를 얻는다. GPU 유효성은 검사하지 않는다. */
 	TSharedPtr<UTexture> GetBaseColorTexture() const override { return material->GetBaseColorTexture(); }
+
+	/** 소유 재질의 현재 정반사 색·세기를 값으로 조회한다. GPU 갱신은 하지 않는다. */
+	FVector3 GetSpecularColor() const override { return material->GetSpecularColor(); }
+
+	/** 소유 재질의 현재 광택 지수를 값으로 조회한다. GPU 갱신은 하지 않는다. */
+	float GetShininess() const override { return material->GetShininess(); }
 
 private:
 	// 비소유 주소다. 재질을 파괴하거나 이동한 뒤에는 조회할 수 없다.
@@ -54,6 +62,37 @@ void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture> texture)
 TSharedPtr<UTexture> UMaterial::GetBaseColorTexture() const
 {
 	return baseColorTexture;
+}
+
+#pragma endregion
+
+#pragma region Specular
+
+void UMaterial::SetSpecularColor(FVector3 color)
+{
+	if (!std::isfinite(color.x) || !std::isfinite(color.y) || !std::isfinite(color.z)) { return; }
+
+	specularColor = {
+		std::clamp(color.x, 0.0f, 1.0f),
+		std::clamp(color.y, 0.0f, 1.0f),
+		std::clamp(color.z, 0.0f, 1.0f)};
+}
+
+FVector3 UMaterial::GetSpecularColor() const
+{
+	return specularColor;
+}
+
+void UMaterial::SetShininess(float newShininess)
+{
+	if (!std::isfinite(newShininess)) { return; }
+
+	shininess = std::max(newShininess, 1.0f);
+}
+
+float UMaterial::GetShininess() const
+{
+	return shininess;
 }
 
 #pragma endregion

@@ -6,6 +6,7 @@ struct PSInput
 	float4 color : COLOR0;
 	float3 normal : NORMAL0;
 	float2 uv : TEXCOORD0;
+	float3 specular : COLOR1;
 };
 
 Texture2D BaseTexture : register(t0);
@@ -13,5 +14,7 @@ SamplerState BaseSampler : register(s0);
 
 float4 Main(PSInput input) : SV_Target
 {
-	return BaseTexture.Sample(BaseSampler, input.uv) * input.color;
+	float4 baseColor = BaseTexture.Sample(BaseSampler, input.uv) * input.color;
+
+	return float4(baseColor.rgb + input.specular, baseColor.a);
 }

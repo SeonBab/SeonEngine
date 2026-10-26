@@ -119,6 +119,8 @@ bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer, int width, 
 	FRenderView renderView;
 	renderView.worldToView = view.CalculateViewMatrix();
 	renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
+	renderView.location = view.location;
+	renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
 
 	return scene.Draw(renderer, renderView);
 }

@@ -68,6 +68,8 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, IRenderer& 
 		const FCameraViewInfo view = camera->GetCameraView();
 		renderView.worldToView = view.CalculateViewMatrix();
 		renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
+		renderView.location = view.location;
+		renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
 	}
 
 	if (!world->SendAllEndOfFrameUpdates())
