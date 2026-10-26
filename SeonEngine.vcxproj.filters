@@ -282,6 +282,12 @@
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\Font.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\FontRenderData.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\ImGuiRendererBackend.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
@@ -504,6 +510,9 @@
       <Filter>Engine\Source\Maps</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\DirectionalLightSceneProxy.cpp">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Renderer\Font.cpp">
       <Filter>Engine\Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\Material.cpp">

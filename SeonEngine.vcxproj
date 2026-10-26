@@ -122,6 +122,8 @@
     <ClInclude Include="Engine\Source\Properties\ComponentPropertyInfo.h" />
     <ClInclude Include="Engine\Source\Properties\PropertyValue.h" />
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h" />
+    <ClInclude Include="Engine\Source\Renderer\Font.h" />
+    <ClInclude Include="Engine\Source\Renderer\FontRenderData.h" />
     <ClInclude Include="Engine\Source\Renderer\ImGuiRendererBackend.h" />
     <ClInclude Include="Engine\Source\Renderer\Material.h" />
     <ClInclude Include="Engine\Source\Renderer\MaterialInterface.h" />
@@ -198,6 +200,7 @@
     <ClCompile Include="Engine\Source\Maps\ComponentTypeRegistry.cpp" />
     <ClCompile Include="Engine\Source\Maps\MapLoader.cpp" />
     <ClCompile Include="Engine\Source\Renderer\DirectionalLightSceneProxy.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\Font.cpp" />
     <ClCompile Include="Engine\Source\Renderer\Material.cpp" />
     <ClCompile Include="Engine\Source\Renderer\MaterialInterface.cpp" />
     <ClCompile Include="Engine\Source\Renderer\MaterialRenderProxy.cpp" />
