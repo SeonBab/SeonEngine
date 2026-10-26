@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Containers/SeonString.h"
 #include "Core/CoreTypes.h"
 #include "Object.h"
 #include "PlayState.h"
@@ -19,6 +20,8 @@ enum class EEndPlayReason : uint8
 ////////////////////////////////////////////////////////////////////////////////
 class UActorComponent : public UObject
 {
+	friend class AActor;
+
 #pragma region Lifecycle
 
 public:
@@ -41,11 +44,15 @@ public:
 	/** 소속 액터를 반환한다. 액터의 수명을 연장하지 않는다. */
 	AActor& GetOwner() const { return owner; }
 
+	/** 등록 전에는 빈 이름이다. 추가 성공 후에는 바뀌지 않으며 반환 뷰는 컴포넌트 파괴 후 무효다. */
+	[[nodiscard]] FStringView GetName() const;
+
 	/** 같은 실제 타입의 복수 추가 허용 정책이다. 기본은 false이며 파생 타입은 타입별 고정 정책으로 재정의한다. */
 	virtual bool AllowsMultipleComponents() const;
 
 private:
 	AActor& owner;
+	FString name; // 액터가 소유권을 받을 때 지정하며 액터 안에서 유일하다.
 
 #pragma endregion
 

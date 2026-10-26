@@ -12,7 +12,8 @@
 AActor::AActor(UWorld& inWorld)
 	: world(&inWorld)
 {
-	components.push_back(MakeUnique<UTransformComponent>(*this));
+	TUniquePtr<UActorComponent> transform = MakeUnique<UTransformComponent>(*this);
+	(void)AddComponent("RootTransform", transform);
 }
 
 AActor::~AActor() = default;
@@ -154,9 +155,9 @@ void AActor::RouteEndPlay(EEndPlayReason reason)
 
 #pragma region Components
 
-bool AActor::AddComponent(TUniquePtr<UActorComponent>& component)
+bool AActor::AddComponent(FStringView name, TUniquePtr<UActorComponent>& component)
 {
-	if (!component || &component->GetOwner() != this)
+	if (name.empty() || FindComponent(name) || !component || &component->GetOwner() != this)
 	{
 		return false;
 	}
@@ -174,6 +175,8 @@ bool AActor::AddComponent(TUniquePtr<UActorComponent>& component)
 		}
 	}
 
+	// 모든 거부 조건을 통과한 뒤 이름과 소유권을 확정한다.
+	component->name = FString(name);
 	UActorComponent* addedComponent = component.get();
 	components.push_back(std::move(component));
 
@@ -183,6 +186,16 @@ bool AActor::AddComponent(TUniquePtr<UActorComponent>& component)
 	}
 
 	return true;
+}
+
+UActorComponent* AActor::FindComponent(FStringView name) const
+{
+	for (const TUniquePtr<UActorComponent>& component : components)
+	{
+		if (component->GetName() == name) { return component.get(); }
+	}
+
+	return nullptr;
 }
 
 #pragma endregion

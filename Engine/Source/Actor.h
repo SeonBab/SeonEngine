@@ -2,6 +2,7 @@
 
 #include "Components/ActorComponent.h"
 #include "Core/Containers/Array.h"
+#include "Core/Containers/SeonString.h"
 #include "Core/CoreTypes.h"
 #include "Core/Templates/UniquePtr.h"
 #include "Object.h"
@@ -131,15 +132,19 @@ private:
 
 public:
 	/**
-	 * 소속이 자신인 컴포넌트의 소유권을 받는다. 성공 시 입력 포인터는 비워진다.
-	 * 빈 포인터, 다른 소속, 복수 불허인 같은 실제 타입의 중복이면 false이며 입력과 기존 목록을 유지한다.
+	 * 소속이 자신인 컴포넌트에 이름을 복사해 지정하고 소유권을 받는다. 성공 시 입력 포인터는 비워진다.
+	 * 빈 이름, 같은 액터 안의 중복 이름, 빈 포인터, 다른 소속, 복수 불허인 같은 실제 타입의 중복이면 false다.
+	 * 실패 시 입력 포인터와 이름, 기존 목록을 유지한다. 이름 비교는 대소문자를 구분한다.
 	 * 복수 허용 정책은 실제 객체에서 조회한다. 서로 다른 파생 타입은 별개로 취급한다.
 	 * 액터가 시작 중이거나 시작 완료면 소유권을 받은 뒤 미시작 컴포넌트의 BeginPlay를 반환 전에 호출한다.
 	 * 필요한 설정은 추가 전에 마친다. true는 소유권 이전 성공이며 콜백 후 객체의 생존을 보장하지 않는다.
 	 * 콜백 중 Destroy의 제거 시점은 World 계약을 따르며 즉시 파괴 뒤 액터/컴포넌트에 접근하면 안 된다.
 	 * 메모리 부족은 false 반환으로 복구하지 않는다.
 	 */
-	[[nodiscard]] bool AddComponent(TUniquePtr<UActorComponent>& component);
+	[[nodiscard]] bool AddComponent(FStringView name, TUniquePtr<UActorComponent>& component);
+
+	/** 이름을 대소문자를 구분해 조회한다. 없으면 nullptr이며 반환 포인터는 비소유다. const 액터에서도 수정할 수 있고 파괴 후 무효다. */
+	[[nodiscard]] UActorComponent* FindComponent(FStringView name) const;
 
 	/**
 	 * T로 변환 가능한 첫 컴포넌트를 반환하며 없으면 nullptr다. 검색은 자기 목록에 한정한다.

@@ -13,6 +13,11 @@ UActorComponent::~UActorComponent() = default;
 
 #pragma region ActorIntegration
 
+FStringView UActorComponent::GetName() const
+{
+	return name;
+}
+
 bool UActorComponent::AllowsMultipleComponents() const
 {
 	return false;

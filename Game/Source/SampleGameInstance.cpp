@@ -77,7 +77,7 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 			(void)mesh->SetStaticMesh(staticMesh);
 			TUniquePtr<UActorComponent> component = std::move(mesh);
 
-			return actor.AddComponent(component);
+			return actor.AddComponent("Body", component);
 		};
 
 		struct FSampleSquarePose
@@ -107,7 +107,7 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 		light->SetLightColor({1.0f, 1.0f, 1.0f});
 		light->SetIntensity(1.0f);
 		TUniquePtr<UActorComponent> lightComponent = std::move(light);
-		if (!lightActor.AddComponent(lightComponent))
+		if (!lightActor.AddComponent("DirectionalLight", lightComponent))
 		{
 			return false;
 		}
@@ -117,7 +117,7 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 		TUniquePtr<USkyLightComponent> skyLight = MakeUnique<USkyLightComponent>(skyLightActor);
 		skyLight->SetIntensity(0.15f);
 		TUniquePtr<UActorComponent> skyLightComponent = std::move(skyLight);
-		if (!skyLightActor.AddComponent(skyLightComponent)) { return false; }
+		if (!skyLightActor.AddComponent("SkyLight", skyLightComponent)) { return false; }
 
 		AActor& cameraActor = world.SpawnActor<AActor>();
 		cameraActor.GetComponent<UTransformComponent>()->SetPosition({0.0f, 0.0f, -6.0f});
@@ -127,7 +127,7 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, FRe
 		camera->SetOrthographicWidth(9.0f);
 
 		TUniquePtr<UActorComponent> cameraComponent = std::move(camera);
-		if (!cameraActor.AddComponent(cameraComponent))
+		if (!cameraActor.AddComponent("Camera", cameraComponent))
 		{
 			return false;
 		}
