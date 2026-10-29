@@ -3,9 +3,8 @@
 #include "Core/Containers/Array.h"
 #include "Core/Containers/SeonString.h"
 #include "Core/Templates/UniquePtr.h"
-#include "Properties/ComponentPropertyInfo.h"
+#include "Reflection/TypeInfo.h"
 
-#include <span>
 #include <typeinfo>
 
 class AActor;
@@ -15,38 +14,29 @@ class UActorComponent;
 using FComponentFactory = TUniquePtr<UActorComponent> (*)(AActor&);
 
 ////////////////////////////////////////////////////////////////////////////////
-// 컴포넌트 종류 이름과 생성 함수, 실제 C++ 타입 및 프로퍼티 목록을 보관한다. 등록과 조회는 객체를 생성하지 않는다.
+// 컴포넌트 종류 이름과 생성 함수, 실제 C++ 타입 및 공유 리플렉션 정보를 연결한다. 등록과 조회는 객체를 생성하지 않는다.
 ////////////////////////////////////////////////////////////////////////////////
 class FComponentTypeRegistry final
 {
 public:
-	/** 기본 "Transform" 생성 함수와 타입 및 position, rotation, scale 프로퍼티를 등록한다. 객체는 생성하지 않으며 중복 이름은 기존 등록을 유지하고 false다. */
+	/** 기본 Transform/DirectionalLight/SkyLight/StaticMesh의 생성 함수·실제 타입·생성 정보를 순서대로 등록한다. 객체는 생성하지 않는다. 첫 실패에서 false이며 기존/앞선 성공 등록은 유지한다. */
 	[[nodiscard]] bool RegisterBuiltInTypes();
 
 	/**
-	 * 이름을 복사하고 typeid로 얻은 타입 정보를 빌려 등록한다. 생성 함수는 해당 타입을 반환해야 한다.
+	 * 이름을 복사하고 typeid 및 공유 FTypeInfo를 빌려 등록한다. 두 정보는 등록표와 모든 조회보다 오래 살아야 한다.
+	 * 생성 함수는 등록한 실제 타입과 같은 GetTypeInfo를 제공하는 객체를 반환해야 한다. 등록 자체는 함수를 실행하지 않는다.
 	 * 빈 이름, null 함수, 중복 이름은 로그와 false로 거부하며 기존 등록을 유지한다.
 	 */
-	[[nodiscard]] bool Register(FStringView typeName, FComponentFactory factory, const std::type_info& componentType);
+	[[nodiscard]] bool Register(FStringView typeName, FComponentFactory factory, const std::type_info& componentType, const FTypeInfo& typeInfo);
 
 	/** 대소문자를 구분해 생성 함수 주소를 반환한다. 미등록 이름은 nullptr이며 함수를 실행하지 않는다. */
 	[[nodiscard]] FComponentFactory Find(FStringView typeName) const;
 
-	/** 등록한 실제 C++ 타입과 정확히 같은지 비교한다. 미등록 이름은 false이며 파생 타입을 같은 타입으로 취급하지 않는다. */
+	/** 등록한 실제 C++ 타입 및 GetTypeInfo의 주소가 정확히 같은지 비교한다. 미등록 이름은 false이며 파생 타입을 같은 타입으로 취급하지 않는다. */
 	[[nodiscard]] bool IsType(FStringView typeName, const UActorComponent& component) const;
 
-	/**
-	 * 등록된 종류에 프로퍼티를 옮겨 보관한다. 이름은 대소문자를 구분한다.
-	 * 미등록 종류, 빈 이름, 중복 이름과 두 함수가 모두 null인 항목은 로그와 false로 거부한다.
-	 * 실패 시 기존 등록을 유지하며 접근 함수를 실행하지 않는다.
-	 */
-	[[nodiscard]] bool RegisterProperty(FStringView typeName, FComponentPropertyInfo property);
-
-	/**
-	 * 등록표가 소유한 읽기 전용 목록을 반환한다. 미등록 종류나 프로퍼티가 없는 종류는 빈 목록이다.
-	 * 등록 추가 또는 등록표 이동과 파괴 이후에는 다시 조회해야 한다. 접근 함수는 실행하지 않는다.
-	 */
-	[[nodiscard]] std::span<const FComponentPropertyInfo> GetProperties(FStringView typeName) const;
+	/** 미등록 종류는 nullptr다. 프로퍼티 목록을 복제하지 않고 등록한 공유 클래스 정보를 빌려 반환한다. */
+	[[nodiscard]] const FTypeInfo* FindTypeInfo(FStringView typeName) const;
 
 private:
 	struct FEntry
@@ -54,7 +44,7 @@ private:
 		FString typeName;
 		FComponentFactory factory = nullptr;
 		const std::type_info* componentType = nullptr; // typeid가 제공하는 정적 타입 정보를 빌린다.
-		TArray<FComponentPropertyInfo> properties;
+		const FTypeInfo* typeInfo = nullptr;           // 생성된 클래스 정보는 정적 수명이며 등록표가 소유하지 않는다.
 	};
 
 	TArray<FEntry> entries;

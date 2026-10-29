@@ -24,7 +24,7 @@ struct FRenderView
 	bool bOrthographic = false;
 };
 
-/** 메시 하나의 형상을 빌리고 변환·정반사 설정 사본과 색상 텍스처의 공유 참조를 보관한다. */
+/** 메시 하나의 형상을 빌리고 변환, 정반사와 알파 마스킹 설정 사본과 색상 텍스처의 공유 참조를 보관한다. */
 struct FMeshDrawItem
 {
 	FMeshDrawItem()
@@ -41,6 +41,10 @@ struct FMeshDrawItem
 	FVector3 specularColor{};
 	// 같은 시점의 Blinn-Phong 광택 지수 사본이다. 유한한 1 이상이며 기본값은 32다.
 	float shininess = 32.0f;
+	// 마스킹을 꺼도 기준값은 보관한다. 값은 같은 요청을 작성할 때 재질에서 복사한다.
+	bool bAlphaMasked = false;
+	// 유한한 0~1 값이다. 마스킹 시 텍스처와 정점색의 곱 알파가 이 값보다 낮으면 제거한다.
+	float alphaCutoff = 0.5f;
 };
 
 /**

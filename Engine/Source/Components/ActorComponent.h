@@ -4,6 +4,7 @@
 #include "Core/CoreTypes.h"
 #include "Object.h"
 #include "PlayState.h"
+#include "ActorComponent.generated.h"
 
 class AActor;
 
@@ -18,8 +19,12 @@ enum class EEndPlayReason : uint8
 // 액터에 붙는 기능 객체의 공통 기반이다.
 // 소속 액터를 소유하지 않으며 액터는 컴포넌트보다 오래 살아 있어야 한다.
 ////////////////////////////////////////////////////////////////////////////////
+UCLASS()
 class UActorComponent : public UObject
 {
+	GENERATED_BODY()
+
+private:
 	friend class AActor;
 
 #pragma region Lifecycle

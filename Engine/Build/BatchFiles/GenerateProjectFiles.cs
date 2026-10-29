@@ -1,5 +1,5 @@
 // 소스 폴더를 훑어 .vcxproj의 파일 목록과 .vcxproj.filters를 만든다.
-// .vcxproj는 손으로 관리하는 파일이라 ClInclude / ClCompile / None 목록만 바꾸고 나머지는 그대로 둔다.
+// 소스 목록과 지정 콘텐츠 루트의 표시 목록만 갱신하고 빌드 설정과 나머지 항목은 보존한다.
 
 using System.Security.Cryptography;
 using System.Text;
@@ -20,6 +20,7 @@ try
 		XDocument project = XDocument.Load(projectPath, LoadOptions.PreserveWhitespace);
 		HashSet<string> compiledShaders = ReadCompiledShaders(project, sources, projectPath);
 		ReplaceSourceItems(project, sources, projectPath, compiledShaders);
+		ReplaceContentItems(project, projectPath, rootDir);
 
 		outputs.Add((Path.GetFileNameWithoutExtension(projectPath), projectPath, project, MakeFilters(sources, compiledShaders, project), sources.Count));
 	}
@@ -240,12 +241,76 @@ static void ReplaceSourceItems(XDocument project, List<string> sources, string p
 	}
 }
 
+// 루트 실행 프로젝트의 콘텐츠 표시 목록을 갱신한다. 실제 복사 목록은 빌드 단계에서 다시 수집한다.
+static void ReplaceContentItems(XDocument project, string projectPath, string rootDir)
+{
+	if (!string.Equals(projectPath, Path.Combine(rootDir, "SeonEngine.vcxproj"), StringComparison.OrdinalIgnoreCase)) { return; }
+
+	XNamespace ns = project.Root!.Name.Namespace;
+	string[] roots = [@"Engine\Content\", @"Game\Content\"];
+	var content = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+	foreach (string relativeRoot in roots)
+	{
+		string directory = Path.Combine(rootDir, relativeRoot);
+		if (!Directory.Exists(directory)) { continue; }
+
+		foreach (string file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+		{
+			content.Add(Path.GetRelativePath(rootDir, file));
+		}
+	}
+
+	// 생성기 소유 그룹과 이전의 단순 콘텐츠 등록만 교체한다. 외부 고지와 파일별 설정은 덮어쓰지 않는다.
+	foreach (XElement group in project.Root.Elements(ns + "ItemGroup").ToList())
+	{
+		bool generated = (string?)group.Attribute("Label") == "SEGeneratedContent";
+		bool changed = false;
+		if (generated && (group.Attributes().Any(attribute => attribute.Name != "Label") || group.Elements().Any(item =>
+			item.Name != ns + "Content" || item.HasElements || item.Attributes().Any(attribute => attribute.Name != "Include"))))
+		{
+			throw new InvalidOperationException($"{projectPath}: 자동 콘텐츠 그룹에 조건이나 파일별 설정이 있다. 변경하지 않았다.");
+		}
+
+		foreach (XElement item in group.Elements(ns + "Content").ToList())
+		{
+			string include = ((string?)item.Attribute("Include") ?? "").Replace('/', '\\');
+			if (!generated && !roots.Any(prefix => include.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))) { continue; }
+
+			if (item.HasElements || item.Attributes().Any(attribute => attribute.Name != "Include") || (!generated && group.HasAttributes))
+			{
+				throw new InvalidOperationException($"{projectPath}: 콘텐츠 항목의 파일별 설정이나 조건을 먼저 확인해야 한다: {include}");
+			}
+
+			if (item.PreviousNode is XText space && string.IsNullOrWhiteSpace(space.Value)) { space.Remove(); }
+			item.Remove();
+			changed = true;
+		}
+
+		if (!group.HasElements && (generated || changed))
+		{
+			if (group.PreviousNode is XText space && string.IsNullOrWhiteSpace(space.Value)) { space.Remove(); }
+			group.Remove();
+		}
+	}
+
+	var generatedGroup = new XElement(ns + "ItemGroup", new XAttribute("Label", "SEGeneratedContent"));
+	foreach (string file in content)
+	{
+		generatedGroup.Add(new XText("\n    "), new XElement(ns + "Content", new XAttribute("Include", file)));
+	}
+	generatedGroup.Add(new XText("\n  "));
+	XElement anchor = project.Root.Elements(ns + "Target").FirstOrDefault()
+		?? throw new InvalidOperationException($"{projectPath}: 콘텐츠 목록을 넣을 Target 위치가 없다.");
+	if (anchor.PreviousNode is XText whitespace && string.IsNullOrWhiteSpace(whitespace.Value)) { whitespace.Remove(); }
+	anchor.AddBeforeSelf(new XText("\n  "), generatedGroup, new XText("\n  "));
+}
+
 // .vcxproj.filters 내용을 만든다. 배치는 VS가 저장하는 모양(필터 / ClInclude / ClCompile / None / FxCompile을 각각 다른 ItemGroup에)을 따른다.
 static XDocument MakeFilters(List<string> sources, HashSet<string> compiledShaders, XDocument sourceProject)
 {
 	XNamespace ns = "http://schemas.microsoft.com/developer/msbuild/2003";
 	var project = new XElement(ns + "Project", new XAttribute("ToolsVersion", "4.0"));
-	// Content 등록은 프로젝트에서 그대로 보존하고 필터에도 표시한다.
+	// 자동 수집과 수동 등록 콘텐츠를 함께 필터에 표시한다.
 	List<string> contentSources = sourceProject.Root!.Elements(ns + "ItemGroup").Elements(ns + "Content")
 		.Select(item => (string?)item.Attribute("Include")).OfType<string>().ToList();
 

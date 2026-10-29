@@ -165,13 +165,13 @@ namespace
 	{
 		GUID containerFormat{};
 		if (!CheckWICResult(decoder->GetContainerFormat(&containerFormat), "Get image container format")) { return false; }
-		if (IsEqualGUID(containerFormat, GUID_ContainerFormatPng))
+		if (IsEqualGUID(containerFormat, GUID_ContainerFormatPng) || IsEqualGUID(containerFormat, GUID_ContainerFormatBmp))
 		{
 			UINT frameCount = 0;
 			if (!CheckWICResult(decoder->GetFrameCount(&frameCount), "Get image frame count")) { return false; }
 			if (frameCount != 1)
 			{
-				WriteLog("Image", ELogLevel::Error, "A PNG image must have one frame (got {}).", frameCount);
+				WriteLog("Image", ELogLevel::Error, "A PNG or BMP image must have one frame (got {}).", frameCount);
 				return false;
 			}
 
@@ -198,7 +198,7 @@ namespace
 			return CheckWICResult(ddsDecoder->GetFrame(0, 0, 0, outFrame.GetAddressOf()), "Get DDS top mip frame");
 		}
 
-		WriteLog("Image", ELogLevel::Error, "Only PNG and supported 2D DDS image files are supported.");
+		WriteLog("Image", ELogLevel::Error, "Only PNG, BMP and supported 2D DDS image files are supported.");
 
 		return false;
 	}

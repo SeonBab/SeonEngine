@@ -3,6 +3,7 @@
 #include "Core/Math/Vector3.h"
 #include "Core/Templates/UniquePtr.h"
 #include "RenderStateComponent.h"
+#include "DirectionalLightComponent.generated.h"
 
 class FDirectionalLightSceneProxy;
 
@@ -10,8 +11,11 @@ class FDirectionalLightSceneProxy;
 // 방향광의 색과 세기를 보관하고 렌더용 Proxy를 소유한다.
 // 방향은 소속 액터의 앞 방향이며 Scene에는 Proxy 주소를 등록한다.
 ////////////////////////////////////////////////////////////////////////////////
+UCLASS()
 class UDirectionalLightComponent : public URenderStateComponent
 {
+	GENERATED_BODY()
+
 #pragma region Lifecycle
 
 public:
@@ -46,7 +50,11 @@ public:
 	void SetIntensity(float newIntensity);
 
 private:
+	// 선형 RGB 값 전체를 읽고 쓴다. 검사/보정과 렌더 반영은 밝기 프로퍼티와 같은 계약을 따른다.
+	UPROPERTY()
 	FVector3 lightColor{1.0f, 1.0f, 1.0f};
+	// 색에 곱하는 밝기 배율이다. 리플렉션 대입도 검사/보정하지 않으며 렌더 반영은 SendRenderUpdates가 맡는다.
+	UPROPERTY()
 	float intensity = 1.0f;
 
 #pragma endregion

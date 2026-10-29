@@ -2,10 +2,12 @@
 
 #include "Core/Logging/Log.h"
 #include "Renderer/ImGuiRendererBackend.h"
+#include "Renderer/TextureRenderTarget2D.h"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 
+#include <limits>
 #include <utility>
 
 // 백엔드 헤더가 Windows 타입 의존을 피하려고 제외한 함수 선언이다.
@@ -81,9 +83,12 @@ bool FEditorUI::HandleWindowMessage(HWND windowHandle, UINT message, WPARAM wPar
 	return true;
 }
 
-bool FEditorUI::Render()
+bool FEditorUI::BeginFrame()
 {
-	if (context == nullptr || !bWin32Initialized || !rendererBackend) { return false; }
+	if (context == nullptr || !bWin32Initialized || !rendererBackend || bFrameStarted)
+	{
+		return false;
+	}
 
 	ImGuiContext* previousContext = ImGui::GetCurrentContext();
 	ImGui::SetCurrentContext(context);
@@ -93,8 +98,23 @@ bool FEditorUI::Render()
 		ImGui::SetCurrentContext(previousContext);
 		return false;
 	}
+
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+	bFrameStarted = true;
+
+	ImGui::SetCurrentContext(previousContext);
+	return true;
+}
+
+bool FEditorUI::Build(int32& outViewportWidth, int32& outViewportHeight)
+{
+	outViewportWidth = 0;
+	outViewportHeight = 0;
+	if (context == nullptr || !bFrameStarted) { return false; }
+
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(context);
 
 	if (ImGui::Begin("SeonEngine"))
 	{
@@ -102,7 +122,62 @@ bool FEditorUI::Render()
 	}
 	ImGui::End();
 
+	ImGui::SetNextWindowSize(ImVec2(640.0f, 360.0f), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Viewport"))
+	{
+		const ImVec2 size = ImGui::GetContentRegionAvail();
+		const float integerLimit = static_cast<float>(std::numeric_limits<int32>::max());
+		if (size.x >= 1.0f && size.y >= 1.0f && size.x < integerLimit && size.y < integerLimit)
+		{
+			outViewportWidth = static_cast<int32>(size.x);
+			outViewportHeight = static_cast<int32>(size.y);
+		}
+	}
+	ImGui::End();
+
+	ImGui::SetCurrentContext(previousContext);
+	return true;
+}
+
+bool FEditorUI::BuildViewportImage(const UTextureRenderTarget2D& renderTarget)
+{
+	if (context == nullptr || !rendererBackend || !bFrameStarted) { return false; }
+
+	const int32 width = renderTarget.GetWidth();
+	const int32 height = renderTarget.GetHeight();
+	if (width <= 0 || height <= 0) { return false; }
+
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(context);
+
+	bool built = true;
+	// Build에서 크기를 측정한 같은 패널에 이어서 이미지를 추가한다.
+	if (ImGui::Begin("Viewport"))
+	{
+		ImTextureRef imageRef;
+		built = rendererBackend->GetTextureRef(renderTarget, imageRef);
+		if (built)
+		{
+			ImGui::Image(imageRef, ImVec2(static_cast<float>(width), static_cast<float>(height)));
+		}
+	}
+	ImGui::End();
+
+	ImGui::SetCurrentContext(previousContext);
+
+	return built;
+}
+
+bool FEditorUI::EndFrame()
+{
+	if (context == nullptr || !rendererBackend || !bFrameStarted) { return false; }
+
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(context);
+
 	ImGui::Render();
+	bFrameStarted = false;
+
 	const bool rendered = rendererBackend->RenderDrawData(ImGui::GetDrawData());
 
 	ImGui::SetCurrentContext(previousContext);
@@ -114,12 +189,18 @@ void FEditorUI::Shutdown()
 	if (context == nullptr)
 	{
 		rendererBackend.reset();
+		bFrameStarted = false;
 		return;
 	}
 
 	// 백엔드는 current context를 사용하므로 소유 대상을 선택하고 정리 후 기존 선택을 복원한다.
 	ImGuiContext* previousContext = ImGui::GetCurrentContext();
 	ImGui::SetCurrentContext(context);
+	if (bFrameStarted)
+	{
+		ImGui::EndFrame();
+		bFrameStarted = false;
+	}
 	if (rendererBackend)
 	{
 		rendererBackend->Shutdown();

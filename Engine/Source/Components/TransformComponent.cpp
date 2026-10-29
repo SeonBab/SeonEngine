@@ -9,6 +9,12 @@ UTransformComponent::UTransformComponent(AActor& owner)
 {
 }
 
+void UTransformComponent::PostLoad()
+{
+	UActorComponent::PostLoad();
+	UpdateComponentToWorld();
+}
+
 #pragma endregion
 
 #pragma region RelativeTransform

@@ -35,6 +35,18 @@ bool FGameWidgetSubsystem::RemoveWidget(UUserWidget* widget)
 
 #pragma endregion
 
+#pragma region Updating
+
+void FGameWidgetSubsystem::Tick(float deltaSeconds)
+{
+	for (const TUniquePtr<UUserWidget>& widget : widgets)
+	{
+		widget->Tick(deltaSeconds);
+	}
+}
+
+#pragma endregion
+
 #pragma region Drawing
 
 bool FGameWidgetSubsystem::Draw(IRenderer& renderer)

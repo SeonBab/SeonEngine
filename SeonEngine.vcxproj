@@ -61,6 +61,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Actor.h" />
+    <ClInclude Include="Engine\Source\AssetManager.h" />
     <ClInclude Include="Engine\Source\Camera\CameraViewInfo.h" />
     <ClInclude Include="Engine\Source\Components\ActorComponent.h" />
     <ClInclude Include="Engine\Source\Components\CameraComponent.h" />
@@ -81,17 +82,20 @@
     <ClInclude Include="Engine\Source\Core\Math\Transform.h" />
     <ClInclude Include="Engine\Source\Core\Math\Vector2.h" />
     <ClInclude Include="Engine\Source\Core\Math\Vector3.h" />
+    <ClInclude Include="Engine\Source\Core\Misc\FileHelper.h" />
     <ClInclude Include="Engine\Source\Core\Misc\Paths.h" />
     <ClInclude Include="Engine\Source\Core\Templates\SharedPtr.h" />
     <ClInclude Include="Engine\Source\Core\Templates\UniquePtr.h" />
     <ClInclude Include="Engine\Source\Core\Time\FrameTimer.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11Device.h" />
+    <ClInclude Include="Engine\Source\D3D11\D3D11FontRenderData.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11ImGuiRendererBackend.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11Renderer.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11Shader.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11StaticMeshRenderData.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11SwapChain.h" />
     <ClInclude Include="Engine\Source\D3D11\D3D11TextureRenderData.h" />
+    <ClInclude Include="Engine\Source\D3D11\D3D11UIRenderer.h" />
     <ClInclude Include="Engine\Source\EditorEngine.h" />
     <ClInclude Include="Engine\Source\EditorViewportClient.h" />
     <ClInclude Include="Engine\Source\Editor\EditorUI.h" />
@@ -115,14 +119,18 @@
     <ClInclude Include="Engine\Source\Launch\EngineLoop.h" />
     <ClInclude Include="Engine\Source\Maps\ActorTypeRegistry.h" />
     <ClInclude Include="Engine\Source\Maps\ComponentTypeRegistry.h" />
+    <ClInclude Include="Engine\Source\Maps\GameMapsSettings.h" />
+    <ClInclude Include="Engine\Source\Maps\GameTypeRegistration.h" />
     <ClInclude Include="Engine\Source\Maps\MapActorData.h" />
     <ClInclude Include="Engine\Source\Maps\MapLoader.h" />
     <ClInclude Include="Engine\Source\Object.h" />
     <ClInclude Include="Engine\Source\PlayState.h" />
-    <ClInclude Include="Engine\Source\Properties\ComponentPropertyInfo.h" />
-    <ClInclude Include="Engine\Source\Properties\PropertyValue.h" />
+    <ClInclude Include="Engine\Source\Reflection\PropertyInfo.h" />
+    <ClInclude Include="Engine\Source\Reflection\ReflectionMacros.h" />
+    <ClInclude Include="Engine\Source\Reflection\TypeInfo.h" />
     <ClInclude Include="Engine\Source\Renderer\DirectionalLightSceneProxy.h" />
     <ClInclude Include="Engine\Source\Renderer\Font.h" />
+    <ClInclude Include="Engine\Source\Renderer\FontGlyph.h" />
     <ClInclude Include="Engine\Source\Renderer\FontRenderData.h" />
     <ClInclude Include="Engine\Source\Renderer\ImGuiRendererBackend.h" />
     <ClInclude Include="Engine\Source\Renderer\Material.h" />
@@ -131,6 +139,7 @@
     <ClInclude Include="Engine\Source\Renderer\ModelData.h" />
     <ClInclude Include="Engine\Source\Renderer\ModelLoader.h" />
     <ClInclude Include="Engine\Source\Renderer\Renderer.h" />
+    <ClInclude Include="Engine\Source\Renderer\RendererFactory.h" />
     <ClInclude Include="Engine\Source\Renderer\Scene.h" />
     <ClInclude Include="Engine\Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Engine\Source\Renderer\SkyLightSceneProxy.h" />
@@ -142,13 +151,18 @@
     <ClInclude Include="Engine\Source\Renderer\Texture.h" />
     <ClInclude Include="Engine\Source\Renderer\Texture2D.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureAddressMode.h" />
+    <ClInclude Include="Engine\Source\Renderer\TextureAlphaRepresentation.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureRenderData.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureRenderTarget2D.h" />
     <ClInclude Include="Engine\Source\Renderer\Vertex.h" />
     <ClInclude Include="Engine\Source\UI\GameWidgetSubsystem.h" />
     <ClInclude Include="Engine\Source\UI\ImageWidget.h" />
+    <ClInclude Include="Engine\Source\UI\TextWidget.h" />
+    <ClInclude Include="Engine\Source\UI\UIBatchData.h" />
     <ClInclude Include="Engine\Source\UI\UIDrawElementList.h" />
+    <ClInclude Include="Engine\Source\UI\UIElementBatcher.h" />
     <ClInclude Include="Engine\Source\UI\UIImageDrawElement.h" />
+    <ClInclude Include="Engine\Source\UI\UITextDrawElement.h" />
     <ClInclude Include="Engine\Source\UI\UserWidget.h" />
     <ClInclude Include="Engine\Source\UI\Widget.h" />
     <ClInclude Include="Engine\Source\Windows\WindowsApplication.h" />
@@ -156,10 +170,12 @@
     <ClInclude Include="Engine\Source\Windows\WindowsInput.h" />
     <ClInclude Include="Engine\Source\World.h" />
     <ClInclude Include="Game\Source\SampleActor.h" />
+    <ClInclude Include="Game\Source\SampleFPSWidget.h" />
     <ClInclude Include="Game\Source\SampleGameInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Actor.cpp" />
+    <ClCompile Include="Engine\Source\AssetManager.cpp" />
     <ClCompile Include="Engine\Source\Camera\CameraViewInfo.cpp" />
     <ClCompile Include="Engine\Source\Components\ActorComponent.cpp" />
     <ClCompile Include="Engine\Source\Components\CameraComponent.cpp" />
@@ -175,13 +191,16 @@
     <ClCompile Include="Engine\Source\Core\Math\Quat.cpp" />
     <ClCompile Include="Engine\Source\Core\Math\Rotator.cpp" />
     <ClCompile Include="Engine\Source\Core\Math\Transform.cpp" />
+    <ClCompile Include="Engine\Source\Core\Misc\FileHelper.cpp" />
     <ClCompile Include="Engine\Source\Core\Misc\Paths.cpp" />
     <ClCompile Include="Engine\Source\Core\Time\FrameTimer.cpp" />
     <ClCompile Include="Engine\Source\D3D11\D3D11Device.cpp" />
+    <ClCompile Include="Engine\Source\D3D11\D3D11FontRenderData.cpp" />
     <ClCompile Include="Engine\Source\D3D11\D3D11ImGuiRendererBackend.cpp" />
     <ClCompile Include="Engine\Source\D3D11\D3D11Renderer.cpp" />
     <ClCompile Include="Engine\Source\D3D11\D3D11Shader.cpp" />
     <ClCompile Include="Engine\Source\D3D11\D3D11SwapChain.cpp" />
+    <ClCompile Include="Engine\Source\D3D11\D3D11UIRenderer.cpp" />
     <ClCompile Include="Engine\Source\EditorEngine.cpp" />
     <ClCompile Include="Engine\Source\EditorViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Editor\EditorUI.cpp" />
@@ -199,8 +218,11 @@
     <ClCompile Include="Engine\Source\Maps\ActorTypeRegistry.cpp" />
     <ClCompile Include="Engine\Source\Maps\ComponentTypeRegistry.cpp" />
     <ClCompile Include="Engine\Source\Maps\MapLoader.cpp" />
+    <ClCompile Include="Engine\Source\Object.cpp" />
+    <ClCompile Include="Engine\Source\Reflection\TypeInfo.cpp" />
     <ClCompile Include="Engine\Source\Renderer\DirectionalLightSceneProxy.cpp" />
     <ClCompile Include="Engine\Source\Renderer\Font.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\FontRenderData.cpp" />
     <ClCompile Include="Engine\Source\Renderer\Material.cpp" />
     <ClCompile Include="Engine\Source\Renderer\MaterialInterface.cpp" />
     <ClCompile Include="Engine\Source\Renderer\MaterialRenderProxy.cpp" />
@@ -215,12 +237,17 @@
     <ClCompile Include="Engine\Source\Renderer\TextureRenderData.cpp" />
     <ClCompile Include="Engine\Source\UI\GameWidgetSubsystem.cpp" />
     <ClCompile Include="Engine\Source\UI\ImageWidget.cpp" />
+    <ClCompile Include="Engine\Source\UI\TextWidget.cpp" />
+    <ClCompile Include="Engine\Source\UI\UIElementBatcher.cpp" />
     <ClCompile Include="Engine\Source\UI\UserWidget.cpp" />
     <ClCompile Include="Engine\Source\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Engine\Source\Windows\WindowsInput.cpp" />
     <ClCompile Include="Engine\Source\World.cpp" />
+    <ClCompile Include="Game\Source\RendererFactory.cpp" />
     <ClCompile Include="Game\Source\SampleActor.cpp" />
+    <ClCompile Include="Game\Source\SampleFPSWidget.cpp" />
     <ClCompile Include="Game\Source\SampleGameInstance.cpp" />
+    <ClCompile Include="Game\Source\SampleProject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\Shaders\Private\StaticMeshVertexShader.hlsl">
@@ -230,11 +257,18 @@
       <ObjectFileOutput>$(OutDir)Shaders\StaticMeshVertexShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
-    <FxCompile Include="Engine\Shaders\Private\ImageVertexShader.hlsl">
+    <FxCompile Include="Engine\Shaders\Private\UIVertexShader.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>5.0</ShaderModel>
       <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\ImageVertexShader.cso</ObjectFileOutput>
+      <ObjectFileOutput>$(OutDir)Shaders\UIVertexShader.cso</ObjectFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </FxCompile>
+    <FxCompile Include="Engine\Shaders\Private\UIPixelShader.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>Main</EntryPointName>
+      <ObjectFileOutput>$(OutDir)Shaders\UIPixelShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
     <FxCompile Include="Engine\Shaders\Private\StaticMeshPixelShader.hlsl">
@@ -244,30 +278,60 @@
       <ObjectFileOutput>$(OutDir)Shaders\StaticMeshPixelShader.cso</ObjectFileOutput>
       <TreatWarningAsError>true</TreatWarningAsError>
     </FxCompile>
-    <FxCompile Include="Engine\Shaders\Private\ImagePixelShader.hlsl">
-      <ShaderType>Pixel</ShaderType>
-      <ShaderModel>5.0</ShaderModel>
-      <EntryPointName>Main</EntryPointName>
-      <ObjectFileOutput>$(OutDir)Shaders\ImagePixelShader.cso</ObjectFileOutput>
-      <TreatWarningAsError>true</TreatWarningAsError>
-    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
-    <Content Include="Engine\Content\Textures\Checker.png" />
-    <Content Include="Engine\Content\Fonts\DebugMono.spritefont" />
     <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\OFL.txt" />
     <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\NOTICE.txt" />
     <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\README.md" />
     <Content Include="Engine\ThirdParty\Fonts\NotoSansMono\NotoSansMono-Regular.ttf" />
   </ItemGroup>
+  <ItemGroup Label="SEGeneratedContent">
+    <Content Include="Engine\Content\Fonts\DebugMono.spritefont" />
+    <Content Include="Engine\Content\Textures\Checker.png" />
+    <Content Include="Game\Content\Maps\SampleDev.json" />
+    <Content Include="Game\Content\Meshes\SampleSquare.x" />
+  </ItemGroup>
   <Target Name="SEPrepareShaderOutput" BeforeTargets="FxCompile">
     <MakeDir Directories="$(OutDir)Shaders" />
   </Target>
-  <Target Name="SECopyEngineTexture" AfterTargets="Build">
-    <Copy SourceFiles="$(SERootDir)Engine\Content\Textures\Checker.png" DestinationFolder="$(OutDir)Content\Textures" SkipUnchangedFiles="true" />
-  </Target>
-  <Target Name="SECopyEngineFont" AfterTargets="Build">
-    <Copy SourceFiles="$(SERootDir)Engine\Content\Fonts\DebugMono.spritefont;$(SERootDir)Engine\ThirdParty\Fonts\NotoSansMono\OFL.txt;$(SERootDir)Engine\ThirdParty\Fonts\NotoSansMono\NOTICE.txt" DestinationFolder="$(OutDir)Content\Fonts" SkipUnchangedFiles="true" />
+  <!-- 매 빌드 현재 원본을 수집한다. 프로젝트 표시 목록과 복사 대상은 별개다. -->
+  <Target Name="SESyncContent" AfterTargets="Build">
+    <Error Condition="'$(OutDir)' == '' Or '$(SERootDir)' == ''" Text="콘텐츠 동기화에는 OutDir와 SERootDir가 필요하다." />
+    <PropertyGroup>
+      <_SEContentRoot>$([System.IO.Path]::GetFullPath('$(OutDir)Content\'))</_SEContentRoot>
+      <_SEEngineContentRoot>$(_SEContentRoot)Engine\</_SEEngineContentRoot>
+      <_SEGameContentRoot>$(_SEContentRoot)Game\</_SEGameContentRoot>
+      <_SEContentManifest>$(_SEContentRoot).se-managed-files.txt</_SEContentManifest>
+    </PropertyGroup>
+    <ItemGroup>
+      <_SEEngineContent Include="$(SERootDir)Engine\Content\**\*" />
+      <_SEGameContent Include="$(SERootDir)Game\Content\**\*" />
+      <!-- 배포할 폰트에는 외부 원본 폴더의 라이선스와 고지도 함께 둔다. -->
+      <_SEFontNotices Include="$(SERootDir)Engine\ThirdParty\Fonts\NotoSansMono\OFL.txt;$(SERootDir)Engine\ThirdParty\Fonts\NotoSansMono\NOTICE.txt" />
+      <_SEContentSource Include="@(_SEEngineContent);@(_SEGameContent);@(_SEFontNotices)" />
+      <_SECurrentContent Include="@(_SEEngineContent-&gt;'Engine\%(RecursiveDir)%(Filename)%(Extension)');@(_SEGameContent-&gt;'Game\%(RecursiveDir)%(Filename)%(Extension)');@(_SEFontNotices-&gt;'Engine\Fonts\%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_SECurrentContent)">
+      <Output TaskParameter="Filtered" ItemName="_SEUniqueContent" />
+    </RemoveDuplicates>
+    <Error Condition="'@(_SECurrentContent-&gt;Count())' != '@(_SEUniqueContent-&gt;Count())'" Text="콘텐츠 출력 경로가 중복된다." />
+    <ReadLinesFromFile File="$(_SEContentManifest)" Condition="Exists('$(_SEContentManifest)')">
+      <Output TaskParameter="Lines" ItemName="_SEPreviousContent" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <_SEPreviousContent>
+        <ResolvedPath>$([System.IO.Path]::GetFullPath('$(_SEContentRoot)%(_SEPreviousContent.Identity)'))</ResolvedPath>
+      </_SEPreviousContent>
+      <_SEStaleContent Include="@(_SEPreviousContent)" Exclude="@(_SECurrentContent)" />
+    </ItemGroup>
+    <!-- 이전 목록도 정규화된 엔진/게임 출력 안에 있는지 확인한 뒤 파일만 삭제한다. -->
+    <Error Condition="'@(_SEPreviousContent)' != '' And !$([System.String]::Copy('%(_SEPreviousContent.ResolvedPath)').StartsWith('$(_SEEngineContentRoot)', System.StringComparison.OrdinalIgnoreCase)) And !$([System.String]::Copy('%(_SEPreviousContent.ResolvedPath)').StartsWith('$(_SEGameContentRoot)', System.StringComparison.OrdinalIgnoreCase))" Text="관리 목록의 콘텐츠 경로가 출력 범위를 벗어난다: %(_SEPreviousContent.Identity)" />
+    <MakeDir Directories="$(_SEContentRoot)" />
+    <Copy SourceFiles="@(_SEContentSource)" DestinationFiles="@(_SECurrentContent-&gt;'$(_SEContentRoot)%(Identity)')" SkipUnchangedFiles="true" />
+    <Delete Files="@(_SEStaleContent-&gt;'%(ResolvedPath)')" />
+    <WriteLinesToFile File="$(_SEContentManifest)" Lines="@(_SECurrentContent)" Overwrite="true" WriteOnlyWhenDifferent="true" Encoding="UTF-8" />
+    <!-- 이전 개별 복사 Target이 만들었던 네 파일만 새 배치로 이전한 뒤 정리한다. -->
+    <Delete Files="$(_SEContentRoot)Textures\Checker.png;$(_SEContentRoot)Fonts\DebugMono.spritefont;$(_SEContentRoot)Fonts\OFL.txt;$(_SEContentRoot)Fonts\NOTICE.txt" />
   </Target>
 </Project>

@@ -9,7 +9,7 @@ class FMaterialRenderProxy;
 class UTexture;
 
 ////////////////////////////////////////////////////////////////////////////////
-// 고정 셰이더용 색상 텍스처를 공유 참조하고 정반사 색·광택 지수를 보관하는 구체 재질이다.
+// 고정 셰이더용 색상 텍스처를 공유 참조하고 정반사 색, 광택 지수와 알파 마스킹 설정을 보관하는 구체 재질이다.
 // 설정과 조회는 같은 스레드에서 사용하며 GPU 생성이나 그리기를 수행하지 않는다.
 ////////////////////////////////////////////////////////////////////////////////
 class UMaterial : public UMaterialInterface
@@ -77,6 +77,29 @@ private:
 
 	// Blinn-Phong의 거듭제곱 지수다. 단위가 없으며 유한한 1 이상 값을 보관한다.
 	float shininess = 32.0f;
+
+#pragma endregion
+
+#pragma region AlphaMask
+
+public:
+	/** 같은 스레드에서 마스킹 사용 여부를 바꾼다. 다음 그리기에 반영되며 GPU 작업은 하지 않는다. */
+	void SetAlphaMasked(bool bNewAlphaMasked);
+
+	/** 기본 false는 알파와 무관하게 기존 불투명 그리기를 유지한다. */
+	bool IsAlphaMasked() const;
+
+	/** 유한한 입력을 0~1로 보정한다. NaN과 무한대는 무시하며 GPU 작업은 하지 않는다. */
+	void SetAlphaCutoff(float newAlphaCutoff);
+
+	/** 기본 0.5다. 마스킹 시 텍스처와 정점색을 곱한 알파가 기준값보다 낮으면 색과 깊이를 기록하지 않는다. */
+	float GetAlphaCutoff() const;
+
+private:
+	// 반투명 합성이 아니라 기준값 아래 픽셀을 제거하는 설정이다.
+	bool bAlphaMasked = false;
+	// 단위 없는 유한한 0~1 값이다. 기준값과 같은 알파는 남으며 마스킹을 꺼도 값을 유지한다.
+	float alphaCutoff = 0.5f;
 
 #pragma endregion
 

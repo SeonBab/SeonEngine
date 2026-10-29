@@ -13,6 +13,9 @@
 
   <Import Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(SEVcpkgTargets)')" Project="$(SEVcpkgTargets)" />
 
+  <!-- 현재 루트 실행 프로젝트만 선언 기반 리플렉션 생성을 사용한다. C# 도구의 빌드로 재진입하지 않는다. -->
+  <Import Condition="'$(MSBuildProjectFullPath)' == '$(SERootDir)SeonEngine.vcxproj'" Project="$(SERootDir)Engine\Build\Reflection.targets" />
+
   <!-- 두 VS 내장 vcpkg의 설치 입력 목록에 연결 설정과 선택한 triplet도 포함한다. -->
   <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and '$(VcpkgEnabled)' == 'true' and '$(VcpkgEnableManifest)' == 'true' and '$(VcpkgManifestInstall)' == 'true'">
     <_ZVcpkgInstallManifestDependenciesInputs Include="$(MSBuildThisFileFullPath)" />

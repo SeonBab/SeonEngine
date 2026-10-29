@@ -3,6 +3,7 @@
 #include "Core/Math/Vector3.h"
 #include "Core/Templates/UniquePtr.h"
 #include "RenderStateComponent.h"
+#include "SkyLightComponent.generated.h"
 
 class FSkyLightSceneProxy;
 
@@ -10,8 +11,11 @@ class FSkyLightSceneProxy;
 // 균일 환경광의 선형 RGB와 밝기 배율을 보관한다. 위치나 회전은 조명값에 영향을 주지 않는다.
 // Proxy를 소유하고 Scene은 주소를 빌린다. GPU 전달은 Scene/Renderer가 맡고 환경 캡처는 지원하지 않는다.
 ////////////////////////////////////////////////////////////////////////////////
+UCLASS()
 class USkyLightComponent : public URenderStateComponent
 {
+	GENERATED_BODY()
+
 #pragma region Lifecycle
 
 public:
@@ -39,7 +43,11 @@ public:
 	void SetIntensity(float newIntensity);
 
 private:
+	// 생성된 접근도 값 전체를 복사한다. 검사/보정 없이 저장하며 렌더 반영은 SendRenderUpdates가 맡는다.
+	UPROPERTY()
 	FVector3 lightColor{1.0f, 1.0f, 1.0f};
+	// 선형 RGB에 곱하는 무차원 밝기 배율이다. 리플렉션 대입만으로 렌더 상태를 만들지 않는다.
+	UPROPERTY()
 	float intensity = 1.0f;
 
 #pragma endregion

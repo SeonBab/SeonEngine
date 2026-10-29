@@ -32,6 +32,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <ExceptionHandling>Sync</ExceptionHandling>

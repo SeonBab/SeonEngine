@@ -3,6 +3,7 @@
 #include "Core/Logging/Log.h"
 
 #include <cstddef>
+#include <cstring>
 #include <limits>
 #include <type_traits>
 #include <utility>
@@ -226,14 +227,86 @@ bool FD3D11Device::CreateIndexBuffer(const TArray<uint32>& indices, Microsoft::W
 	return true;
 }
 
-bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout)
+bool FD3D11Device::CreateDynamicBuffer(uint32 byteCapacity, D3D11_BIND_FLAG bindFlag, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer)
 {
-	if (!device || vertexShaderBytecode.empty())
+	if (!device || byteCapacity == 0 || (bindFlag != D3D11_BIND_VERTEX_BUFFER && bindFlag != D3D11_BIND_INDEX_BUFFER))
 	{
-		WriteLog("D3D11", ELogLevel::Error, "Creating an input layout requires an initialized device and nonempty vertex shader bytecode.");
+		WriteLog("D3D11", ELogLevel::Error, "Creating a dynamic buffer requires an initialized device, positive byte capacity, and a single vertex or index binding.");
 		return false;
 	}
 
+	D3D11_BUFFER_DESC description{};
+	description.ByteWidth = byteCapacity;
+	description.Usage = D3D11_USAGE_DYNAMIC;
+	description.BindFlags = bindFlag;
+	description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> createdBuffer;
+	const HRESULT result = device->CreateBuffer(&description, nullptr, createdBuffer.GetAddressOf());
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "CreateBuffer(dynamic buffer) failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	outBuffer = std::move(createdBuffer);
+	return true;
+}
+
+bool FD3D11Device::UpdateDynamicBuffer(ID3D11Buffer* buffer, const void* data, uint32 byteSize)
+{
+	if (!device || !context || buffer == nullptr || data == nullptr || byteSize == 0)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Updating a dynamic buffer requires an initialized device and context, a buffer, CPU data, and a positive byte size.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Device> bufferDevice;
+	buffer->GetDevice(bufferDevice.GetAddressOf());
+	if (bufferDevice.Get() != device.Get())
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Dynamic buffer belongs to another D3D11 device.");
+		return false;
+	}
+
+	D3D11_BUFFER_DESC description{};
+	buffer->GetDesc(&description);
+	if (description.Usage != D3D11_USAGE_DYNAMIC)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Updating requires a DYNAMIC buffer.");
+		return false;
+	}
+	if ((description.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) == 0)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Updating requires CPU write access to the buffer.");
+		return false;
+	}
+	if (description.BindFlags != D3D11_BIND_VERTEX_BUFFER && description.BindFlags != D3D11_BIND_INDEX_BUFFER)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Updating requires a vertex or index buffer.");
+		return false;
+	}
+	if (byteSize > description.ByteWidth)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Dynamic buffer update exceeds its capacity (requested {}, buffer {}).", byteSize, description.ByteWidth);
+		return false;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE mapped{};
+	const HRESULT result = context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Map(dynamic buffer) failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	std::memcpy(mapped.pData, data, byteSize);
+	context->Unmap(buffer, 0);
+	return true;
+}
+
+bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout)
+{
 	static_assert(std::is_standard_layout_v<FVertex> && std::is_trivially_copyable_v<FVertex>);
 	D3D11_INPUT_ELEMENT_DESC elements[] =
 		{
@@ -242,8 +315,37 @@ bool FD3D11Device::CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, 
 			{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<UINT>(offsetof(FVertex, normal)), D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<UINT>(offsetof(FVertex, uv)), D3D11_INPUT_PER_VERTEX_DATA, 0}};
 
+	return CreateInputLayout(elements, vertexShaderBytecode, outLayout);
+}
+
+bool FD3D11Device::CreateInputLayout(std::span<const D3D11_INPUT_ELEMENT_DESC> elements, const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout)
+{
+	if (!device)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating an input layout requires an initialized device.");
+		return false;
+	}
+
+	if (elements.empty())
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating an input layout requires nonempty input elements.");
+		return false;
+	}
+
+	if (elements.size() > D3D11_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Input element count {} exceeds the D3D11 limit {}.", elements.size(), D3D11_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT);
+		return false;
+	}
+
+	if (vertexShaderBytecode.empty())
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating an input layout requires nonempty vertex shader bytecode.");
+		return false;
+	}
+
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> createdLayout;
-	const HRESULT result = device->CreateInputLayout(elements, 4, vertexShaderBytecode.data(), vertexShaderBytecode.size(), createdLayout.GetAddressOf());
+	const HRESULT result = device->CreateInputLayout(elements.data(), static_cast<UINT>(elements.size()), vertexShaderBytecode.data(), vertexShaderBytecode.size(), createdLayout.GetAddressOf());
 	if (FAILED(result))
 	{
 		WriteLog("D3D11", ELogLevel::Error, "CreateInputLayout failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));

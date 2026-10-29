@@ -20,6 +20,7 @@ public:
 
 	[[nodiscard]] bool Initialize(ImGuiContext* inContext) override;
 	[[nodiscard]] bool NewFrame() override;
+	[[nodiscard]] bool GetTextureRef(const UTexture& texture, ImTextureRef& outTextureRef) override;
 	[[nodiscard]] bool RenderDrawData(ImDrawData* drawData) override;
 	void Shutdown() override;
 

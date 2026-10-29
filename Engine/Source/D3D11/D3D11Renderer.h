@@ -6,6 +6,7 @@
 #include "Core/Templates/UniquePtr.h"
 #include "D3D11/D3D11Device.h"
 #include "D3D11/D3D11SwapChain.h"
+#include "D3D11/D3D11UIRenderer.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/StaticMeshRenderData.h"
 #include "Windows/WindowsHWrapper.h"
@@ -14,14 +15,17 @@
 #include <wrl/client.h>
 
 #include <array>
+#include <span>
 
 struct FStaticMeshData;
 struct FImage;
-struct FUIImageDrawElement;
+struct FUIBatchData;
 struct FMeshDrawItem;
 struct FSceneRenderData;
 struct FRenderView;
 class FUIDrawElementList;
+class UFont;
+class UTexture;
 class UTexture2D;
 class UTextureRenderTarget2D;
 
@@ -34,9 +38,9 @@ class FD3D11Renderer : public IRenderer
 #pragma region Lifecycle
 
 public:
-	FD3D11Renderer() = default;
+	FD3D11Renderer();
 
-	~FD3D11Renderer() override = default;
+	~FD3D11Renderer() override;
 
 	FD3D11Renderer(const FD3D11Renderer&) = delete;
 
@@ -46,13 +50,13 @@ public:
 
 	FD3D11Renderer& operator=(FD3D11Renderer&&) = delete;
 
-	/** 유효한 창과 양수 클라이언트 크기로 준비한다. 중복 초기화는 거부하며 자원 생성 실패 시 부분 자원을 정리하고 false를 반환한다. */
+	/** 유효한 창과 양수 크기로 준비한다. 중복 초기화는 거부한다. 일반 실패는 부분 정리 후 false이며 DirectXTK 생성 예외는 전파한다. 예외 후 정리는 호출자가 맡는다. */
 	[[nodiscard]] bool Initialize(void* nativeWindowHandle, int32 width, int32 height) override;
 
 	/** 초기화된 장치에 맞는 미초기화 backend를 만든다. 반환 객체는 이 Renderer보다 먼저 정리해야 한다. */
 	[[nodiscard]] TUniquePtr<IImGuiRendererBackend> CreateImGuiRendererBackend() override;
 
-	/** 바인딩, 스왑 체인, 텍스처/샘플러/버퍼/셰이더, 장치 순서로 정리한다. 빈 상태나 부분 초기화 후에도 반복 호출할 수 있다. */
+	/** 바인딩을 해제하고 출력 및 그리기 자원을 장치보다 먼저 정리한다. 빈 상태나 부분 초기화 후에도 반복 호출할 수 있다. */
 	void Shutdown() override;
 
 	/** 초기화 성공 후 종료 전 같은 스레드에서 빌려 사용한다. COM 참조를 추가하지 않는다. */
@@ -83,6 +87,19 @@ public:
 	 * 호출자가 자원을 소유하며 CPU 입력은 성공 후 해제할 수 있다. 장치가 바뀌면 다시 생성해야 한다.
 	 */
 	[[nodiscard]] bool CreateTexture2D(const FImage& image, UTexture2D& outTexture) override;
+
+	/**
+	 * 원본 DDS 바이트로 단일 2D 색상 텍스처를 만든다. 입력은 호출 동안만 빌리고 파일을 변경하지 않는다.
+	 * RGBA/BGRA/BGRX 8비트 UNORM과 BC1/BC2/BC3의 UNORM 및 sRGB 형식을 지원하며 원본 밉을 유지한다.
+	 * 배열, 큐브, 볼륨과 Custom 알파 표현은 거부한다. 미지정 알파 표현은 Straight로 간주한다.
+	 * 생성된 자원의 실제 크기와 알파 표현을 저장하며 원본 픽셀 변환이나 새 밉 생성은 하지 않는다.
+	 * 초기화된 Renderer의 같은 스레드에서 호출한다. 성공 시에만 출력 데이터를 교체하며 실패 시 기존 출력과 주소 설정을 유지한다.
+	 * 성공 교체 전 기존 데이터의 비소유 사용을 끝낸다. true는 GPU 완료를 뜻하지 않는다.
+	 */
+	[[nodiscard]] bool CreateTexture2DFromDDS(std::span<const uint8> ddsBytes, UTexture2D& outTexture) override;
+
+	/** Premultiplied 아틀라스의 .spritefont 바이트로 폰트와 동일 SRV를 참조하는 UTexture2D를 준비한다. 출력 보존/예외는 공통 계약을 따른다. */
+	[[nodiscard]] bool CreateFontResource(std::span<const uint8> fontData, UFont& outFont) override;
 
 	/**
 	 * 초기화 후 같은 스레드의 활성 프레임 밖에서 RGBA8 UNORM 렌더 타겟을 만든다.
@@ -184,19 +201,16 @@ private:
 #pragma region UI
 
 public:
-	/** 전용 이미지 픽셀 셰이더로 목록의 이미지를 비선행곱 알파 합성한다. 성공과 실패 모두 불투명 기본 상태로 복원하며 빈 목록은 상태 변경 없이 true다. */
+	/**
+	 * 이미지 목록을 공통 CPU 배치로 변환하고 Straight/Premultiplied 자원에 맞춰 제출한다. 빈 목록은 상태 변경 없이 true다.
+	 * 모든 배치의 자원을 그리기 전에 검사한다. 준비 실패는 이번 호출을 그리지 않으며 제출 중 실패는 앞선 결과를 롤백하지 않는다.
+	 * 제출 뒤 성공/실패 모두 불투명 기본 블렌드와 월드 깊이 상태로 복원하고 UI PS b0를 해제한다. 임의의 이전 GPU 상태를 저장하지 않는다.
+	 */
 	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements) override;
 
 private:
-	/**
-	 * 활성 프레임에서 현재 장치의 텍스처를 현재 출력 영역 왼쪽 위 기준 픽셀 위치, 크기로 그린다.
-	 * 위치, 크기는 유한하고 크기는 양수여야 하며 행렬 성분의 유한 범위를 넘는 변환은 false다. 음수 위치는 허용하고 출력 영역 밖은 GPU가 자른다.
-	 * 월드 변환 데이터는 유지하며 셰이더/버퍼 바인딩은 변경한다. 알파 블렌드 상태는 DrawUI가 설정한다.
-	 * true는 그리기 요청 성공이며 GPU 작업 완료나 화면 표시를 뜻하지 않는다.
-	 * 텍스처나 SRV가 미준비이거나 D3D11 이외의 렌더 데이터이면 false다. 요소와 텍스처는 호출 동안만 빌린다.
-	 * 활성 렌더 타겟과 같은 원본 자원을 읽으려 하면 상수 버퍼 갱신과 그리기 전에 거부한다.
-	 */
-	[[nodiscard]] bool DrawImage(const FUIImageDrawElement& element);
+	/** Build가 만든 배치의 D3D11 SRV/장치/출력 충돌과 지원 샘플링을 모두 검사한다. GPU 상태나 버퍼는 변경하지 않는다. */
+	[[nodiscard]] bool ValidateUIBatchResources(const FUIBatchData& batchData) const;
 
 #pragma endregion
 
@@ -204,6 +218,9 @@ private:
 
 private:
 	FD3D11Device graphics;
+
+	// UI 고정/동적 자원과 상태 준비를 맡는다. 초기화/정리와 UI 제출에서 함께 사용하며 장치보다 먼저 파괴된다.
+	FD3D11UIRenderer uiRenderer;
 
 	FD3D11SwapChain swapChain;
 
@@ -226,11 +243,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> staticMeshVertexShader;
 
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> imageVertexShader;
-
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> staticMeshPixelShader;
-
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> imagePixelShader;
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
@@ -244,21 +257,15 @@ private:
 	// VS b3. 월드 변환·시점·정반사 RGB·광택 지수를 담는 112바이트이며 메시마다 갱신한다.
 	Microsoft::WRL::ComPtr<ID3D11Buffer> specularConstantBuffer;
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> imageTransformConstantBuffer;
+	// 메시 PS b1. 마스킹 플래그와 기준값을 담는 16바이트이며 불투명 메시도 매번 갱신한다.
+	Microsoft::WRL::ComPtr<ID3D11Buffer> alphaMaskConstantBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
 
-	Microsoft::WRL::ComPtr<ID3D11BlendState> uiBlendState;
-
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> worldDepthStencilState;
 
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> uiDepthStencilState;
-
-	// [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. UI는 [0][0]을 사용한다.
+	// Point 필터의 [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. 메시 텍스처의 주소 설정에 따라 선택한다.
 	std::array<std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>, 2> samplerStates;
-
-	// TODO(seon): UI 배칭, 전용 정점 도입 시 공통 사각형의 보관 형식을 재검토한다.
-	TUniquePtr<FStaticMeshRenderData> imageQuad;
 
 	FMatrix4 localToWorld{};
 

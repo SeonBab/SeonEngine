@@ -22,6 +22,12 @@ UStaticMeshComponent::~UStaticMeshComponent()
 	DestroyRenderState();
 }
 
+void UStaticMeshComponent::PostLoad()
+{
+	URenderStateComponent::PostLoad();
+	MarkRenderStateDirty();
+}
+
 #pragma endregion
 
 #pragma region Mesh

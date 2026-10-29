@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 루트 실행 프로젝트의 선언 분석 → 생성 → C++ 컴파일 연결. 생성 파일은 Intermediate에서만 관리한다. -->
+<Project>
+  <PropertyGroup>
+    <SEReflectionClang Condition="'$(SEReflectionClang)' == ''">$(ProgramW6432)\LLVM\bin\clang-cl.exe</SEReflectionClang>
+    <SEReflectionDotNet Condition="'$(SEReflectionDotNet)' == ''">dotnet</SEReflectionDotNet>
+    <_SEReflectionOutput>$([System.IO.Path]::GetFullPath('$(IntDir)Reflection\'))</_SEReflectionOutput>
+    <_SEReflectionToolOutput>$([System.IO.Path]::GetFullPath('$(IntDir)ReflectionTool\'))</_SEReflectionToolOutput>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath);$(SERootDir)Engine\Build\BatchFiles\GenerateReflection.cs</MSBuildAllProjects>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- IntelliSense도 같은 생성 헤더 경로를 사용한다. 디자인 시점에는 생성 도구를 실행하지 않는다. -->
+      <AdditionalIncludeDirectories>$(_SEReflectionOutput);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- JSON 인코딩과 평가된 항목 메타데이터 처리는 빌드 작업 안에서 수행한다. 별도 사용자 등록표는 없다. -->
+  <UsingTask TaskName="SEReflectionBuildFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <Task>
+      <Code Type="Class" Language="cs"><![CDATA[
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Collections.Generic;
+using System.Runtime.Serialization.Json;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+public sealed class SEReflectionBuildFiles : Task
+{
+	[Required] public string ProjectDirectory { get; set; }
+	[Required] public string OutputDirectory { get; set; }
+	[Required] public string IntermediateRoot { get; set; }
+	public ITaskItem[] Headers { get; set; }
+	public ITaskItem[] Sources { get; set; }
+	public string SystemIncludes { get; set; }
+	public string ExternalIncludes { get; set; }
+	public bool ReadGeneratedSources { get; set; }
+	[Output] public ITaskItem[] GeneratedSources { get; set; }
+
+	public override bool Execute()
+	{
+		try
+		{
+			string output = Path.GetFullPath(OutputDirectory).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+			string intermediate = Path.GetFullPath(IntermediateRoot).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+			if (!output.StartsWith(intermediate, StringComparison.OrdinalIgnoreCase))
+				throw new InvalidOperationException("Reflection output must be below Intermediate.");
+			string[] headers = (Headers ?? new ITaskItem[0]).Select(h => FullPath(h.ItemSpec))
+				.OrderBy(h => h, StringComparer.OrdinalIgnoreCase).ToArray();
+			if (ReadGeneratedSources)
+			{
+				// 생성 성공 후의 목록만 소비한다. 남아 있는 이전 cpp를 폴더 검색으로 다시 포함하지 않는다.
+				var generated = new List<ITaskItem>();
+				foreach (string entry in File.ReadAllLines(Path.Combine(output, "GeneratedSources.txt")))
+				{
+					string path = Path.GetFullPath(entry);
+					if (!path.StartsWith(output, StringComparison.OrdinalIgnoreCase) ||
+						!Path.GetDirectoryName(path).Equals(output.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase) ||
+						!path.EndsWith(".generated.cpp", StringComparison.OrdinalIgnoreCase) || !File.Exists(path))
+						throw new InvalidOperationException("Invalid generated source: " + entry);
+					string stem = Path.GetFileName(path).Substring(0, Path.GetFileName(path).Length - ".generated.cpp".Length);
+					string[] matches = headers.Where(h => Path.GetFileNameWithoutExtension(h).Equals(stem, StringComparison.OrdinalIgnoreCase)).ToArray();
+					if (matches.Length != 1) throw new InvalidOperationException("Generated source requires one matching original header: " + stem);
+					var item = new TaskItem(path);
+					string includes = Sources.First(s => s.GetMetadata("ExcludedFromBuild") != "true").GetMetadata("AdditionalIncludeDirectories");
+					item.SetMetadata("AdditionalIncludeDirectories", Path.GetDirectoryName(matches[0]) + ";" + includes);
+					generated.Add(item);
+				}
+				GeneratedSources = generated.ToArray();
+				return true;
+			}
+
+			ITaskItem[] sources = (Sources ?? new ITaskItem[0]).Where(s => s.GetMetadata("ExcludedFromBuild") != "true").ToArray();
+			if (sources.Length == 0) throw new InvalidOperationException("Reflection requires an active C++ source configuration.");
+			// 분석은 한 구성으로 실행한다. 파일별로 다른 분석 조건을 조용히 하나로 합치지 않는다.
+			string[] common = { "PreprocessorDefinitions", "AdditionalIncludeDirectories", "RuntimeLibrary", "LanguageStandard", "RuntimeTypeInfo", "ExceptionHandling", "PrecompiledHeader" };
+			foreach (string name in common)
+				if (sources.Select(s => s.GetMetadata(name)).Distinct(StringComparer.Ordinal).Count() != 1)
+					throw new InvalidOperationException("Per-file reflection configuration is unsupported: " + name);
+			ITaskItem source = sources[0];
+			if (source.GetMetadata("LanguageStandard") != "stdcpp20" || source.GetMetadata("RuntimeTypeInfo") != "true" ||
+				source.GetMetadata("ExceptionHandling") != "Sync" || source.GetMetadata("PrecompiledHeader") != "NotUsing")
+				throw new InvalidOperationException("Reflection requires C++20, RTTI, /EHsc and no PCH.");
+			string crt = source.GetMetadata("RuntimeLibrary");
+			if (crt != "MultiThreadedDLL" && crt != "MultiThreadedDebugDLL")
+				throw new InvalidOperationException("Reflection supports /MD and /MDd.");
+			var arguments = new List<string> { crt == "MultiThreadedDebugDLL" ? "/MDd" : "/MD" };
+			arguments.AddRange(Split(source.GetMetadata("PreprocessorDefinitions")).Select(d => "/D" + d));
+			arguments.AddRange(Split(source.GetMetadata("AdditionalIncludeDirectories")).Select(p => "/I" + FullPath(p)));
+			arguments.AddRange(Split(SystemIncludes).Concat(Split(ExternalIncludes)).Select(p => "/external:I" + FullPath(p)));
+			Directory.CreateDirectory(output);
+			WriteJson(Path.Combine(output, "Headers.json"), headers);
+			WriteJson(Path.Combine(output, "CompilerArgs.json"), arguments.Distinct(StringComparer.Ordinal).ToArray());
+			return true;
+		}
+		catch (Exception error)
+		{
+			Log.LogErrorFromException(error, false);
+			return false;
+		}
+	}
+
+	private string FullPath(string path)
+	{
+		path = path.Trim('"');
+		return Path.GetFullPath(Path.IsPathRooted(path) ? path : Path.Combine(ProjectDirectory, path));
+	}
+
+	private static string[] Split(string value)
+	{
+		return (value ?? "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).Where(v => v.Length != 0).ToArray();
+	}
+
+	private static void WriteJson(string path, string[] values)
+	{
+		using (var stream = new MemoryStream())
+		{
+			new DataContractJsonSerializer(typeof(string[])).WriteObject(stream, values);
+			byte[] bytes = stream.ToArray();
+			if (!File.Exists(path) || !File.ReadAllBytes(path).SequenceEqual(bytes)) File.WriteAllBytes(path, bytes);
+		}
+	}
+}
+	]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="SEGenerateReflection" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="!Exists('$(SEReflectionClang)')" Text="clang-cl을 찾을 수 없습니다. LLVM을 설치하거나 SEReflectionClang에 실행 파일의 절대 경로를 지정하세요: $(SEReflectionClang)" />
+    <SEReflectionBuildFiles ProjectDirectory="$(MSBuildProjectDirectory)" OutputDirectory="$(_SEReflectionOutput)" IntermediateRoot="$(SERootDir)Intermediate\" Headers="@(ClInclude)" Sources="@(ClCompile)" SystemIncludes="$(IncludePath)" ExternalIncludes="$(ExternalIncludePath)" />
+    <!-- 실패 시 다음 작업으로 진행하지 않는다. JSON 문자열은 위 작업이 인코딩하며 셸 인수로 직접 합치지 않는다. -->
+    <Exec WorkingDirectory="$(SERootDir)" UseUtf8Encoding="Always" StdOutEncoding="utf-8" StdErrEncoding="utf-8" Command="&quot;$(SEReflectionDotNet)&quot; run --file &quot;$(SERootDir)Engine\Build\BatchFiles\GenerateReflection.cs&quot; --artifacts-path &quot;$(_SEReflectionToolOutput).&quot; --property:UseSharedCompilation=false -- --headers &quot;$(_SEReflectionOutput)Headers.json&quot; --output &quot;$(_SEReflectionOutput).&quot; --clang &quot;$(SEReflectionClang)&quot; --compiler-args &quot;$(_SEReflectionOutput)CompilerArgs.json&quot;" />
+    <SEReflectionBuildFiles ProjectDirectory="$(MSBuildProjectDirectory)" OutputDirectory="$(_SEReflectionOutput)" IntermediateRoot="$(SERootDir)Intermediate\" Headers="@(ClInclude)" Sources="@(ClCompile)" ReadGeneratedSources="true">
+      <Output TaskParameter="GeneratedSources" ItemName="_SEReflectionGeneratedSources" />
+    </SEReflectionBuildFiles>
+    <ItemGroup>
+      <ClCompile Include="@(_SEReflectionGeneratedSources)" />
+    </ItemGroup>
+  </Target>
+</Project>

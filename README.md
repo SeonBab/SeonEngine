@@ -9,6 +9,6 @@
 
 `SeonEngine.slnx`를 열면 루트 `SeonEngine.vcxproj` 실행 프로젝트를 사용한다. 엔진 소스는 `Engine/Source`, 게임 소스는 `Game/Source`에 둔다.
 
-상세 설정은 [빌드·개발 설정](Docs/BuildSetup.md)을 참고한다.
+상세 설정은 [빌드·개발 설정](Docs/BuildSetup.md)을 참고한다. 다른 렌더러의 연결 안내와 개발 규칙은 [개발 문서 목록](Docs/README.md)에서 찾을 수 있다.
 
 외부 라이브러리 사용·배포 정보: [Assimp와 의존 라이브러리 고지](Engine/ThirdParty/Assimp/README.md).

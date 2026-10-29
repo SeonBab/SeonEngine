@@ -1,33 +1,23 @@
 #include "SampleGameInstance.h"
 
 #include "Actor.h"
+#include "AssetManager.h"
 #include "Components/ActorComponent.h"
 #include "Components/CameraComponent.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Components/SkyLightComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Components/TransformComponent.h"
-#include "Core/Math/Rotator.h"
-#include "Core/Misc/Paths.h"
+#include "Core/Logging/Log.h"
 #include "Core/Templates/UniquePtr.h"
+#include "Engine.h"
 #include "GameClient.h"
 #include "GameInstanceFactory.h"
-#include "Image/Image.h"
-#include "Image/ImageUtils.h"
-#include "Renderer/Material.h"
-#include "Renderer/Renderer.h"
-#include "Renderer/StaticMesh.h"
-#include "Renderer/StaticMeshData.h"
-#include "Renderer/StaticMeshRenderData.h"
+#include "Renderer/Font.h"
 #include "Renderer/Texture2D.h"
-#include "SampleActor.h"
+#include "SampleFPSWidget.h"
 #include "UI/ImageWidget.h"
 #include "UI/UserWidget.h"
 #include "UI/Widget.h"
 #include "World.h"
 
-#include <filesystem>
-#include <optional>
 #include <utility>
 
 TUniquePtr<UGameInstance> CreateGameInstance()
@@ -35,90 +25,18 @@ TUniquePtr<UGameInstance> CreateGameInstance()
 	return MakeUnique<USampleGameInstance>();
 }
 
-bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, IRenderer& renderer)
+bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, IRenderer&)
 {
-	// 월드 콘텐츠를 준비한다. 초기화 실패의 정리는 엔진이 맡는다.
+	UEngine* engine = UEngine::Get();
+	if (!engine)
 	{
-		const std::optional<std::filesystem::path> baseDir = FPaths::BaseDir();
-		if (!baseDir) { return false; }
+		WriteLog("SampleGame", ELogLevel::Error, "Preparing sample assets requires an active engine.");
+		return false;
+	}
+	UAssetManager& assets = engine->GetAssetManager();
 
-		FImage checkerImage;
-		if (!FImageUtils::LoadImageFile(*baseDir / L"Content" / L"Textures" / L"Checker.png", checkerImage)) { return false; }
-
-		const FStaticMeshData meshData =
-			{
-				{{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
-					{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
-					{{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
-					{{0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}}},
-				{0, 1, 2, 0, 2, 3}};
-
-		// 형상/재질을 한 번 준비한다. 컴포넌트가 자산을 공유하고 자산이 GPU 형상을 단독 소유한다.
-		TUniquePtr<FStaticMeshRenderData> renderData;
-		if (!renderer.CreateMesh(meshData, renderData)) { return false; }
-
-		TSharedPtr<UTexture2D> meshTexture = MakeShared<UTexture2D>();
-		if (!renderer.CreateTexture2D(checkerImage, *meshTexture)) { return false; }
-
-		TSharedPtr<UMaterial> meshMaterial = MakeShared<UMaterial>();
-		meshMaterial->SetBaseColorTexture(meshTexture);
-		TSharedPtr<UStaticMesh> staticMesh = MakeShared<UStaticMesh>();
-		staticMesh->SetRenderData(std::move(renderData));
-		staticMesh->SetStaticMaterials({meshMaterial});
-
-		const auto configureSquare = [&staticMesh](AActor& actor, FVector3 position, FRotator rotation)
-		{
-			UTransformComponent* transform = actor.GetComponent<UTransformComponent>();
-			transform->SetPosition(position);
-			transform->SetRotation(rotation);
-			transform->SetScale({1.4f, 1.4f, 1.4f});
-
-			TUniquePtr<UStaticMeshComponent> mesh = MakeUnique<UStaticMeshComponent>(actor);
-			(void)mesh->SetStaticMesh(staticMesh);
-			TUniquePtr<UActorComponent> component = std::move(mesh);
-
-			return actor.AddComponent("Body", component);
-		};
-
-		struct FSampleSquarePose
-		{
-			FVector3 position;
-			FRotator rotation;
-		};
-
-		// 같은 메시와 색으로 면의 기울기에 따른 광량만 비교한다.
-		const FSampleSquarePose fixedSquares[] =
-			{
-				{{-2.5f, 1.2f, 0.0f}, {35.0f, -35.0f, 0.0f}},
-				{{0.0f, 1.2f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-				{{2.5f, 1.2f, 0.0f}, {0.0f, 60.0f, 0.0f}},
-				{{-2.5f, -1.2f, 0.0f}, {60.0f, 0.0f, 0.0f}},
-				{{0.0f, -1.2f, 0.0f}, {-60.0f, 0.0f, 0.0f}}};
-
-		for (const FSampleSquarePose& pose : fixedSquares)
-		{
-			if (!configureSquare(world.SpawnActor<AActor>(), pose.position, pose.rotation)) { return false; }
-		}
-		if (!configureSquare(world.SpawnActor<ASampleActor>(), {2.5f, -1.2f, 0.0f}, {0.0f, 0.0f, 15.0f})) { return false; }
-
-		AActor& lightActor = world.SpawnActor<AActor>();
-		lightActor.GetComponent<UTransformComponent>()->SetRotation({35.0f, -35.0f, 0.0f});
-		TUniquePtr<UDirectionalLightComponent> light = MakeUnique<UDirectionalLightComponent>(lightActor);
-		light->SetLightColor({1.0f, 1.0f, 1.0f});
-		light->SetIntensity(1.0f);
-		TUniquePtr<UActorComponent> lightComponent = std::move(light);
-		if (!lightActor.AddComponent("DirectionalLight", lightComponent))
-		{
-			return false;
-		}
-
-		// 방향광과 독립적인 균일 주변광이다. 세기 0.15는 비교용 예시이며 물리 단위가 아니다.
-		AActor& skyLightActor = world.SpawnActor<AActor>();
-		TUniquePtr<USkyLightComponent> skyLight = MakeUnique<USkyLightComponent>(skyLightActor);
-		skyLight->SetIntensity(0.15f);
-		TUniquePtr<UActorComponent> skyLightComponent = std::move(skyLight);
-		if (!skyLightActor.AddComponent("SkyLight", skyLightComponent)) { return false; }
-
+	// 게임 실행에서만 사용할 카메라를 준비한다.
+	{
 		AActor& cameraActor = world.SpawnActor<AActor>();
 		cameraActor.GetComponent<UTransformComponent>()->SetPosition({0.0f, 0.0f, -6.0f});
 
@@ -136,14 +54,8 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, IRe
 	}
 
 	// 로컬 클라이언트의 UI를 준비한다.
-	const std::optional<std::filesystem::path> baseDir = FPaths::BaseDir();
-	if (!baseDir) { return false; }
-
-	FImage image;
-	if (!FImageUtils::LoadImageFile(*baseDir / L"Content" / L"Textures" / L"Checker.png", image)) { return false; }
-
-	TSharedPtr<UTexture2D> texture = MakeShared<UTexture2D>();
-	if (!renderer.CreateTexture2D(image, *texture)) { return false; }
+	TSharedPtr<UTexture2D> texture = assets.LoadTexture2D("/Engine/Textures/Checker.png");
+	if (!texture) { return false; }
 
 	TUniquePtr<UImageWidget> imageWidget = MakeUnique<UImageWidget>();
 	if (!imageWidget->SetTexture(texture)) { return false; }
@@ -154,5 +66,16 @@ bool USampleGameInstance::Initialize(UWorld& world, FGameClient& gameClient, IRe
 	TUniquePtr<UWidget> root = std::move(imageWidget);
 	if (!widget->SetRootWidget(root)) { return false; }
 
-	return gameClient.GetWidgetSubsystem().AddWidget(widget);
+	if (!gameClient.GetWidgetSubsystem().AddWidget(widget)) { return false; }
+
+	TSharedPtr<UFont> font = assets.LoadFont("/Engine/Fonts/DebugMono.spritefont");
+	if (!font) { return false; }
+
+	TUniquePtr<USampleFPSWidget> fpsWidget = MakeUnique<USampleFPSWidget>();
+	if (!fpsWidget->Initialize(font)) { return false; }
+
+	// Client가 FPS 위젯과 루트를 소유하고 Subsystem이 프레임마다 갱신한다.
+	TUniquePtr<UUserWidget> userWidget = std::move(fpsWidget);
+
+	return gameClient.GetWidgetSubsystem().AddWidget(userWidget);
 }

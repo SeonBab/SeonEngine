@@ -6,23 +6,31 @@
 #include "Core/Math/Matrix4.h"
 #include "Core/Misc/Paths.h"
 #include "Core/Templates/SharedPtr.h"
+#include "D3D11/D3D11FontRenderData.h"
 #include "D3D11/D3D11ImGuiRendererBackend.h"
 #include "D3D11/D3D11Shader.h"
 #include "D3D11/D3D11StaticMeshRenderData.h"
 #include "D3D11/D3D11TextureRenderData.h"
 #include "Image/Image.h"
+#include "Renderer/Font.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/StaticMeshData.h"
 #include "Renderer/Texture.h"
 #include "Renderer/Texture2D.h"
 #include "Renderer/TextureRenderTarget2D.h"
+#include "UI/UIBatchData.h"
 #include "UI/UIDrawElementList.h"
-#include "UI/UIImageDrawElement.h"
+#include "UI/UIElementBatcher.h"
+
+#include <directxtk/DDSTextureLoader.h>
+#include <directxtk/SpriteFont.h>
 
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <limits>
 #include <optional>
+#include <type_traits>
 #include <utility>
 
 namespace
@@ -34,6 +42,20 @@ namespace
 	};
 
 	static_assert(sizeof(FTransformConstants) == 128);
+
+	// StaticMeshPixelShader의 PS b1과 같은 16바이트 배치다. GPU 플래그는 C++ bool 대신 uint32를 쓴다.
+	struct FAlphaMaskConstants
+	{
+		uint32 bAlphaMasked = 0;
+		float alphaCutoff = 0.5f;
+		uint32 padding[2]{};
+	};
+
+	static_assert(std::is_standard_layout_v<FAlphaMaskConstants> && std::is_trivially_copyable_v<FAlphaMaskConstants>);
+	static_assert(sizeof(FAlphaMaskConstants) == 16);
+	static_assert(offsetof(FAlphaMaskConstants, bAlphaMasked) == 0);
+	static_assert(offsetof(FAlphaMaskConstants, alphaCutoff) == 4);
+	static_assert(offsetof(FAlphaMaskConstants, padding) == 8);
 
 	struct FDirectionalLightConstants
 	{
@@ -101,6 +123,10 @@ namespace
 
 #pragma region Lifecycle
 
+FD3D11Renderer::FD3D11Renderer() = default;
+
+FD3D11Renderer::~FD3D11Renderer() = default;
+
 bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 height)
 {
 	const HWND windowHandle = static_cast<HWND>(nativeWindowHandle);
@@ -124,27 +150,34 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	const std::filesystem::path shaderDir = *baseDir / L"Shaders";
 	TArray<uint8> staticMeshVertexShaderBytecode;
 	TArray<uint8> staticMeshPixelShaderBytecode;
-	TArray<uint8> imageVertexShaderBytecode;
-	TArray<uint8> imagePixelShaderBytecode;
+	TArray<uint8> uiVertexShaderBytecode;
+	TArray<uint8> uiPixelShaderBytecode;
 	if (!ReadShaderBytecode(shaderDir / L"StaticMeshVertexShader.cso", staticMeshVertexShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"StaticMeshPixelShader.cso", staticMeshPixelShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"ImageVertexShader.cso", imageVertexShaderBytecode) ||
-		!ReadShaderBytecode(shaderDir / L"ImagePixelShader.cso", imagePixelShaderBytecode))
+		!ReadShaderBytecode(shaderDir / L"StaticMeshPixelShader.cso", staticMeshPixelShaderBytecode))
 	{
 		return false;
 	}
 
+	if (!ReadShaderBytecode(shaderDir / L"UIVertexShader.cso", uiVertexShaderBytecode))
+	{
+		return false;
+	}
+
+	if (!ReadShaderBytecode(shaderDir / L"UIPixelShader.cso", uiPixelShaderBytecode))
+	{
+		return false;
+	}
+
+	WriteLog("D3D11", ELogLevel::Info, "UI pixel shader bytecode loaded ({} bytes).", uiPixelShaderBytecode.size());
+	WriteLog("D3D11", ELogLevel::Info, "UI vertex shader bytecode loaded ({} bytes).", uiVertexShaderBytecode.size());
 	WriteLog("D3D11", ELogLevel::Info, "Vertex shader bytecode loaded ({} bytes).", staticMeshVertexShaderBytecode.size());
 	WriteLog("D3D11", ELogLevel::Info, "Static mesh pixel shader bytecode loaded ({} bytes).", staticMeshPixelShaderBytecode.size());
-	WriteLog("D3D11", ELogLevel::Info, "Image pixel shader bytecode loaded ({} bytes).", imagePixelShaderBytecode.size());
 	if (!graphics.Initialize())
 	{
 		return false;
 	}
 	if (!graphics.CreateVertexShader(staticMeshVertexShaderBytecode, staticMeshVertexShader) ||
-		!graphics.CreateVertexShader(imageVertexShaderBytecode, imageVertexShader) ||
-		!graphics.CreatePixelShader(staticMeshPixelShaderBytecode, staticMeshPixelShader) ||
-		!graphics.CreatePixelShader(imagePixelShaderBytecode, imagePixelShader))
+		!graphics.CreatePixelShader(staticMeshPixelShaderBytecode, staticMeshPixelShader))
 	{
 		Shutdown();
 		return false;
@@ -158,6 +191,12 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	}
 
 	WriteLog("D3D11", ELogLevel::Info, "Vertex input layout created.");
+
+	if (!uiRenderer.Initialize(graphics, uiVertexShaderBytecode, uiPixelShaderBytecode))
+	{
+		Shutdown();
+		return false;
+	}
 
 	static_assert(sizeof(FMatrix4) == 64);
 	constexpr uint32 TransformBufferByteSize = static_cast<uint32>(sizeof(FTransformConstants));
@@ -208,25 +247,10 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 		return false;
 	}
 
-	const FTransformConstants initialImageConstants{identity, identity};
-	if (!graphics.CreateConstantBuffer(TransformBufferByteSize, imageTransformConstantBuffer) ||
-		!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &initialImageConstants, TransformBufferByteSize))
-	{
-		Shutdown();
-		return false;
-	}
-
-	D3D11_BLEND_DESC blendDescription{};
-	D3D11_RENDER_TARGET_BLEND_DESC& target = blendDescription.RenderTarget[0];
-	target.BlendEnable = TRUE;
-	target.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	target.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	target.BlendOp = D3D11_BLEND_OP_ADD;
-	target.SrcBlendAlpha = D3D11_BLEND_ONE;
-	target.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	target.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	target.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	if (!graphics.CreateBlendState(blendDescription, uiBlendState))
+	constexpr uint32 AlphaMaskBufferByteSize = static_cast<uint32>(sizeof(FAlphaMaskConstants));
+	const FAlphaMaskConstants initialAlphaMaskConstants{};
+	if (!graphics.CreateConstantBuffer(AlphaMaskBufferByteSize, alphaMaskConstantBuffer) ||
+		!graphics.UpdateConstantBuffer(alphaMaskConstantBuffer.Get(), &initialAlphaMaskConstants, AlphaMaskBufferByteSize))
 	{
 		Shutdown();
 		return false;
@@ -246,15 +270,6 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	depthDescription.BackFace = depthDescription.FrontFace;
 
 	if (!graphics.CreateDepthStencilState(depthDescription, worldDepthStencilState))
-	{
-		Shutdown();
-		return false;
-	}
-
-	depthDescription.DepthEnable = FALSE;
-	depthDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-
-	if (!graphics.CreateDepthStencilState(depthDescription, uiDepthStencilState))
 	{
 		Shutdown();
 		return false;
@@ -309,19 +324,6 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	worldToClip = initialWorldToClip;
 	bInitialized = true;
 
-	const FStaticMeshData imageQuadData =
-		{
-			{{{0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {0.0f, 0.0f}},
-				{{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {1.0f, 0.0f}},
-				{{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {1.0f, 1.0f}},
-				{{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {}, {0.0f, 1.0f}}},
-			{0, 1, 2, 0, 2, 3}};
-	if (!CreateMesh(imageQuadData, imageQuad))
-	{
-		Shutdown();
-		return false;
-	}
-
 	return true;
 }
 
@@ -344,6 +346,7 @@ void FD3D11Renderer::Shutdown()
 		graphics.SetVertexShaderConstantBuffer(1, nullptr);
 		graphics.SetVertexShaderConstantBuffer(2, nullptr);
 		graphics.SetVertexShaderConstantBuffer(3, nullptr);
+		graphics.SetPixelShaderConstantBuffer(0, nullptr);
 		graphics.SetVertexBuffer(nullptr);
 		graphics.SetInputLayout(nullptr);
 		graphics.SetRenderTarget(nullptr);
@@ -351,15 +354,14 @@ void FD3D11Renderer::Shutdown()
 		graphics.SetVertexShader(nullptr);
 	}
 
+	uiRenderer.Shutdown();
 	activeRenderTargetResource.Reset();
 	captureDepthStencilView.Reset();
 	captureDepthStencilTexture.Reset();
 	depthStencilView.Reset();
 	depthStencilTexture.Reset();
 	worldDepthStencilState.Reset();
-	uiDepthStencilState.Reset();
 	swapChain.Shutdown();
-	imageQuad.reset();
 	for (std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>& samplersForU : samplerStates)
 	{
 		for (Microsoft::WRL::ComPtr<ID3D11SamplerState>& sampler : samplersForU)
@@ -368,17 +370,14 @@ void FD3D11Renderer::Shutdown()
 		}
 	}
 	whiteTextureView.Reset();
-	uiBlendState.Reset();
 	transformConstantBuffer.Reset();
 	directionalLightConstantBuffer.Reset();
 	skyLightConstantBuffer.Reset();
 	specularConstantBuffer.Reset();
-	imageTransformConstantBuffer.Reset();
+	alphaMaskConstantBuffer.Reset();
 	inputLayout.Reset();
 	staticMeshPixelShader.Reset();
-	imagePixelShader.Reset();
 	staticMeshVertexShader.Reset();
-	imageVertexShader.Reset();
 	graphics.Shutdown();
 	localToWorld = FMatrix4{};
 	worldToClip = FMatrix4{};
@@ -446,6 +445,137 @@ bool FD3D11Renderer::CreateTexture2D(const FImage& image, UTexture2D& outTexture
 	return true;
 }
 
+bool FD3D11Renderer::CreateTexture2DFromDDS(std::span<const uint8> ddsBytes, UTexture2D& outTexture)
+{
+	if (!bInitialized || ddsBytes.empty())
+	{
+		WriteLog("Renderer", ELogLevel::Error, "DDS texture creation requires an initialized renderer and nonempty bytes.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> view;
+	DirectX::DDS_ALPHA_MODE alphaMode = DirectX::DDS_ALPHA_MODE_UNKNOWN;
+	// 컨텍스트 없는 오버로드는 DDS의 밉만 사용하며 자동 밉 생성이나 픽셀 변환을 하지 않는다.
+	const HRESULT result = DirectX::CreateDDSTextureFromMemory(graphics.GetDevice(), ddsBytes.data(), ddsBytes.size(), resource.GetAddressOf(), view.GetAddressOf(), 0, &alphaMode);
+	if (FAILED(result))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Creating a DDS texture failed (HRESULT 0x{:08X}).", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+	if (FAILED(resource.As(&texture)))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "DDS texture creation requires a 2D resource.");
+		return false;
+	}
+	D3D11_TEXTURE2D_DESC description{};
+	texture->GetDesc(&description);
+	if (description.ArraySize != 1 || (description.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) != 0 || alphaMode == DirectX::DDS_ALPHA_MODE_CUSTOM)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "DDS texture arrays, cubes and custom alpha modes are not supported.");
+		return false;
+	}
+
+	switch (description.Format)
+	{
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		case DXGI_FORMAT_B8G8R8A8_UNORM:
+		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+		case DXGI_FORMAT_B8G8R8X8_UNORM:
+		case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+			break;
+		default:
+			WriteLog("Renderer", ELogLevel::Error, "DDS texture creation requires supported RGBA/BGRA/BGRX8 or BC1/BC2/BC3 color data.");
+			return false;
+	}
+
+	TUniquePtr<FD3D11TextureRenderData> newTexture = MakeUnique<FD3D11TextureRenderData>(static_cast<int32>(description.Width), static_cast<int32>(description.Height));
+	newTexture->textureView = std::move(view);
+	newTexture->SetAlphaRepresentation(alphaMode == DirectX::DDS_ALPHA_MODE_PREMULTIPLIED ? ETextureAlphaRepresentation::Premultiplied : ETextureAlphaRepresentation::Straight);
+	outTexture.SetRenderData(std::move(newTexture));
+
+	return true;
+}
+
+bool FD3D11Renderer::CreateFontResource(std::span<const uint8> fontData, UFont& outFont)
+{
+	if (!bInitialized)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Creating a font requires an initialized renderer.");
+		return false;
+	}
+	if (fontData.empty())
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Creating a font requires non-empty font data.");
+		return false;
+	}
+
+	TUniquePtr<FD3D11FontRenderData> newFont = MakeUnique<FD3D11FontRenderData>();
+	newFont->spriteFont = MakeUnique<DirectX::SpriteFont>(graphics.GetDevice(), fontData.data(), fontData.size());
+
+	// GetSpriteSheet가 반환한 COM 참조를 같은 SRV의 엔진 텍스처 데이터로 넘긴다. GPU 픽셀은 복제하지 않는다.
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> atlasView;
+	newFont->spriteFont->GetSpriteSheet(atlasView.GetAddressOf());
+	if (!atlasView)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Creating a font requires an atlas shader resource view.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Resource> atlasResource;
+	atlasView->GetResource(atlasResource.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> atlasTexture;
+	const HRESULT atlasResult = atlasResource.As(&atlasTexture);
+	if (FAILED(atlasResult))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Font atlas must be a 2D texture (HRESULT 0x{:08X}).", static_cast<unsigned long>(atlasResult));
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC atlasDescription{};
+	atlasTexture->GetDesc(&atlasDescription);
+	if (atlasDescription.Width == 0)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Font atlas width must be positive.");
+		return false;
+	}
+	if (atlasDescription.Height == 0)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Font atlas height must be positive.");
+		return false;
+	}
+	if (atlasDescription.Width > static_cast<UINT>(std::numeric_limits<int32>::max()))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Font atlas width exceeds the supported integer range.");
+		return false;
+	}
+	if (atlasDescription.Height > static_cast<UINT>(std::numeric_limits<int32>::max()))
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Font atlas height exceeds the supported integer range.");
+		return false;
+	}
+
+	TUniquePtr<FD3D11TextureRenderData> atlasData = MakeUnique<FD3D11TextureRenderData>(static_cast<int32>(atlasDescription.Width), static_cast<int32>(atlasDescription.Height));
+	atlasData->textureView = std::move(atlasView);
+	// 입력 .spritefont의 준비 계약을 기록한다. 픽셀 변환이나 자동 추론은 하지 않는다.
+	atlasData->SetAlphaRepresentation(ETextureAlphaRepresentation::Premultiplied);
+	newFont->atlas = MakeUnique<UTexture2D>();
+	newFont->atlas->SetRenderData(std::move(atlasData));
+
+	// 폰트와 공통 아틀라스가 모두 준비된 뒤에만 기존 출력을 교체한다.
+	outFont.SetRenderData(std::move(newFont));
+	return true;
+}
+
 bool FD3D11Renderer::CreateRenderTarget2D(int32 width, int32 height, UTextureRenderTarget2D& outTexture)
 {
 	if (!bInitialized || bFrameActive)
@@ -467,6 +597,7 @@ bool FD3D11Renderer::CreateRenderTarget2D(int32 width, int32 height, UTextureRen
 	const float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
 	graphics.ClearRenderTargetView(newTexture->renderTargetView.Get(), clearColor);
 
+	newTexture->SetAlphaRepresentation(ETextureAlphaRepresentation::Straight);
 	// 두 뷰와 실제 크기를 함께 교체해 공유 객체의 주소와 기존 주소 설정을 유지한다.
 	outTexture.SetRenderData(std::move(newTexture));
 
@@ -767,6 +898,14 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view
 		return false;
 	}
 
+	const FAlphaMaskConstants alphaMaskConstants{
+		.bAlphaMasked = item.bAlphaMasked ? 1u : 0u,
+		.alphaCutoff = item.alphaCutoff};
+	if (!graphics.UpdateConstantBuffer(alphaMaskConstantBuffer.Get(), &alphaMaskConstants, static_cast<uint32>(sizeof(alphaMaskConstants))))
+	{
+		return false;
+	}
+
 	graphics.SetVertexShader(staticMeshVertexShader.Get());
 	graphics.SetPixelShader(staticMeshPixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
@@ -779,6 +918,7 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view
 	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(2, skyLightConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(3, specularConstantBuffer.Get());
+	graphics.SetPixelShaderConstantBuffer(1, alphaMaskConstantBuffer.Get());
 	graphics.SetIndexBuffer(d3d11Mesh->indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(d3d11Mesh->indexCount, 0, 0);
@@ -812,102 +952,91 @@ bool FD3D11Renderer::IsActiveRenderTargetResource(ID3D11ShaderResourceView* view
 
 #pragma region UI
 
+bool FD3D11Renderer::ValidateUIBatchResources(const FUIBatchData& batchData) const
+{
+	for (const FUIRenderBatch& batch : batchData.renderBatches)
+	{
+		if (batch.texture == nullptr)
+		{
+			WriteLog("Renderer", ELogLevel::Error, "UI batches require a texture.");
+			return false;
+		}
+		const FD3D11TextureRenderData* textureData = dynamic_cast<const FD3D11TextureRenderData*>(batch.texture->GetRenderData());
+		if (textureData == nullptr)
+		{
+			WriteLog("Renderer", ELogLevel::Error, "UI batches require D3D11 texture render data.");
+			return false;
+		}
+		if (!textureData->textureView)
+		{
+			WriteLog("Renderer", ELogLevel::Error, "UI batches require a prepared shader resource view.");
+			return false;
+		}
+		Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
+		textureData->textureView->GetDevice(textureDevice.GetAddressOf());
+		if (textureDevice.Get() != graphics.GetDevice())
+		{
+			WriteLog("Renderer", ELogLevel::Error, "UI batch texture belongs to another D3D11 device.");
+			return false;
+		}
+		if (IsActiveRenderTargetResource(textureData->textureView.Get()))
+		{
+			WriteLog("Renderer", ELogLevel::Error, "UI batches cannot sample the active render target.");
+			return false;
+		}
+		// Renderer와 UI 고정 자원은 함께 초기화된다. 여기서는 목록 전체의 지원 모드를 검사한다.
+		switch (batch.sampling)
+		{
+			case EUISampling::PointClamp:
+			case EUISampling::LinearClamp:
+				break;
+			default:
+				WriteLog("Renderer", ELogLevel::Error, "UI batch uses an unsupported sampling mode.");
+				return false;
+		}
+	}
+	return true;
+}
+
 bool FD3D11Renderer::DrawUI(const FUIDrawElementList& elements)
 {
-	if (elements.GetImageElements().empty()) { return true; }
+	if (elements.GetElements().empty()) { return true; }
+	if (!bInitialized)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing UI requires an initialized renderer.");
+		return false;
+	}
 	if (!bFrameActive)
 	{
 		WriteLog("Renderer", ELogLevel::Error, "Drawing UI requires an active frame.");
 		return false;
 	}
 
-	graphics.SetBlendState(uiBlendState.Get());
-	graphics.SetDepthStencilState(uiDepthStencilState.Get());
+	// 이번 호출만의 출력이다. Build 실패 시 이전 호출의 배치를 제출하지 않는다.
+	FUIElementBatcher batcher;
+	FUIBatchData batchData;
+	if (!batcher.Build(elements, batchData)) { return false; }
+	// 빈 문자열/공백만 있는 유효한 요청은 GPU 상태 변경이나 버퍼 준비가 필요 없다.
+	if (batchData.renderBatches.empty()) { return true; }
+	if (!ValidateUIBatchResources(batchData)) { return false; }
+	if (!uiRenderer.UploadBatchData(graphics, batchData)) { return false; }
+	if (!uiRenderer.PrepareDraw(graphics, outputWidth, outputHeight)) { return false; }
 
-	for (const FUIImageDrawElement& element : elements.GetImageElements())
+	bool bSubmitted = true;
+	for (const FUIRenderBatch& batch : batchData.renderBatches)
 	{
-		if (!DrawImage(element))
+		if (!uiRenderer.SubmitBatch(graphics, batch))
 		{
-			graphics.SetBlendState(nullptr);
-			graphics.SetDepthStencilState(worldDepthStencilState.Get());
-			return false;
+			bSubmitted = false;
+			break;
 		}
 	}
 
+	// 성공/실패 모두 같은 종료 경로를 사용한다. 임의의 호출 전 상태를 저장하는 계약은 아니다.
+	graphics.SetPixelShaderConstantBuffer(0, nullptr);
 	graphics.SetBlendState(nullptr);
 	graphics.SetDepthStencilState(worldDepthStencilState.Get());
-
-	return true;
-}
-
-bool FD3D11Renderer::DrawImage(const FUIImageDrawElement& element)
-{
-	if (!bFrameActive)
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires an active frame.");
-		return false;
-	}
-	const FD3D11StaticMeshRenderData* d3d11Quad = dynamic_cast<const FD3D11StaticMeshRenderData*>(imageQuad.get());
-	if (!d3d11Quad || !d3d11Quad->vertexBuffer || !d3d11Quad->indexBuffer || d3d11Quad->indexCount == 0)
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a nonempty D3D11 quad.");
-		return false;
-	}
-	const FD3D11TextureRenderData* textureData = element.texture ? dynamic_cast<const FD3D11TextureRenderData*>(element.texture->GetRenderData()) : nullptr;
-	if (!textureData || !textureData->textureView || !std::isfinite(element.position.x) || !std::isfinite(element.position.y) ||
-		!std::isfinite(element.size.x) || !std::isfinite(element.size.y) || element.size.x <= 0.0f || element.size.y <= 0.0f)
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a D3D11 texture, finite position and positive finite size.");
-		return false;
-	}
-	Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
-	textureData->textureView->GetDevice(textureDevice.GetAddressOf());
-	if (textureDevice.Get() != graphics.GetDevice())
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing an image requires a texture from the current renderer device.");
-		return false;
-	}
-
-	if (IsActiveRenderTargetResource(textureData->textureView.Get()))
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing an image cannot sample the active render target.");
-		return false;
-	}
-
-	const float width = static_cast<float>(outputWidth);
-	const float height = static_cast<float>(outputHeight);
-	FMatrix4 imageToClip{};
-	imageToClip.m[0][0] = 2.0f * (element.size.x / width);
-	imageToClip.m[1][1] = -2.0f * (element.size.y / height);
-	imageToClip.m[2][2] = 1.0f;
-	imageToClip.m[3][0] = 2.0f * (element.position.x / width) - 1.0f;
-	imageToClip.m[3][1] = 1.0f - 2.0f * (element.position.y / height);
-	imageToClip.m[3][3] = 1.0f;
-	if (!std::isfinite(imageToClip.m[0][0]) || !std::isfinite(imageToClip.m[1][1]) ||
-		!std::isfinite(imageToClip.m[3][0]) || !std::isfinite(imageToClip.m[3][1]))
-	{
-		WriteLog("Renderer", ELogLevel::Error, "Image transform exceeds the finite matrix range.");
-		return false;
-	}
-
-	FMatrix4 identity;
-	identity.SetIdentity();
-
-	const FTransformConstants constants{imageToClip, identity};
-	if (!graphics.UpdateConstantBuffer(imageTransformConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(FTransformConstants)))) { return false; }
-
-	graphics.SetVertexShader(imageVertexShader.Get());
-	graphics.SetPixelShader(imagePixelShader.Get());
-	graphics.SetInputLayout(inputLayout.Get());
-	graphics.SetVertexBuffer(d3d11Quad->vertexBuffer.Get());
-	graphics.SetPixelShaderResourceView(textureData->textureView.Get());
-	graphics.SetPixelShaderSamplerState(samplerStates[0][0].Get());
-	graphics.SetVertexShaderConstantBuffer(0, imageTransformConstantBuffer.Get());
-	graphics.SetIndexBuffer(d3d11Quad->indexBuffer.Get());
-	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	graphics.DrawIndexed(d3d11Quad->indexCount, 0, 0);
-
-	return true;
+	return bSubmitted;
 }
 
 #pragma endregion

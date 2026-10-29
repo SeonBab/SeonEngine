@@ -108,10 +108,38 @@ void FEditorViewportClient::SetFarClipDistance(float newFarClipDistance)
 
 #pragma endregion
 
+#pragma region RenderTarget
+
+bool FEditorViewportClient::ResizeRenderTarget(IRenderer& renderer, int32 width, int32 height)
+{
+	if (width <= 0 || height <= 0) { return false; }
+
+	if (renderTarget.GetWidth() == width && renderTarget.GetHeight() == height)
+	{
+		return true;
+	}
+
+	return renderer.CreateRenderTarget2D(width, height, renderTarget);
+}
+
+const UTextureRenderTarget2D& FEditorViewportClient::GetRenderTarget() const
+{
+	return renderTarget;
+}
+
+void FEditorViewportClient::ReleaseRenderTarget()
+{
+	renderTarget.SetRenderData(nullptr);
+}
+
+#pragma endregion
+
 #pragma region Drawing
 
-bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer, int width, int height) const
+bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer) const
 {
+	const int32 width = renderTarget.GetWidth();
+	const int32 height = renderTarget.GetHeight();
 	if (width <= 0 || height <= 0) { return false; }
 
 	const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -122,7 +150,12 @@ bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer, int width, 
 	renderView.location = view.location;
 	renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
 
-	return scene.Draw(renderer, renderView);
+	if (!renderer.BeginRenderTarget(renderTarget)) { return false; }
+
+	const bool drawn = scene.Draw(renderer, renderView);
+	const bool restored = renderer.EndRenderTarget();
+
+	return drawn && restored;
 }
 
 #pragma endregion

@@ -56,7 +56,7 @@ private:
 
 	FWindowsApplication application;
 
-	// Initialize에서 구현을 생성해 단독 소유하며 Engine과 UI보다 오래 유지한다.
+	// Initialize에서 실행 구성의 생성 함수로 받은 구현을 단독 소유하며 Engine과 UI보다 오래 유지한다.
 	TUniquePtr<IRenderer> renderer;
 
 	TUniquePtr<UEngine> engine;

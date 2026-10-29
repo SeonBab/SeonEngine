@@ -1,54 +1,46 @@
 #include "ComponentTypeRegistry.h"
 
 #include "Components/ActorComponent.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/SkyLightComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/Logging/Log.h"
-#include "Core/Math/Vector3.h"
-
-#include <cmath>
-#include <utility>
-#include <variant>
 
 namespace
 {
-	bool GetTransformPosition(const UActorComponent& component, FPropertyValue& outValue)
-	{
-		const UTransformComponent* transform = dynamic_cast<const UTransformComponent*>(&component);
-		if (!transform) { return false; }
-
-		outValue = transform->GetPosition();
-		return true;
-	}
-
-	bool SetTransformPosition(UActorComponent& component, const FPropertyValue& value)
-	{
-		UTransformComponent* transform = dynamic_cast<UTransformComponent*>(&component);
-		if (!transform) { return false; }
-
-		const FVector3* position = std::get_if<FVector3>(&value);
-		if (!position) { return false; }
-
-		if (!std::isfinite(position->x) || !std::isfinite(position->y) || !std::isfinite(position->z)) { return false; }
-
-		// 자손의 월드 변환도 갱신하도록 기존 setter를 사용한다.
-		transform->SetPosition(*position);
-		return true;
-	}
-
 	TUniquePtr<UActorComponent> CreateTransform(AActor& actor)
 	{
 		return MakeUnique<UTransformComponent>(actor);
+	}
+
+	TUniquePtr<UActorComponent> CreateDirectionalLight(AActor& actor)
+	{
+		return MakeUnique<UDirectionalLightComponent>(actor);
+	}
+
+	TUniquePtr<UActorComponent> CreateSkyLight(AActor& actor)
+	{
+		return MakeUnique<USkyLightComponent>(actor);
+	}
+
+	TUniquePtr<UActorComponent> CreateStaticMesh(AActor& actor)
+	{
+		return MakeUnique<UStaticMeshComponent>(actor);
 	}
 }
 
 bool FComponentTypeRegistry::RegisterBuiltInTypes()
 {
-	if (!Register("Transform", &CreateTransform, typeid(UTransformComponent))) { return false; }
+	if (!Register("Transform", &CreateTransform, typeid(UTransformComponent), UTransformComponent::StaticTypeInfo())) { return false; }
+	if (!Register("DirectionalLight", &CreateDirectionalLight, typeid(UDirectionalLightComponent), UDirectionalLightComponent::StaticTypeInfo())) { return false; }
 
-	return RegisterProperty("Transform", {"position", &GetTransformPosition, &SetTransformPosition});
+	if (!Register("SkyLight", &CreateSkyLight, typeid(USkyLightComponent), USkyLightComponent::StaticTypeInfo())) { return false; }
+
+	return Register("StaticMesh", &CreateStaticMesh, typeid(UStaticMeshComponent), UStaticMeshComponent::StaticTypeInfo());
 }
 
-bool FComponentTypeRegistry::Register(FStringView typeName, FComponentFactory factory, const std::type_info& componentType)
+bool FComponentTypeRegistry::Register(FStringView typeName, FComponentFactory factory, const std::type_info& componentType, const FTypeInfo& typeInfo)
 {
 	if (typeName.empty())
 	{
@@ -69,7 +61,7 @@ bool FComponentTypeRegistry::Register(FStringView typeName, FComponentFactory fa
 	}
 
 	// 조회 시 원본 문자열의 수명에 의존하지 않도록 이름을 소유한다.
-	entries.push_back({FString(typeName), factory, &componentType, {}});
+	entries.push_back({FString(typeName), factory, &componentType, &typeInfo});
 	return true;
 }
 
@@ -87,53 +79,18 @@ bool FComponentTypeRegistry::IsType(FStringView typeName, const UActorComponent&
 {
 	for (const FEntry& entry : entries)
 	{
-		if (entry.typeName == typeName) { return *entry.componentType == typeid(component); }
+		if (entry.typeName == typeName) { return *entry.componentType == typeid(component) && entry.typeInfo == &component.GetTypeInfo(); }
 	}
 
 	return false;
 }
 
-bool FComponentTypeRegistry::RegisterProperty(FStringView typeName, FComponentPropertyInfo property)
-{
-	if (property.name.empty())
-	{
-		WriteLog("Map", ELogLevel::Error, "Property name for component type '{}' must not be empty.", typeName);
-		return false;
-	}
-
-	if (!property.getValue && !property.setValue)
-	{
-		WriteLog("Map", ELogLevel::Error, "Property '{}' for component type '{}' must provide an accessor.", property.name, typeName);
-		return false;
-	}
-
-	for (FEntry& entry : entries)
-	{
-		if (entry.typeName != typeName) { continue; }
-
-		for (const FComponentPropertyInfo& existing : entry.properties)
-		{
-			if (existing.name == property.name)
-			{
-				WriteLog("Map", ELogLevel::Error, "Property '{}' for component type '{}' is already registered.", property.name, typeName);
-				return false;
-			}
-		}
-
-		entry.properties.push_back(std::move(property));
-		return true;
-	}
-
-	WriteLog("Map", ELogLevel::Error, "Cannot register property '{}' for unknown component type '{}'.", property.name, typeName);
-	return false;
-}
-
-std::span<const FComponentPropertyInfo> FComponentTypeRegistry::GetProperties(FStringView typeName) const
+const FTypeInfo* FComponentTypeRegistry::FindTypeInfo(FStringView typeName) const
 {
 	for (const FEntry& entry : entries)
 	{
-		if (entry.typeName == typeName) { return entry.properties; }
+		if (entry.typeName == typeName) { return entry.typeInfo; }
 	}
 
-	return {};
+	return nullptr;
 }

@@ -4,9 +4,10 @@
 #include "Core/CoreTypes.h"
 #include "Core/Math/Matrix4.h"
 #include "Core/Templates/SharedPtr.h"
+#include "Renderer/StaticMesh.h"
 #include "RenderStateComponent.h"
+#include "StaticMeshComponent.generated.h"
 
-class UStaticMesh;
 class UMaterialInterface;
 class FStaticMeshSceneProxy;
 
@@ -14,8 +15,11 @@ class FStaticMeshSceneProxy;
 // 선택한 정적 메시 자산과 재질의 수명을 공유하고 렌더 상태 생성/변경/해제를 요청한다.
 // 등록된 Proxy는 Scene이 소유한다. 컴포넌트는 현재 Proxy의 자원을 사용 종료까지 유지한다.
 ////////////////////////////////////////////////////////////////////////////////
+UCLASS()
 class UStaticMeshComponent : public URenderStateComponent
 {
+	GENERATED_BODY()
+
 #pragma region Lifecycle
 
 public:
@@ -24,6 +28,9 @@ public:
 
 	/** 남은 Proxy를 Scene에서 제거한 뒤 자원 참조를 해제한다. Actor와 World는 그때까지 살아 있어야 한다. */
 	~UStaticMeshComponent() override;
+
+	/** 복원 완료 뒤 생성된 렌더 상태를 dirty 표시한다. 개별 리플렉션 대입은 알림이나 GPU 준비를 수행하지 않는다. */
+	void PostLoad() override;
 
 #pragma endregion
 
@@ -38,6 +45,7 @@ public:
 
 private:
 	// 사용자가 선택한 설정이다. 변경 직후 이전 Proxy의 자원 수명은 아래 별도 참조로 유지한다.
+	UPROPERTY()
 	TSharedPtr<UStaticMesh> staticMesh;
 
 #pragma endregion

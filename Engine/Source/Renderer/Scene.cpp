@@ -187,6 +187,8 @@ bool FScene::Draw(IRenderer& renderer, const FRenderView& view)
 		item.baseColorTexture = materialProxy->GetBaseColorTexture();
 		item.specularColor = materialProxy->GetSpecularColor();
 		item.shininess = materialProxy->GetShininess();
+		item.bAlphaMasked = materialProxy->IsAlphaMasked();
+		item.alphaCutoff = materialProxy->GetAlphaCutoff();
 		data.meshes.push_back(std::move(item));
 	}
 

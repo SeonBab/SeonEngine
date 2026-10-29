@@ -1,6 +1,8 @@
 #include "D3D11ImGuiRendererBackend.h"
 
 #include "Core/Logging/Log.h"
+#include "D3D11/D3D11TextureRenderData.h"
+#include "Renderer/Texture.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -54,6 +56,24 @@ bool FD3D11ImGuiRendererBackend::NewFrame()
 	ImGui::SetCurrentContext(context);
 	ImGui_ImplDX11_NewFrame();
 	ImGui::SetCurrentContext(previousContext);
+	return true;
+}
+
+bool FD3D11ImGuiRendererBackend::GetTextureRef(const UTexture& texture, ImTextureRef& outTextureRef)
+{
+	outTextureRef = ImTextureRef();
+	if (!context || !bDX11BackendInitialized) { return false; }
+
+	const FD3D11TextureRenderData* textureData = dynamic_cast<const FD3D11TextureRenderData*>(texture.GetRenderData());
+	if (!textureData || !textureData->textureView) { return false; }
+
+	Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
+	textureData->textureView->GetDevice(textureDevice.GetAddressOf());
+	if (textureDevice.Get() != device) { return false; }
+
+	// ImGui DX11 backend는 ImTextureID를 SRV 주소로 해석한다. 참조 횟수나 자원 소유권은 바꾸지 않는다.
+	outTextureRef = ImTextureRef(reinterpret_cast<ImTextureID>(textureData->textureView.Get()));
+
 	return true;
 }
 

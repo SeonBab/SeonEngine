@@ -6,6 +6,7 @@
 #include "GameInstance.h"
 #include "GameInstanceFactory.h"
 #include "Input/PlayerInput.h"
+#include "Maps/GameMapsSettings.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderData.h"
 #include "World.h"
@@ -14,7 +15,10 @@
 
 UGameEngine::UGameEngine() = default;
 
-UGameEngine::~UGameEngine() = default;
+UGameEngine::~UGameEngine()
+{
+	PreExit();
+}
 
 #pragma endregion
 
@@ -26,14 +30,22 @@ bool UGameEngine::Initialize(IRenderer& renderer)
 
 	if (!UEngine::Initialize(renderer)) { return false; }
 
+	if (!LoadMap(GetGameMapsSettings().gameDefaultMap))
+	{
+		PreExit();
+		return false;
+	}
+
 	gameClient = MakeUnique<FGameClient>();
 	gameInstance = CreateGameInstance();
 	if (!gameInstance || !gameInstance->Initialize(*world, *gameClient, renderer))
 	{
+		PreExit();
 		return false;
 	}
 	if (!world->CreateRenderStates())
 	{
+		PreExit();
 		return false;
 	}
 
@@ -60,6 +72,7 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, IRenderer& 
 	}
 
 	world->Tick(deltaSeconds, input, playerInput);
+	gameClient->GetWidgetSubsystem().Tick(deltaSeconds);
 
 	FRenderView renderView;
 	if (const UCameraComponent* camera = world->GetActiveCamera())
@@ -114,7 +127,7 @@ void UGameEngine::PreExit()
 	}
 	gameInstance.reset();
 	gameClient.reset();
-	world.reset();
+	UEngine::PreExit();
 }
 
 #pragma endregion

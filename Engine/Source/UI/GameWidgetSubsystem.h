@@ -12,14 +12,26 @@ class FGameWidgetSubsystem
 #pragma region Widgets
 
 public:
-	/** 성공하면 위젯의 소유권을 받고 입력 포인터를 비운다. 빈 입력이면 목록을 유지하고 false를 반환한다. */
+	/** 성공하면 위젯의 소유권을 받고 입력 포인터를 비운다. 빈 입력은 false다. Tick과 수집·제출 중에는 호출하지 않는다. */
 	[[nodiscard]] bool AddWidget(TUniquePtr<UUserWidget>& widget);
 
-	/** 등록된 위젯을 제거하고 즉시 파괴한다. 없으면 false를 반환한다. 성공 후 전달한 포인터를 사용하면 안 된다. */
+	/** 등록된 위젯을 제거하고 즉시 파괴한다. 없으면 false다. Tick과 수집·제출 중 호출 및 파괴 후 포인터 재사용은 금지한다. */
 	[[nodiscard]] bool RemoveWidget(UUserWidget* widget);
 
 private:
 	TArray<TUniquePtr<UUserWidget>> widgets;
+
+#pragma endregion
+
+#pragma region Updating
+
+public:
+	/**
+	 * 게임 프레임의 경과 초를 등록 순서대로 각 UserWidget에 전달한다. 빈 목록은 아무 작업도 하지 않는다.
+	 * GameEngine이 월드 갱신 뒤 요소 수집 전에 한 번 호출하며 그리기는 하지 않는다.
+	 * 순회 중 등록·제거와 중첩 Tick/Draw는 금지한다. 변경을 자동 감지하거나 보류하지 않으며 예외는 전파한다.
+	 */
+	void Tick(float deltaSeconds);
 
 #pragma endregion
 

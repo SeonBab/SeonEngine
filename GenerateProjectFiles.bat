@@ -10,7 +10,7 @@ rem 스크립트 본체: Engine\Build\BatchFiles\GenerateProjectFiles.cs (.NET 1
 set "SE_ROOT=%~dp0"
 set "SE_EXIT_CODE=0"
 
-rem dotnet run 파일.cs(단일 파일 실행)는 .NET 10 SDK부터 지원한다.
+rem dotnet run --file 파일.cs(단일 파일 실행)는 .NET 10 SDK부터 지원한다.
 rem SDK 없이 런타임만 있으면 버전 대신 다른 문장이 나올 수 있으므로 숫자인지도 확인한다.
 set "SE_DOTNET_MAJOR="
 for /f "tokens=1 delims=." %%v in ('dotnet --version 2^>nul') do set "SE_DOTNET_MAJOR=%%v"
@@ -19,7 +19,7 @@ echo %SE_DOTNET_MAJOR%| findstr /r "^[0-9][0-9]*$" >nul || goto :NoDotnet
 if %SE_DOTNET_MAJOR% LSS 10 goto :NoDotnet
 
 rem 빌드 결과는 .NET 기본 위치(%TEMP%) 대신 저장소의 Intermediate에 둔다.
-dotnet run "%SE_ROOT%Engine\Build\BatchFiles\GenerateProjectFiles.cs" --artifacts-path "%SE_ROOT%Intermediate\DotNET\GenerateProjectFiles"
+dotnet run --file "%SE_ROOT%Engine\Build\BatchFiles\GenerateProjectFiles.cs" --artifacts-path "%SE_ROOT%Intermediate\DotNET\GenerateProjectFiles"
 set "SE_EXIT_CODE=%ERRORLEVEL%"
 goto :End
 

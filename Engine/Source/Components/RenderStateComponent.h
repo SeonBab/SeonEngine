@@ -1,13 +1,17 @@
 #pragma once
 
 #include "ActorComponent.h"
+#include "RenderStateComponent.generated.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Scene에 반영할 렌더 상태의 생성, 갱신, 해제 계약을 제공하는 추상 컴포넌트다.
 // 구체 렌더 데이터와 Proxy의 소유 방식은 파생 클래스가 결정한다.
 ////////////////////////////////////////////////////////////////////////////////
+UCLASS()
 class URenderStateComponent : public UActorComponent
 {
+	GENERATED_BODY()
+
 public:
 	/** 소속 액터를 기반 컴포넌트에 전달한다. 렌더 상태는 생성하지 않는다. */
 	explicit URenderStateComponent(AActor& owner);

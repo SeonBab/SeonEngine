@@ -1,15 +1,21 @@
 #include "MapLoader.h"
 
 #include "Actor.h"
+#include "AssetManager.h"
 #include "Components/ActorComponent.h"
 #include "Core/Containers/Array.h"
 #include "Core/Containers/SeonString.h"
 #include "Core/Logging/Log.h"
+#include "Core/Math/Rotator.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Misc/Paths.h"
 #include "Core/Templates/UniquePtr.h"
+#include "Engine.h"
 #include "Maps/ActorTypeRegistry.h"
 #include "Maps/ComponentTypeRegistry.h"
-#include "Properties/ComponentPropertyInfo.h"
-#include "Properties/PropertyValue.h"
+#include "Reflection/PropertyInfo.h"
+#include "Reflection/TypeInfo.h"
+#include "Renderer/StaticMesh.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
@@ -18,24 +24,17 @@
 #include <cmath>
 #include <fstream>
 #include <limits>
-#include <span>
 #include <string>
 #include <utility>
-#include <variant>
 
 namespace
 {
-	const FComponentPropertyInfo* FindProperty(std::span<const FComponentPropertyInfo> properties, FStringView name)
+	bool IsFloatNumber(const rapidjson::Value& value)
 	{
-		for (const FComponentPropertyInfo& property : properties)
-		{
-			if (property.name == name) { return &property; }
-		}
-
-		return nullptr;
+		return value.IsNumber() && std::isfinite(value.GetDouble()) && std::abs(value.GetDouble()) <= std::numeric_limits<float>::max();
 	}
 
-	bool ValidateComponentProperties(const rapidjson::Value& data, std::span<const FComponentPropertyInfo> properties, FStringView pathText, rapidjson::SizeType actorIndex, rapidjson::SizeType componentIndex)
+	bool ValidateComponentProperties(const rapidjson::Value& data, const FTypeInfo& typeInfo, FStringView pathText, rapidjson::SizeType actorIndex, rapidjson::SizeType componentIndex)
 	{
 		TArray<FStringView> names;
 		for (const auto& member : data.GetObject())
@@ -43,10 +42,10 @@ namespace
 			const FStringView name(member.name.GetString(), member.name.GetStringLength());
 			if (name == "name" || name == "type") { continue; }
 
-			const FComponentPropertyInfo* property = FindProperty(properties, name);
-			if (!property || !property->getValue || !property->setValue)
+			const FPropertyInfo* property = typeInfo.FindProperty(name);
+			if (!property)
 			{
-				WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must be registered with read and write accessors.", name, componentIndex, actorIndex, pathText);
+				WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must be declared as a reflected property.", name, componentIndex, actorIndex, pathText);
 				return false;
 			}
 
@@ -57,15 +56,41 @@ namespace
 			}
 			names.push_back(name);
 
+			const std::type_info& valueType = property->GetValueType();
+			if (valueType == typeid(TSharedPtr<UStaticMesh>))
+			{
+				if (member.value.IsNull()) { continue; }
+				// 경로 형식만 검사한다. 파일 읽기와 GPU 자산 준비는 전체 사전 검사 이후에 수행한다.
+				if (!member.value.IsString() || !FPaths::ResolveContentPath(FStringView(member.value.GetString(), member.value.GetStringLength())))
+				{
+					WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must be null or a valid /Engine/... or /Game/... asset path.", name, componentIndex, actorIndex, pathText);
+					return false;
+				}
+				continue;
+			}
+			if (valueType != typeid(float) && valueType != typeid(FVector3) && valueType != typeid(FRotator))
+			{
+				WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' has an unsupported value type.", name, componentIndex, actorIndex, pathText);
+				return false;
+			}
+			if (valueType == typeid(float))
+			{
+				if (!IsFloatNumber(member.value))
+				{
+					WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must be finite and within the float range.", name, componentIndex, actorIndex, pathText);
+					return false;
+				}
+				continue;
+			}
 			if (!member.value.IsArray() || member.value.Size() != 3)
 			{
-				WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must be an array of three numbers.", name, componentIndex, actorIndex, pathText);
+				WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must be an array of three numbers for its reflected value type.", name, componentIndex, actorIndex, pathText);
 				return false;
 			}
 
 			for (const rapidjson::Value& element : member.value.GetArray())
 			{
-				if (!element.IsNumber() || !std::isfinite(element.GetDouble()) || std::abs(element.GetDouble()) > std::numeric_limits<float>::max())
+				if (!IsFloatNumber(element))
 				{
 					WriteLog("Map", ELogLevel::Error, "Property '{}' of component at index {} of actor at index {} in JSON map file '{}' must contain finite numbers within the float range.", name, componentIndex, actorIndex, pathText);
 					return false;
@@ -76,32 +101,57 @@ namespace
 		return true;
 	}
 
-	bool ApplyComponentProperties(const rapidjson::Value& data, UActorComponent& component, std::span<const FComponentPropertyInfo> properties, FStringView pathText, rapidjson::SizeType actorIndex, rapidjson::SizeType componentIndex)
+	bool ApplyComponentProperties(const rapidjson::Value& data, UActorComponent& component, const FTypeInfo& typeInfo, FStringView pathText, rapidjson::SizeType actorIndex, rapidjson::SizeType componentIndex)
 	{
+		// 파일 전체 검사와 실제 객체의 타입 확인이 끝났다. JSON 변환은 로더가 담당하며 getter를 실행하지 않는다.
 		for (const auto& member : data.GetObject())
 		{
 			const FStringView name(member.name.GetString(), member.name.GetStringLength());
 			if (name == "name" || name == "type") { continue; }
 
-			const FComponentPropertyInfo* property = FindProperty(properties, name);
-			FPropertyValue value;
-			if (!property || !property->getValue || !property->setValue || !property->getValue(component, value))
+			const FPropertyInfo* property = typeInfo.FindProperty(name);
+			bool applied = false;
+			if (property && property->GetValueType() == typeid(float))
 			{
-				WriteLog("Map", ELogLevel::Error, "Reading property '{}' of component at index {} of actor at index {} in JSON map file '{}' failed.", name, componentIndex, actorIndex, pathText);
-				return false;
+				applied = property->TrySetValue(component, static_cast<float>(member.value.GetDouble()));
 			}
-
-			// 파일 전체 검사로 세 숫자의 범위를 확인했다. getter가 선택한 값 타입에 맞춰 변환한다.
-			const float first = static_cast<float>(member.value[0].GetDouble());
-			const float second = static_cast<float>(member.value[1].GetDouble());
-			const float third = static_cast<float>(member.value[2].GetDouble());
-			std::visit([first, second, third](auto& typedValue)
+			else if (property && (property->GetValueType() == typeid(FVector3) || property->GetValueType() == typeid(FRotator)))
 			{
-				typedValue = {first, second, third};
-			}, value);
-			if (!property->setValue(component, value))
+				const float first = static_cast<float>(member.value[0].GetDouble());
+				const float second = static_cast<float>(member.value[1].GetDouble());
+				const float third = static_cast<float>(member.value[2].GetDouble());
+				if (property->GetValueType() == typeid(FVector3))
+				{
+					applied = property->TrySetValue(component, FVector3{first, second, third});
+				}
+				else
+				{
+					applied = property->TrySetValue(component, FRotator{first, second, third});
+				}
+			}
+			else if (property && property->GetValueType() == typeid(TSharedPtr<UStaticMesh>))
 			{
-				WriteLog("Map", ELogLevel::Error, "Applying property '{}' of component at index {} of actor at index {} in JSON map file '{}' failed.", name, componentIndex, actorIndex, pathText);
+				TSharedPtr<UStaticMesh> mesh;
+				if (!member.value.IsNull())
+				{
+					UEngine* engine = UEngine::Get();
+					if (!engine)
+					{
+						WriteLog("Map", ELogLevel::Error, "Loading asset property '{}' of component at index {} of actor at index {} in JSON map file '{}' requires an active engine.", name, componentIndex, actorIndex, pathText);
+						return false;
+					}
+					mesh = engine->GetAssetManager().LoadStaticMesh(FStringView(member.value.GetString(), member.value.GetStringLength()));
+					if (!mesh)
+					{
+						WriteLog("Map", ELogLevel::Error, "Loading asset property '{}' of component at index {} of actor at index {} in JSON map file '{}' failed.", name, componentIndex, actorIndex, pathText);
+						return false;
+					}
+				}
+				applied = property->TrySetValue(component, mesh);
+			}
+			if (!applied)
+			{
+				WriteLog("Map", ELogLevel::Error, "Applying reflected property '{}' of component at index {} of actor at index {} in JSON map file '{}' failed.", name, componentIndex, actorIndex, pathText);
 				return false;
 			}
 		}
@@ -118,6 +168,7 @@ namespace
 			const rapidjson::Value& type = data["type"];
 			const FStringView componentName(name.GetString(), name.GetStringLength());
 			const FStringView typeName(type.GetString(), type.GetStringLength());
+			const FTypeInfo& typeInfo = *componentTypes.FindTypeInfo(typeName);
 
 			if (UActorComponent* existing = actor.FindComponent(componentName))
 			{
@@ -126,7 +177,8 @@ namespace
 					WriteLog("Map", ELogLevel::Error, "Component '{}' at index {} of actor at index {} in JSON map file '{}' does not match registered type '{}'.", componentName, index, actorIndex, pathText, typeName);
 					return false;
 				}
-				if (!ApplyComponentProperties(data, *existing, componentTypes.GetProperties(typeName), pathText, actorIndex, index)) { return false; }
+				if (!ApplyComponentProperties(data, *existing, typeInfo, pathText, actorIndex, index)) { return false; }
+				existing->PostLoad();
 				continue;
 			}
 
@@ -154,13 +206,16 @@ namespace
 				WriteLog("Map", ELogLevel::Error, "Factory for component type '{}' at index {} of actor at index {} in JSON map file '{}' returned a component with another owner.", typeName, index, actorIndex, pathText);
 				return false;
 			}
-			if (!ApplyComponentProperties(data, *component, componentTypes.GetProperties(typeName), pathText, actorIndex, index)) { return false; }
+			if (!ApplyComponentProperties(data, *component, typeInfo, pathText, actorIndex, index)) { return false; }
+
+			UActorComponent* restored = component.get();
 
 			if (!actor.AddComponent(componentName, component))
 			{
 				WriteLog("Map", ELogLevel::Error, "Adding component '{}' at index {} of actor at index {} in JSON map file '{}' failed.", componentName, index, actorIndex, pathText);
 				return false;
 			}
+			restored->PostLoad();
 		}
 
 		return true;
@@ -356,7 +411,7 @@ bool FMapLoader::LoadMapFile(const std::filesystem::path& path, const FActorType
 				WriteLog("Map", ELogLevel::Error, "Component at index {} of actor at index {} in JSON map file '{}' has duplicate name '{}'.", componentIndex, index, pathText, componentName);
 				return false;
 			}
-			if (!ValidateComponentProperties(componentData, componentTypes.GetProperties(componentTypeName), pathText, index, componentIndex)) { return false; }
+			if (!ValidateComponentProperties(componentData, *componentTypes.FindTypeInfo(componentTypeName), pathText, index, componentIndex)) { return false; }
 			componentNames.push_back(componentName);
 		}
 		factories.push_back(factory);

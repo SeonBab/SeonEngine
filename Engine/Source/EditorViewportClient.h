@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Camera/CameraViewInfo.h"
+#include "Core/CoreTypes.h"
 #include "Core/Math/Rotator.h"
 #include "Core/Math/Vector3.h"
+#include "Renderer/TextureRenderTarget2D.h"
 
 class IRenderer;
 class FScene;
@@ -31,7 +33,7 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// 원근과 직교 편집 시점, 투영 설정을 보관하고 선택한 시점으로 장면을 그린다.
+// 원근과 직교 편집 시점, 투영 설정과 장면용 렌더 타겟을 보관하고 선택한 시점으로 장면을 그린다.
 ////////////////////////////////////////////////////////////////////////////////
 class FEditorViewportClient
 {
@@ -102,15 +104,38 @@ private:
 
 #pragma endregion
 
+#pragma region RenderTarget
+
+public:
+	/**
+	 * 초기화된 동일 Renderer로 프레임 시작 전에 양수 픽셀 크기의 타겟을 준비한다. 같은 크기는 생성 없이 재사용한다.
+	 * 성공 시에만 GPU 데이터와 크기를 교체하며 실패하면 기존 타겟을 유지한다. 교체 전 기존 데이터의 비소유 사용을 끝내야 한다.
+	 * Renderer와 장치 상태를 별도로 검사하지 않으므로 같은 크기의 성공도 현재 GPU 사용 가능 여부를 보장하지 않는다.
+	 */
+	[[nodiscard]] bool ResizeRenderTarget(IRenderer& renderer, int32 width, int32 height);
+
+	/** 소유 타겟을 읽기 전용으로 빌린다. 참조는 Client 수명 동안 유효하며 초기에는 GPU 데이터 없이 크기가 0이다. */
+	const UTextureRenderTarget2D& GetRenderTarget() const;
+
+	/** UI와 출력의 비소유 사용을 끝낸 뒤 타깃의 모든 렌더 데이터를 해제한다. 크기는 0으로 돌아가며 카메라는 유지한다. 반복 호출을 허용한다. */
+	void ReleaseRenderTarget();
+
+private:
+	UTextureRenderTarget2D renderTarget; // Client가 GPU 데이터를 소유한다. 기본 생성만으로 GPU 자원을 만들지는 않는다.
+
+#pragma endregion
+
 #pragma region Drawing
 
 public:
 	/**
-	 * 편집 시점 행렬을 전달하고 장면을 그린다. 양수 크기와 유효한 시점 설정이 필요하며 크기는 설정한 viewport와 일치해야 한다.
-	 * 호출자는 Renderer 초기화, 장면 렌더 상태 준비, 출력과 viewport 설정 및 BeginFrame을 완료하고 프레임 종료를 담당한다.
-	 * Scene과 Renderer는 호출 동안만 빌린다. 월드 갱신이나 프레임 시작/종료는 하지 않으며 실패하면 false다.
+	 * 준비한 소유 타겟의 실제 크기로 편집 시점 행렬을 계산하고 그 타겟에 장면을 그린 뒤 창 출력을 복원한다.
+	 * 호출자는 동일 Renderer 초기화, 양수 크기의 타겟·장면 렌더 상태 준비 및 BeginFrame을 완료하고 프레임 종료를 담당한다.
+	 * 다른 렌더 타겟이 활성인 상태에서는 호출하지 않는다. 장면 그리기가 실패해도 출력 복원을 시도하며 어느 쪽이든 실패하면 false다.
+	 * 실패 후에는 이후 제출·Present를 진행하지 않고 Shutdown으로 정리한다. 복원 실패 시 타겟이 활성 상태일 수 있다.
+	 * Scene과 Renderer는 호출 동안만 빌린다. 월드 갱신이나 프레임 시작/종료는 하지 않는다.
 	 */
-	[[nodiscard]] bool Draw(FScene& scene, IRenderer& renderer, int width, int height) const;
+	[[nodiscard]] bool Draw(FScene& scene, IRenderer& renderer) const;
 
 #pragma endregion
 };

@@ -2,6 +2,10 @@
 
 #include <utility>
 
+void UUserWidget::Tick(float)
+{
+}
+
 bool UUserWidget::CollectDrawElements(FUIDrawElementList& elements)
 {
 	if (!rootWidget) { return true; }

@@ -28,6 +28,10 @@ public:
 	/** 소유 재질의 현재 광택 지수를 값으로 조회한다. GPU 갱신은 하지 않는다. */
 	float GetShininess() const override { return material->GetShininess(); }
 
+	bool IsAlphaMasked() const override { return material->IsAlphaMasked(); }
+
+	float GetAlphaCutoff() const override { return material->GetAlphaCutoff(); }
+
 private:
 	// 비소유 주소다. 재질을 파괴하거나 이동한 뒤에는 조회할 수 없다.
 	UMaterial* material;
@@ -93,6 +97,32 @@ void UMaterial::SetShininess(float newShininess)
 float UMaterial::GetShininess() const
 {
 	return shininess;
+}
+
+#pragma endregion
+
+#pragma region AlphaMask
+
+void UMaterial::SetAlphaMasked(bool bNewAlphaMasked)
+{
+	bAlphaMasked = bNewAlphaMasked;
+}
+
+bool UMaterial::IsAlphaMasked() const
+{
+	return bAlphaMasked;
+}
+
+void UMaterial::SetAlphaCutoff(float newAlphaCutoff)
+{
+	if (!std::isfinite(newAlphaCutoff)) { return; }
+
+	alphaCutoff = std::clamp(newAlphaCutoff, 0.0f, 1.0f);
+}
+
+float UMaterial::GetAlphaCutoff() const
+{
+	return alphaCutoff;
 }
 
 #pragma endregion

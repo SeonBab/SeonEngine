@@ -8,6 +8,8 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
+#include <span>
+
 /** D3D11 장치와 즉시 컨텍스트를 소유한다. COM 참조는 명시적 정리 또는 소멸 시 해제한다. */
 class FD3D11Device
 {
@@ -100,8 +102,31 @@ public:
 	/** 32비트 인덱스 배열로 변경 불가 버퍼를 만든다. 장치, 입력, 크기 검사나 API가 실패하면 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateIndexBuffer(const TArray<uint32>& indices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer);
 
+	/**
+	 * 양수 바이트 용량으로 CPU 쓰기가 가능한 DYNAMIC 버퍼를 만든다. bindFlag는 정점용 또는 인덱스용 하나만 허용한다.
+	 * 초기 내용은 미정이며 데이터 업로드, 바인딩, 용량 확장은 수행하지 않는다. 정점 형식과 인덱스 범위는 호출자가 정한다.
+	 * 장치 미준비, 잘못된 입력, 생성 API 실패는 로그/false이며 기존 출력은 유지한다. 성공하면 출력 소유권을 교체한다.
+	 */
+	[[nodiscard]] bool CreateDynamicBuffer(uint32 byteCapacity, D3D11_BIND_FLAG bindFlag, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer);
+
+	/**
+	 * 같은 장치의 CPU 쓰기 가능한 동적 정점/인덱스 버퍼를 WRITE_DISCARD로 갱신한다. 시작 오프셋은 0이다.
+	 * 소유 스레드에서 호출하며 data는 byteSize만큼 읽을 수 있어야 한다. 양수 크기와 버퍼 용량 이내의 범위를 요구한다.
+	 * 검사 실패는 내용을 변경하지 않고 로그/false다. Map 실패도 로그/false이며 실패한 갱신을 그리기에 사용해서는 안 된다.
+	 * 성공한 Map은 복사 후 Unmap한다. 복사 범위 밖의 이전 내용은 보존하지 않으며 true는 GPU 완료를 뜻하지 않는다.
+	 * 버퍼 생성, 용량 확장, 바인딩과 그리기는 수행하지 않는다.
+	 */
+	[[nodiscard]] bool UpdateDynamicBuffer(ID3D11Buffer* buffer, const void* data, uint32 byteSize);
+
 	/** FVertex용 입력 레이아웃을 만든다. 장치 초기화가 필요하며 실패 시 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateInputLayout(const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout);
+
+	/**
+	 * 입력 항목과 정점 셰이더 바이트코드로 입력 레이아웃을 만든다. 항목은 호출 중에만 참조한다.
+	 * 준비된 장치와 비어 있지 않은 입력을 요구한다. 항목은 D3D11 제한과 셰이더 입력 계약을 따라야 한다.
+	 * 실패하면 로그/false와 기존 출력 유지, 성공하면 출력 소유권을 교체한다. 바인딩은 수행하지 않는다.
+	 */
+	[[nodiscard]] bool CreateInputLayout(std::span<const D3D11_INPUT_ELEMENT_DESC> elements, const TArray<uint8>& vertexShaderBytecode, Microsoft::WRL::ComPtr<ID3D11InputLayout>& outLayout);
 
 	/** 준비된 컨텍스트에 같은 장치의 입력 레이아웃을 연결한다. nullptr면 해제한다. */
 	void SetInputLayout(ID3D11InputLayout* layout);

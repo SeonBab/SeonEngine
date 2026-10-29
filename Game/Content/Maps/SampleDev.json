@@ -1,0 +1,133 @@
+{
+	"actors": [
+		{
+			"type": "SampleActor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativePosition": [2.5, -1.2, 0],
+					"relativeRotation": [0, 0, 15],
+					"relativeScale": [1.4, 1.4, 1.4]
+				},
+				{
+					"name": "Body",
+					"type": "StaticMesh",
+					"staticMesh": "/Game/Meshes/SampleSquare.x"
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativeRotation": [35, -35, 0]
+				},
+				{
+					"name": "DirectionalLight",
+					"type": "DirectionalLight",
+					"lightColor": [1, 1, 1],
+					"intensity": 1
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "SkyLight",
+					"type": "SkyLight",
+					"lightColor": [1, 1, 1],
+					"intensity": 0.15
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativePosition": [-2.5, 1.2, 0],
+					"relativeRotation": [35, -35, 0],
+					"relativeScale": [1.4, 1.4, 1.4]
+				},
+				{
+					"name": "Body",
+					"type": "StaticMesh",
+					"staticMesh": "/Game/Meshes/SampleSquare.x"
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativePosition": [0, 1.2, 0],
+					"relativeRotation": [0, 0, 0],
+					"relativeScale": [1.4, 1.4, 1.4]
+				},
+				{
+					"name": "Body",
+					"type": "StaticMesh",
+					"staticMesh": "/Game/Meshes/SampleSquare.x"
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativePosition": [2.5, 1.2, 0],
+					"relativeRotation": [0, 60, 0],
+					"relativeScale": [1.4, 1.4, 1.4]
+				},
+				{
+					"name": "Body",
+					"type": "StaticMesh",
+					"staticMesh": "/Game/Meshes/SampleSquare.x"
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativePosition": [-2.5, -1.2, 0],
+					"relativeRotation": [60, 0, 0],
+					"relativeScale": [1.4, 1.4, 1.4]
+				},
+				{
+					"name": "Body",
+					"type": "StaticMesh",
+					"staticMesh": "/Game/Meshes/SampleSquare.x"
+				}
+			]
+		},
+		{
+			"type": "Actor",
+			"components": [
+				{
+					"name": "RootTransform",
+					"type": "Transform",
+					"relativePosition": [0, -1.2, 0],
+					"relativeRotation": [-60, 0, 0],
+					"relativeScale": [1.4, 1.4, 1.4]
+				},
+				{
+					"name": "Body",
+					"type": "StaticMesh",
+					"staticMesh": "/Game/Meshes/SampleSquare.x"
+				}
+			]
+		}
+	]
+}

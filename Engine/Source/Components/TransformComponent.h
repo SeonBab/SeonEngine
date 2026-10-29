@@ -5,19 +5,26 @@
 #include "Core/Math/Rotator.h"
 #include "Core/Math/Transform.h"
 #include "Core/Math/Vector3.h"
+#include "TransformComponent.generated.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 액터에 붙어 위치, 회전, 크기 데이터를 보관한다.
-// 부모 기준 상대값을 저장하고 값이나 부모가 바뀌면 자신과 자손의 월드 변환을 즉시 갱신한다.
+// 부모 기준 상대값을 저장하고 일반 setter·부모 변경·맵 복원 완료에서 자신과 자손의 월드 변환을 갱신한다.
 // 모든 변경과 조회는 같은 스레드에서 수행한다. GPU 반영은 기존 렌더 상태 갱신 경로가 맡는다.
 ////////////////////////////////////////////////////////////////////////////////
+UCLASS()
 class UTransformComponent : public UActorComponent
 {
+	GENERATED_BODY()
+
 #pragma region Lifecycle
 
 public:
 	/** 부모 없는 소속 액터에 상대값과 월드 변환을 항등으로 초기화한다. 자동 등록은 하지 않는다. */
 	explicit UTransformComponent(AActor& owner);
+
+	/** 복원된 상대값으로 자신과 자손의 월드 변환을 갱신한다. 개별 리플렉션 대입은 이 함수를 호출하지 않는다. */
+	void PostLoad() override;
 
 #pragma endregion
 
@@ -55,8 +62,12 @@ public:
 	void SetScale(FVector3 newScale);
 
 private:
+	// 생성된 접근은 상대값만 복사한다. 맵 로더는 유한한 값을 검사하고 적용 완료 뒤 PostLoad를 호출한다.
+	UPROPERTY()
 	FVector3 relativePosition{};
-	FRotator relativeRotation{}; // 각도 API로 설정한 표현을 유지한다. Quat/Transform 설정 시에는 대표 각도로 대체된다.
+	UPROPERTY()
+	FRotator relativeRotation{}; // 도 단위 저장 표현이다. Quat/Transform 설정 시에는 대표 각도로 대체된다.
+	UPROPERTY()
 	FVector3 relativeScale{1.0f, 1.0f, 1.0f};
 
 #pragma endregion

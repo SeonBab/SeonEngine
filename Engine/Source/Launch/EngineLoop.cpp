@@ -1,10 +1,10 @@
 #include "EngineLoop.h"
 
 #include "Core/Time/FrameTimer.h"
-#include "D3D11/D3D11Renderer.h"
 #include "EditorEngine.h"
 #include "GameEngine.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/RendererFactory.h"
 
 #include <utility>
 
@@ -74,7 +74,8 @@ bool FEngineLoop::Initialize(EEngineMode engineMode)
 		return false;
 	}
 
-	renderer = MakeUnique<FD3D11Renderer>();
+	renderer = CreateRenderer();
+	if (!renderer) { return false; }
 	if (!renderer->Initialize(application.GetWindowHandle(), clientWidth, clientHeight))
 	{
 		return false;

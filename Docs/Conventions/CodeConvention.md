@@ -160,8 +160,8 @@
   | 접두사 | 뜻 | 대상 |
   |---|---|---|
   | `F` | — | 다른 접두사가 적용되지 않는 일반 class / struct (값 타입, 소유권 등 특정 성질을 뜻하지 않음) |
-  | `A` | Actor 계열 | `AActor`와 그 파생 클래스. AActor는 UObject를 상속하지만 Actor 계열은 A를 유지한다. GC·리플렉션은 아직 없음 (2026-10-16 정정) |
-  | `U` | UObject 계열 | UObject 및 그 파생 클래스. 현재 상속 관계만 나타내며 GC·리플렉션·객체 등록을 뜻하지 않음 (2026-10-16) |
+  | `A` | Actor 계열 | `AActor`와 그 파생 클래스. AActor는 UObject를 상속하지만 Actor 계열은 A를 유지한다. 접두사 자체는 GC나 타입별 메타데이터 지원을 뜻하지 않음 |
+  | `U` | UObject 계열 | UObject 및 그 파생 클래스. 상속 관계를 나타내며 GC·타입별 메타데이터의 자동 생성·객체 등록을 뜻하지 않음 |
   | `T` | Template | 템플릿 class / struct |
   | `I` | Interface | 순수 가상 함수로만 이루어진 class |
   | `E` | Enum | 열거형 |
@@ -669,6 +669,7 @@
 ### 3.9 Macro `중요`
 
 - **이름** — UPPER_SNAKE_CASE를 사용하며 `SE_` 접두사를 일괄 요구하지 않는다(1.2 Naming 참고). 역할이나 소속을 구분할 때는 `PLATFORM_`, `BUILD_`, `WITH_` 또는 모듈 이름처럼 의미 있는 접두사를 사용한다. 외부 코드와 충돌하면 구체적인 역할·모듈·프로젝트 이름으로 구분한다.
+- **리플렉션 선언 표기** — ReflectionMacros.h의 `UCLASS()`·`UPROPERTY()`·`GENERATED_BODY()`는 선언 기반 생성의 고정 표기다. UPROPERTY/UCLASS는 UPPER_SNAKE_CASE 규칙의 좁은 예외이며 사용자 정의 일반 매크로로 확대하지 않는다. 현재 옵션 인수를 받지 않는다. generated.h는 원본 헤더의 마지막 include로 두고 GENERATED_BODY 다음에 접근 지정자를 명시한다. 생성된 SE_REFLECTION 계열 매크로와 SEGetPropertyValue_/SESetPropertyValue_ 함수는 도구가 관리하므로 수동 선언·재정의하지 않는다. 생성 내부 함수 이름의 밑줄은 자동 생성 식별자를 구분하는 좁은 예외다. GENERATED_BODY는 클래스 멤버 선언을 펼치는 매크로이므로 실행 문장용 do/while로 감싸지 않는다.
 - **기존 이름** — 이 명명 규칙 변경만으로 기존 매크로를 일괄 개명하지 않는다. 실제 API나 빌드 설정을 설명할 때는 현재 이름을 사용하고, 이름을 바꾸는 작업에서는 정의·사용처·프로젝트 설정·관련 문서를 함께 갱신한다.
 - **사용 범위** — 매크로로만 할 수 있는 일에만 쓴다.
   - 플랫폼 / 빌드 구성 분기
@@ -684,6 +685,8 @@
   | `PLATFORM_` | 플랫폼 | `PLATFORM_WINDOWS` |
   | `BUILD_` | 빌드 구성 | `BUILD_DEBUG`, `BUILD_RELEASE` |
   | `WITH_` | 켜고 끌 수 있는 기능 | `WITH_EDITOR`, `WITH_PROFILER` |
+
+- **생성기 분석 분기** — SE_REFLECTION_ANALYSIS는 기본0, 도구 분석에서1이다. 일반 제품 컴파일에1을 전달하지 않는다. __clang__ 같은 컴파일러 제공 식별자는 값이 아닌 정의 여부로 분석 도구의 지원 환경을 확인한다. SE_REFLECTION_FILE_ID는 생성 파일의 토큰 식별자이므로0/1 분기 매크로가 아니며 다음 생성 헤더가 #undef 후 연결한다.
 
 - **작성 규칙**
   - 매크로 인자는 괄호로 감싼다.
