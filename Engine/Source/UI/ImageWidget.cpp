@@ -4,8 +4,6 @@
 
 #include <utility>
 
-#pragma region Texture
-
 bool UImageWidget::SetTexture(TSharedPtr<UTexture> newTexture)
 {
 	if (!newTexture) { return false; }
@@ -14,10 +12,6 @@ bool UImageWidget::SetTexture(TSharedPtr<UTexture> newTexture)
 
 	return true;
 }
-
-#pragma endregion
-
-#pragma region Layout
 
 void UImageWidget::SetPosition(FVector2 newPosition)
 {
@@ -39,10 +33,6 @@ FVector2 UImageWidget::GetSize() const
 	return size;
 }
 
-#pragma endregion
-
-#pragma region Drawing
-
 bool UImageWidget::CollectDrawElements(FUIDrawElementList& elements)
 {
 	if (texture)
@@ -52,5 +42,3 @@ bool UImageWidget::CollectDrawElements(FUIDrawElementList& elements)
 
 	return true;
 }
-
-#pragma endregion

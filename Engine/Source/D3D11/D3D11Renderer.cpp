@@ -121,8 +121,6 @@ namespace
 	}
 }
 
-#pragma region Lifecycle
-
 FD3D11Renderer::FD3D11Renderer() = default;
 
 FD3D11Renderer::~FD3D11Renderer() = default;
@@ -276,9 +274,9 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	}
 
 	D3D11_SAMPLER_DESC samplerDescription{};
-	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDescription.Filter = D3D11_FILTER_ANISOTROPIC;
 	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.MaxAnisotropy = 1;
+	samplerDescription.MaxAnisotropy = 8;
 	samplerDescription.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
 	for (size_t u = 0; u < samplerStates.size(); ++u)
@@ -311,6 +309,11 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 	}
 
 	if (!graphics.CreateDepthStencilBuffer(static_cast<uint32>(width), static_cast<uint32>(height), depthStencilTexture, depthStencilView))
+	{
+		Shutdown();
+		return false;
+	}
+	if (!CreateMultisampleResources(static_cast<uint32>(width), static_cast<uint32>(height), msaaColorTexture, msaaRenderTargetView, msaaDepthTexture, msaaDepthStencilView))
 	{
 		Shutdown();
 		return false;
@@ -356,6 +359,14 @@ void FD3D11Renderer::Shutdown()
 
 	uiRenderer.Shutdown();
 	activeRenderTargetResource.Reset();
+	msaaDepthStencilView.Reset();
+	msaaDepthTexture.Reset();
+	msaaRenderTargetView.Reset();
+	msaaColorTexture.Reset();
+	captureMsaaDepthStencilView.Reset();
+	captureMsaaDepthTexture.Reset();
+	captureMsaaRenderTargetView.Reset();
+	captureMsaaColorTexture.Reset();
 	captureDepthStencilView.Reset();
 	captureDepthStencilTexture.Reset();
 	depthStencilView.Reset();
@@ -391,12 +402,46 @@ void FD3D11Renderer::Shutdown()
 	outputHeight = 0;
 	bInitialized = false;
 	bFrameActive = false;
+	bWorldRenderingFinished = false;
 	bRenderTargetActive = false;
 }
 
-#pragma endregion
+bool FD3D11Renderer::CreateMultisampleResources(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outColorTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outRenderTargetView, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outDepthTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outDepthStencilView)
+{
+	if (!graphics.GetDevice() || width == 0 || height == 0 || width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample resources require an initialized device and valid dimensions.");
+		return false;
+	}
 
-#pragma region ResourceCreation
+	constexpr uint32 SampleCount = 4;
+	if (!graphics.IsMultisampleSupported(DXGI_FORMAT_R8G8B8A8_UNORM, SampleCount) || !graphics.IsMultisampleSupported(DXGI_FORMAT_D32_FLOAT, SampleCount))
+	{
+		outDepthStencilView.Reset();
+		outDepthTexture.Reset();
+		outRenderTargetView.Reset();
+		outColorTexture.Reset();
+		WriteLog("D3D11", ELogLevel::Warning, "MSAA 4x is not supported for the color/depth formats; keeping single-sample output.");
+		return true;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdColorTexture;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> createdRenderTargetView;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdDepthTexture;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> createdDepthStencilView;
+	if (!graphics.CreateMultisampleRenderTargetTexture2D(width, height, SampleCount, createdColorTexture, createdRenderTargetView) ||
+		!graphics.CreateMultisampleDepthStencilBuffer(width, height, SampleCount, createdDepthTexture, createdDepthStencilView))
+	{
+		return false;
+	}
+
+	outColorTexture = std::move(createdColorTexture);
+	outRenderTargetView = std::move(createdRenderTargetView);
+	outDepthTexture = std::move(createdDepthTexture);
+	outDepthStencilView = std::move(createdDepthStencilView);
+
+	return true;
+}
 
 bool FD3D11Renderer::CreateMesh(const FStaticMeshData& meshData, TUniquePtr<FStaticMeshRenderData>& outMesh)
 {
@@ -604,10 +649,6 @@ bool FD3D11Renderer::CreateRenderTarget2D(int32 width, int32 height, UTextureRen
 	return true;
 }
 
-#pragma endregion
-
-#pragma region ViewTransform
-
 bool FD3D11Renderer::SetLocalToWorld(const FMatrix4& matrix)
 {
 	if (!bInitialized)
@@ -645,10 +686,6 @@ bool FD3D11Renderer::SetWorldToClip(const FMatrix4& matrix)
 	return true;
 }
 
-#pragma endregion
-
-#pragma region Lighting
-
 bool FD3D11Renderer::SetDirectionalLight(FVector3 lightDirection, FVector3 lightColor)
 {
 	if (!bInitialized)
@@ -675,11 +712,7 @@ bool FD3D11Renderer::SetSkyLight(FVector3 lightColor)
 	return graphics.UpdateConstantBuffer(skyLightConstantBuffer.Get(), &constants, static_cast<uint32>(sizeof(constants)));
 }
 
-#pragma endregion
-
-#pragma region Frame
-
-bool FD3D11Renderer::BeginFrame(int32 width, int32 height)
+bool FD3D11Renderer::BeginFrame(int32 width, int32 height, FVector3 backgroundColor)
 {
 	if (!bInitialized || bFrameActive || width <= 0 || height <= 0)
 	{
@@ -699,28 +732,74 @@ bool FD3D11Renderer::BeginFrame(int32 width, int32 height)
 		{
 			return false;
 		}
+		if (!CreateMultisampleResources(static_cast<uint32>(width), static_cast<uint32>(height), msaaColorTexture, msaaRenderTargetView, msaaDepthTexture, msaaDepthStencilView))
+		{
+			return false;
+		}
 
 		bufferWidth = width;
 		bufferHeight = height;
 	}
 
-	const float clearColor[] = {0.05f, 0.10f, 0.20f, 1.0f};
+	const float clearColor[] = {backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0f};
 
-	graphics.SetRenderTarget(swapChain.GetBackBufferRenderTargetView(), depthStencilView.Get());
-	graphics.SetViewport(bufferWidth, bufferHeight);
-	outputWidth = bufferWidth;
-	outputHeight = bufferHeight;
+	ID3D11RenderTargetView* worldRenderTarget = msaaRenderTargetView ? msaaRenderTargetView.Get() : swapChain.GetBackBufferRenderTargetView();
+	ID3D11DepthStencilView* worldDepth = msaaDepthStencilView ? msaaDepthStencilView.Get() : depthStencilView.Get();
+	BindOutput(worldRenderTarget, worldDepth, bufferWidth, bufferHeight);
 	graphics.SetDepthStencilState(worldDepthStencilState.Get());
 
-	graphics.ClearRenderTargetView(swapChain.GetBackBufferRenderTargetView(), clearColor);
-	graphics.ClearDepthStencilView(depthStencilView.Get(), 1.0f);
+	graphics.ClearRenderTargetView(worldRenderTarget, clearColor);
+	graphics.ClearDepthStencilView(worldDepth, 1.0f);
 
+	bWorldRenderingFinished = false;
 	bFrameActive = true;
 
 	return true;
 }
 
-bool FD3D11Renderer::BeginRenderTarget(const UTextureRenderTarget2D& target)
+void FD3D11Renderer::BindOutput(ID3D11RenderTargetView* renderTarget, ID3D11DepthStencilView* depthStencil, int32 width, int32 height)
+{
+	graphics.SetRenderTarget(renderTarget, depthStencil);
+	graphics.SetViewport(width, height);
+	outputWidth = width;
+	outputHeight = height;
+}
+
+bool FD3D11Renderer::PrepareCaptureResources(int32 width, int32 height)
+{
+	if (!captureDepthStencilTexture || !captureDepthStencilView || captureDepthWidth != width || captureDepthHeight != height)
+	{
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> createdCaptureDepthTexture;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> createdCaptureDepthStencilView;
+		if (!graphics.CreateDepthStencilBuffer(static_cast<uint32>(width), static_cast<uint32>(height), createdCaptureDepthTexture, createdCaptureDepthStencilView))
+		{
+			return false;
+		}
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> createdCaptureMsaaColorTexture;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> createdCaptureMsaaRenderTargetView;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> createdCaptureMsaaDepthTexture;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> createdCaptureMsaaDepthStencilView;
+		if (!CreateMultisampleResources(static_cast<uint32>(width), static_cast<uint32>(height), createdCaptureMsaaColorTexture, createdCaptureMsaaRenderTargetView, createdCaptureMsaaDepthTexture, createdCaptureMsaaDepthStencilView))
+		{
+			return false;
+		}
+
+		captureDepthStencilTexture = std::move(createdCaptureDepthTexture);
+		captureDepthStencilView = std::move(createdCaptureDepthStencilView);
+		captureMsaaColorTexture = std::move(createdCaptureMsaaColorTexture);
+		captureMsaaRenderTargetView = std::move(createdCaptureMsaaRenderTargetView);
+		captureMsaaDepthTexture = std::move(createdCaptureMsaaDepthTexture);
+		captureMsaaDepthStencilView = std::move(createdCaptureMsaaDepthStencilView);
+
+		captureDepthWidth = width;
+		captureDepthHeight = height;
+	}
+
+	return true;
+}
+
+bool FD3D11Renderer::BeginRenderTarget(const UTextureRenderTarget2D& target, FVector3 backgroundColor)
 {
 	if (!bInitialized || !bFrameActive || bRenderTargetActive)
 	{
@@ -748,15 +827,9 @@ bool FD3D11Renderer::BeginRenderTarget(const UTextureRenderTarget2D& target)
 	const int32 targetWidth = target.GetWidth();
 	const int32 targetHeight = target.GetHeight();
 
-	if (!captureDepthStencilTexture || !captureDepthStencilView || captureDepthWidth != targetWidth || captureDepthHeight != targetHeight)
+	if (!PrepareCaptureResources(targetWidth, targetHeight))
 	{
-		if (!graphics.CreateDepthStencilBuffer(static_cast<uint32>(targetWidth), static_cast<uint32>(targetHeight), captureDepthStencilTexture, captureDepthStencilView))
-		{
-			return false;
-		}
-
-		captureDepthWidth = targetWidth;
-		captureDepthHeight = targetHeight;
+		return false;
 	}
 
 	savedLocalToWorld = localToWorld;
@@ -766,16 +839,15 @@ bool FD3D11Renderer::BeginRenderTarget(const UTextureRenderTarget2D& target)
 
 	graphics.SetPixelShaderResourceView(nullptr);
 
-	graphics.SetRenderTarget(targetData->renderTargetView.Get(), captureDepthStencilView.Get());
-	graphics.SetViewport(targetWidth, targetHeight);
-	outputWidth = targetWidth;
-	outputHeight = targetHeight;
+	ID3D11RenderTargetView* captureOutput = captureMsaaRenderTargetView ? captureMsaaRenderTargetView.Get() : targetData->renderTargetView.Get();
+	ID3D11DepthStencilView* captureDepth = captureMsaaDepthStencilView ? captureMsaaDepthStencilView.Get() : captureDepthStencilView.Get();
+	BindOutput(captureOutput, captureDepth, targetWidth, targetHeight);
 	graphics.SetDepthStencilState(worldDepthStencilState.Get());
 	graphics.SetBlendState(nullptr);
 
-	const float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
-	graphics.ClearRenderTargetView(targetData->renderTargetView.Get(), clearColor);
-	graphics.ClearDepthStencilView(captureDepthStencilView.Get(), 1.0f);
+	const float clearColor[] = {backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0f};
+	graphics.ClearRenderTargetView(captureOutput, clearColor);
+	graphics.ClearDepthStencilView(captureDepth, 1.0f);
 
 	bRenderTargetActive = true;
 
@@ -797,10 +869,23 @@ bool FD3D11Renderer::EndRenderTarget()
 		return false;
 	}
 
-	graphics.SetRenderTarget(swapChain.GetBackBufferRenderTargetView(), depthStencilView.Get());
-	graphics.SetViewport(bufferWidth, bufferHeight);
-	outputWidth = bufferWidth;
-	outputHeight = bufferHeight;
+	if (captureMsaaColorTexture)
+	{
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> destinationTexture;
+		const HRESULT result = activeRenderTargetResource.As(&destinationTexture);
+		if (FAILED(result))
+		{
+			WriteLog("D3D11", ELogLevel::Error, "Querying the capture resolve destination texture failed (HRESULT 0x{:08X}).", static_cast<unsigned long>(result));
+			return false;
+		}
+
+		graphics.SetRenderTarget(nullptr);
+		if (!graphics.ResolveTexture2D(destinationTexture.Get(), captureMsaaColorTexture.Get())) { return false; }
+	}
+
+	const bool bUseWindowMultisample = !bWorldRenderingFinished && msaaRenderTargetView;
+	BindOutput(bUseWindowMultisample ? msaaRenderTargetView.Get() : swapChain.GetBackBufferRenderTargetView(),
+		bUseWindowMultisample ? msaaDepthStencilView.Get() : depthStencilView.Get(), bufferWidth, bufferHeight);
 	graphics.SetDepthStencilState(worldDepthStencilState.Get());
 	graphics.SetBlendState(nullptr);
 
@@ -816,9 +901,9 @@ bool FD3D11Renderer::EndRenderTarget()
 
 bool FD3D11Renderer::DrawScene(const FSceneRenderData& data)
 {
-	if (!bFrameActive)
+	if (!bFrameActive || (!bRenderTargetActive && bWorldRenderingFinished))
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing a scene requires an active frame.");
+		WriteLog("Renderer", ELogLevel::Error, "Drawing a window scene requires an active frame before EndWorldRendering.");
 		return false;
 	}
 
@@ -926,14 +1011,45 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view
 	return true;
 }
 
+bool FD3D11Renderer::EndWorldRendering()
+{
+	if (!bInitialized || !bFrameActive || bRenderTargetActive || bWorldRenderingFinished)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Ending world rendering requires an active window world phase with no active render target.");
+		return false;
+	}
+
+	if (msaaColorTexture)
+	{
+		Microsoft::WRL::ComPtr<ID3D11Resource> backBufferResource;
+		swapChain.GetBackBufferRenderTargetView()->GetResource(backBufferResource.GetAddressOf());
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> backBufferTexture;
+		const HRESULT result = backBufferResource.As(&backBufferTexture);
+		if (FAILED(result))
+		{
+			WriteLog("D3D11", ELogLevel::Error, "Querying the resolve destination texture failed (HRESULT 0x{:08X}).", static_cast<unsigned long>(result));
+			return false;
+		}
+
+		graphics.SetRenderTarget(nullptr);
+		if (!graphics.ResolveTexture2D(backBufferTexture.Get(), msaaColorTexture.Get())) { return false; }
+	}
+
+	BindOutput(swapChain.GetBackBufferRenderTargetView(), depthStencilView.Get(), bufferWidth, bufferHeight);
+	bWorldRenderingFinished = true;
+
+	return true;
+}
+
 bool FD3D11Renderer::EndFrame()
 {
-	if (!bFrameActive || bRenderTargetActive)
+	if (!bFrameActive || bRenderTargetActive || !bWorldRenderingFinished)
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Ending a frame requires an active frame and no active render target.");
+		WriteLog("Renderer", ELogLevel::Error, "Ending a frame requires a completed window world phase and no active render target.");
 		return false;
 	}
 	bFrameActive = false;
+	bWorldRenderingFinished = false;
 
 	return swapChain.Present();
 }
@@ -947,10 +1063,6 @@ bool FD3D11Renderer::IsActiveRenderTargetResource(ID3D11ShaderResourceView* view
 
 	return resource.Get() == activeRenderTargetResource.Get();
 }
-
-#pragma endregion
-
-#pragma region UI
 
 bool FD3D11Renderer::ValidateUIBatchResources(const FUIBatchData& batchData) const
 {
@@ -1018,6 +1130,11 @@ bool FD3D11Renderer::DrawUI(const FUIDrawElementList& elements)
 	if (!batcher.Build(elements, batchData)) { return false; }
 	// 빈 문자열/공백만 있는 유효한 요청은 GPU 상태 변경이나 버퍼 준비가 필요 없다.
 	if (batchData.renderBatches.empty()) { return true; }
+	if (!bRenderTargetActive && !bWorldRenderingFinished)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Window UI batches require EndWorldRendering first.");
+		return false;
+	}
 	if (!ValidateUIBatchResources(batchData)) { return false; }
 	if (!uiRenderer.UploadBatchData(graphics, batchData)) { return false; }
 	if (!uiRenderer.PrepareDraw(graphics, outputWidth, outputHeight)) { return false; }
@@ -1038,5 +1155,3 @@ bool FD3D11Renderer::DrawUI(const FUIDrawElementList& elements)
 	graphics.SetDepthStencilState(worldDepthStencilState.Get());
 	return bSubmitted;
 }
-
-#pragma endregion

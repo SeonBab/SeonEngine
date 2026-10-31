@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Templates/UniquePtr.h"
-#include "Object.h"
+#include "Object/Object.h"
 #include "Renderer/TextureAddressMode.h"
 class FTextureRenderData;
 

@@ -4,18 +4,12 @@
 #include "Maps/GameMapsSettings.h"
 #include "Renderer/ImGuiRendererBackend.h"
 #include "Renderer/Renderer.h"
-#include "World.h"
-
-#pragma region Lifecycle
+#include "World/World.h"
 
 UEditorEngine::~UEditorEngine()
 {
 	PreExit();
 }
-
-#pragma endregion
-
-#pragma region EditorUI
 
 bool UEditorEngine::InitializeEditorUI(HWND windowHandle, IRenderer& renderer)
 {
@@ -39,10 +33,6 @@ bool UEditorEngine::HandleWindowMessage(HWND windowHandle, UINT message, WPARAM 
 {
 	return editorUI.HandleWindowMessage(windowHandle, message, wParam, lParam, outResult);
 }
-
-#pragma endregion
-
-#pragma region Execution
 
 bool UEditorEngine::Initialize(IRenderer& renderer)
 {
@@ -75,7 +65,7 @@ bool UEditorEngine::Tick(float, const FInputState&, IRenderer& renderer, int wid
 	{
 		return false;
 	}
-	if (!renderer.BeginFrame(width, height))
+	if (!renderer.BeginFrame(width, height, {0.05f, 0.10f, 0.20f}))
 	{
 		return false;
 	}
@@ -84,6 +74,10 @@ bool UEditorEngine::Tick(float, const FInputState&, IRenderer& renderer, int wid
 		return false;
 	}
 	if (viewportWidth > 0 && viewportHeight > 0 && !viewportClient.Draw(world->GetScene(), renderer))
+	{
+		return false;
+	}
+	if (!renderer.EndWorldRendering())
 	{
 		return false;
 	}
@@ -107,5 +101,3 @@ void UEditorEngine::PreExit()
 	viewportClient.ReleaseRenderTarget();
 	UEngine::PreExit();
 }
-
-#pragma endregion

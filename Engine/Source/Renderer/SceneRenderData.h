@@ -8,7 +8,7 @@
 class FStaticMeshRenderData;
 class UTexture;
 
-/** 월드→뷰, 뷰→클립 행렬과 월드 시점 위치·직교 여부의 값 사본이다. 행벡터 기준으로 두 행렬을 순서대로 곱한다. */
+/** 월드→뷰, 뷰→클립 행렬과 월드 시점 위치·직교 여부·배경색의 값 사본이다. 행벡터 기준으로 두 행렬을 순서대로 곱한다. */
 struct FRenderView
 {
 	FRenderView()
@@ -22,6 +22,8 @@ struct FRenderView
 	FVector3 location{};
 	// true이면 직교 투영의 일정한 시선 방향을 사용한다. 실제 투영 행렬과 일치시킨다.
 	bool bOrthographic = false;
+	// 이 시점의 출력을 지울 RGB 사본이다. 알파는 1을 사용한다.
+	FVector3 backgroundColor{0.05f, 0.10f, 0.20f};
 };
 
 /** 메시 하나의 형상을 빌리고 변환, 정반사와 알파 마스킹 설정 사본과 색상 텍스처의 공유 참조를 보관한다. */

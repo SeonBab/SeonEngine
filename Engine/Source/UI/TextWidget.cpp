@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <utility>
 
-#pragma region Font
-
 bool UTextWidget::SetFont(TSharedPtr<UFont> newFont)
 {
 	if (!newFont)
@@ -22,10 +20,6 @@ bool UTextWidget::SetFont(TSharedPtr<UFont> newFont)
 	return true;
 }
 
-#pragma endregion
-
-#pragma region Text
-
 void UTextWidget::SetText(FString newText)
 {
 	text = std::move(newText);
@@ -35,10 +29,6 @@ const FString& UTextWidget::GetText() const
 {
 	return text;
 }
-
-#pragma endregion
-
-#pragma region Layout
 
 void UTextWidget::SetPosition(FVector2 newPosition)
 {
@@ -60,10 +50,6 @@ float UTextWidget::GetScale() const
 	return scale;
 }
 
-#pragma endregion
-
-#pragma region Appearance
-
 void UTextWidget::SetColor(std::array<float, 4> newColor)
 {
 	color = newColor;
@@ -73,10 +59,6 @@ std::array<float, 4> UTextWidget::GetColor() const
 {
 	return color;
 }
-
-#pragma endregion
-
-#pragma region Drawing
 
 bool UTextWidget::CollectDrawElements(FUIDrawElementList& elements)
 {
@@ -93,5 +75,3 @@ bool UTextWidget::CollectDrawElements(FUIDrawElementList& elements)
 
 	return true;
 }
-
-#pragma endregion

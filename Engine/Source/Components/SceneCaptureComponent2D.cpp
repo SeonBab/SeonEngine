@@ -1,14 +1,14 @@
 #include "SceneCaptureComponent2D.h"
 
-#include "Actor.h"
 #include "Components/TransformComponent.h"
 #include "Core/Math/Matrix4.h"
 #include "Core/Math/Transform.h"
+#include "Object/Actor.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/Scene.h"
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/TextureRenderTarget2D.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <utility>
 
@@ -87,6 +87,16 @@ void USceneCaptureComponent2D::SetFarClipDistance(float newFarClipDistance)
 	farClipDistance = newFarClipDistance;
 }
 
+FVector3 USceneCaptureComponent2D::GetBackgroundColor() const
+{
+	return backgroundColor;
+}
+
+void USceneCaptureComponent2D::SetBackgroundColor(FVector3 color)
+{
+	backgroundColor = color;
+}
+
 FCameraViewInfo USceneCaptureComponent2D::GetCaptureView() const
 {
 	const UTransformComponent* transform =
@@ -101,6 +111,7 @@ FCameraViewInfo USceneCaptureComponent2D::GetCaptureView() const
 	view.orthographicWidth = orthographicWidth;
 	view.nearClipDistance = nearClipDistance;
 	view.farClipDistance = farClipDistance;
+	view.backgroundColor = backgroundColor;
 
 	return view;
 }
@@ -124,8 +135,9 @@ bool USceneCaptureComponent2D::CaptureScene(IRenderer& renderer) const
 	renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
 	renderView.location = view.location;
 	renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
+	renderView.backgroundColor = view.backgroundColor;
 
-	if (!renderer.BeginRenderTarget(*textureTarget)) { return false; }
+	if (!renderer.BeginRenderTarget(*textureTarget, renderView.backgroundColor)) { return false; }
 	if (!GetOwner().GetWorld().GetScene().Draw(renderer, renderView)) { return false; }
 
 	return renderer.EndRenderTarget();

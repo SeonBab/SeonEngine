@@ -1,14 +1,12 @@
 #include "DirectionalLightComponent.h"
 
-#include "Actor.h"
+#include "Object/Actor.h"
 #include "Renderer/DirectionalLightSceneProxy.h"
 #include "Renderer/Scene.h"
 #include "TransformComponent.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <utility>
-
-#pragma region Lifecycle
 
 UDirectionalLightComponent::UDirectionalLightComponent(AActor& owner)
 	: URenderStateComponent(owner)
@@ -19,10 +17,6 @@ UDirectionalLightComponent::~UDirectionalLightComponent()
 {
 	DestroyRenderState();
 }
-
-#pragma endregion
-
-#pragma region Light
 
 FVector3 UDirectionalLightComponent::GetLightDirection() const
 {
@@ -50,10 +44,6 @@ void UDirectionalLightComponent::SetIntensity(float newIntensity)
 {
 	intensity = newIntensity;
 }
-
-#pragma endregion
-
-#pragma region RenderState
 
 bool UDirectionalLightComponent::CreateRenderState()
 {
@@ -93,5 +83,3 @@ bool UDirectionalLightComponent::IsRenderStateCreated() const
 {
 	return sceneProxy != nullptr;
 }
-
-#pragma endregion

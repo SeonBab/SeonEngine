@@ -6,6 +6,7 @@
 #include <span>
 
 struct FImage;
+struct FVector3;
 struct FSceneRenderData;
 struct FStaticMeshData;
 class FStaticMeshRenderData;
@@ -67,13 +68,13 @@ public:
 	/** 활성 프레임 밖에서 양수 크기의 RGBA8 UNORM 단일 밉·샘플 색상 타겟을 검정/알파1로 준비한다. 성공 시 데이터·크기를 함께 교체하고 실패 시 이전 출력을 유지한다. */
 	[[nodiscard]] virtual bool CreateRenderTarget2D(int32 width, int32 height, UTextureRenderTarget2D& outTexture) = 0;
 
-	/** 초기화 후 양수 실제 크기로 프레임을 시작하고 창 출력을 준비·지운다. 이미 활성인 프레임은 거부한다. */
-	[[nodiscard]] virtual bool BeginFrame(int32 width, int32 height) = 0;
+	/** 초기화 후 양수 실제 크기로 프레임을 시작하고 창 출력을 지정 RGB·알파1과 깊이1로 지운다. 색은 이번 호출에만 사용하며 이미 활성인 프레임은 거부한다. */
+	[[nodiscard]] virtual bool BeginFrame(int32 width, int32 height, FVector3 backgroundColor) = 0;
 
-	/** 활성 프레임에서 준비된 타겟 출력으로 전환하고 색상·깊이를 지운다. 중첩은 거부하며 실패 시 기존 출력·행렬을 유지한다. */
-	[[nodiscard]] virtual bool BeginRenderTarget(const UTextureRenderTarget2D& target) = 0;
+	/** 활성 프레임에서 타겟용 출력으로 전환하고 지정 RGB·알파1과 깊이1로 지운다. 색은 이번 호출에만 사용한다. 작업 출력을 쓰는 구현은 EndRenderTarget에서 결과를 갱신한다. 중첩은 거부하며 실패 시 기존 출력·행렬을 유지한다. */
+	[[nodiscard]] virtual bool BeginRenderTarget(const UTextureRenderTarget2D& target, FVector3 backgroundColor) = 0;
 
-	/** 활성 타겟을 끝내고 창 출력·기존 행렬을 복원한다. clear·Present는 하지 않는다. 실패하면 활성 상태를 유지한다. */
+	/** 활성 타겟의 결과 갱신을 요청하고 창 출력·기존 행렬을 복원한다. clear·Present는 하지 않는다. 실패하면 활성 상태를 유지하지만 일부 GPU 상태가 바뀔 수 있으므로 그리기를 중단하고 Shutdown해야 한다. */
 	[[nodiscard]] virtual bool EndRenderTarget() = 0;
 
 	/**
@@ -84,14 +85,23 @@ public:
 	[[nodiscard]] virtual bool DrawScene(const FSceneRenderData& data) = 0;
 
 	/**
+	 * 활성 타겟이 없는 프레임의 창 월드 단계를 한 번 끝내고 UI용 창 출력을 준비한다. 필요하면 MSAA 결과를 합친다.
+	 * 성공 뒤 창 DrawScene은 금지하고 창 UI/EndFrame을 허용한다. 별도 렌더 타겟 제출은 계속 허용한다.
+	 * 미시작/타겟 활성/중복 호출은 상태를 유지하고 거부한다. 준비나 Resolve 실패 뒤에는 Shutdown한다.
+	 * true는 단계 전환 요청 성공이며 GPU 완료나 화면 표시를 뜻하지 않는다.
+	 */
+	[[nodiscard]] virtual bool EndWorldRendering() = 0;
+
+	/**
 	 * 활성 프레임에 이미지 목록을 자원의 Straight/Premultiplied 표현에 맞춰 제출한다. 빈 목록은 상태 변경 없이 성공한다.
 	 * 입력은 호출 동안만 빌리며 자원과 메타데이터를 교체/파괴하지 않는다. 지연 구현은 값과 GPU 수명을 반환 전에 확보한다.
 	 * 목록 전체의 준비/자원 검증 실패는 이번 호출을 그리지 않는다. 제출 중 실패는 이후 배치를 중단하며 이미 제출한 결과는 롤백하지 않는다.
+	 * 실제 창 UI 배치는 EndWorldRendering 성공 뒤에 제출한다. 별도 렌더 타겟의 UI는 해당 타겟 활성 중 제출할 수 있다.
 	 * true는 제출 요청 성공이며 GPU 완료나 화면 표시를 뜻하지 않는다. 출력 선택·clear·Present는 수행하지 않는다.
 	 */
 	[[nodiscard]] virtual bool DrawUI(const FUIDrawElementList& elements) = 0;
 
-	/** 프레임을 닫고 표시를 요청한다. 타겟 활성 중에는 상태를 유지하고 거부한다. 표시 요청 실패 시에도 프레임은 이미 종료됐을 수 있다. */
+	/** EndWorldRendering 성공 후 프레임을 닫고 표시를 요청한다. 타겟 활성/월드 미종료는 상태를 유지하고 거부한다. 표시 요청 실패 시에도 프레임은 이미 종료됐을 수 있다. */
 	[[nodiscard]] virtual bool EndFrame() = 0;
 
 	/** 초기화된 구현에 맞는 미초기화 ImGui backend를 만든다. 미지원/미초기화는 nullptr다. 반환 객체는 이 Renderer보다 먼저 정리해야 한다. */

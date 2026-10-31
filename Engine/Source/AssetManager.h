@@ -2,7 +2,7 @@
 
 #include "Core/Containers/SeonString.h"
 #include "Core/Templates/SharedPtr.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 #include <unordered_map>
 

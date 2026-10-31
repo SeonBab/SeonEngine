@@ -1,10 +1,10 @@
 #pragma once
 
+#include "ActorComponent.generated.h"
 #include "Core/Containers/SeonString.h"
 #include "Core/CoreTypes.h"
-#include "Object.h"
-#include "PlayState.h"
-#include "ActorComponent.generated.h"
+#include "Object/Object.h"
+#include "Object/PlayState.h"
 
 class AActor;
 

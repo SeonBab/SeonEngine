@@ -1,16 +1,14 @@
 #include "World.h"
 
-#include "Actor.h"
 #include "Components/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/RenderStateComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/TransformComponent.h"
 #include "Input/PlayerInput.h"
+#include "Object/Actor.h"
 
 #include <algorithm>
-
-#pragma region Lifecycle
 
 UWorld::UWorld() = default;
 
@@ -23,10 +21,6 @@ UWorld::~UWorld()
 		(void)DestroyActorImmediately(actors.back().get(), EEndPlayReason::Quit);
 	}
 }
-
-#pragma endregion
-
-#pragma region Rendering
 
 FScene& UWorld::GetScene()
 {
@@ -86,10 +80,6 @@ bool UWorld::CaptureScenes(IRenderer& renderer)
 
 	return true;
 }
-
-#pragma endregion
-
-#pragma region Actors
 
 void UWorld::GetActors(TArray<AActor*>& outActors) const
 {
@@ -183,10 +173,6 @@ bool UWorld::SetActorParent(AActor* actor, AActor* newParent, EActorTransformRul
 	return true;
 }
 
-#pragma endregion
-
-#pragma region Camera
-
 bool UWorld::SetActiveCamera(AActor* actor)
 {
 	if (!actor)
@@ -216,10 +202,6 @@ UCameraComponent* UWorld::GetActiveCamera() const
 	return activeCameraActor->GetComponent<UCameraComponent>();
 }
 
-#pragma endregion
-
-#pragma region Destruction
-
 bool UWorld::DestroyActor(AActor* actor)
 {
 	if (!actor) { return false; }
@@ -236,12 +218,17 @@ bool UWorld::DestroyActor(AActor* actor)
 	if (!bIsTicking && !bIsEndingPlay) { return DestroyActorImmediately(actor); }
 	if (actor->IsActorBeingDestroyed()) { return true; }
 
-	if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) == pendingDestroyActors.end())
+	if (!IsActorPendingDestroy(actor))
 	{
 		pendingDestroyActors.push_back(actor);
 	}
 
 	return true;
+}
+
+bool UWorld::IsActorPendingDestroy(const AActor* actor) const
+{
+	return std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end();
 }
 
 bool UWorld::DestroyActorImmediately(AActor* actor, EEndPlayReason reason)
@@ -328,10 +315,6 @@ void UWorld::PurgeDestroyedActors()
 	}
 }
 
-#pragma endregion
-
-#pragma region PlayLifecycle
-
 void UWorld::BeginPlay()
 {
 	if (bIsTicking || bBegunPlay || bIsTearingDown) { return; }
@@ -342,7 +325,7 @@ void UWorld::BeginPlay()
 	{
 		AActor* actor = actors[index].get();
 		if (actor->IsActorBeingDestroyed()) { continue; }
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		if (IsActorPendingDestroy(actor))
 		{
 			continue;
 		}
@@ -371,14 +354,14 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 	{
 		AActor* actor = actors[index].get();
 		if (actor->IsActorBeingDestroyed()) { continue; }
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		if (IsActorPendingDestroy(actor))
 		{
 			continue;
 		}
 
 		actor->DispatchBeginPlay();
 		if (!actor->HasActorBegunPlay()) { continue; }
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		if (IsActorPendingDestroy(actor))
 		{
 			continue;
 		}
@@ -388,18 +371,18 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 		for (UInputComponent* component : inputComponents)
 		{
 			component->ProcessInput(input, deltaSeconds);
-			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			if (IsActorPendingDestroy(actor))
 			{
 				break;
 			}
 
 			playerInput.DispatchActionEvents(*component, deltaSeconds);
-			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			if (IsActorPendingDestroy(actor))
 			{
 				break;
 			}
 		}
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		if (IsActorPendingDestroy(actor))
 		{
 			continue;
 		}
@@ -408,7 +391,7 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 		{
 			actor->Tick(deltaSeconds);
 		}
-		if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+		if (IsActorPendingDestroy(actor))
 		{
 			continue;
 		}
@@ -422,7 +405,7 @@ void UWorld::Tick(float deltaSeconds, const FInputState& input, UPlayerInput& pl
 			}
 
 			component->TickComponent(deltaSeconds);
-			if (std::find(pendingDestroyActors.begin(), pendingDestroyActors.end(), actor) != pendingDestroyActors.end())
+			if (IsActorPendingDestroy(actor))
 			{
 				break;
 			}
@@ -448,5 +431,3 @@ void UWorld::EndPlay(EEndPlayReason reason)
 
 	PurgeDestroyedActors();
 }
-
-#pragma endregion

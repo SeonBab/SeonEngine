@@ -48,6 +48,12 @@ private:
 #pragma region RenderTargets
 
 public:
+	/**
+	 * 포맷과 샘플 수 조합의 지원 여부만 조회한다. 장치 미준비, 범위 밖 샘플 수, API 실패 또는 미지원이면 false다.
+	 * 자원을 생성하거나 GPU 바인딩을 바꾸지 않는다. 렌더 타겟/Resolve 등 용도별 포맷 지원은 별도로 확인해야 한다.
+	 */
+	[[nodiscard]] bool IsMultisampleSupported(DXGI_FORMAT format, uint32 sampleCount) const;
+
 	/** 준비된 장치의 즉시 컨텍스트로 같은 장치의 유효한 RTV를 지운다. RGBA float 4개가 필요하다. */
 	void ClearRenderTargetView(ID3D11RenderTargetView* renderTargetView, const float color[4]);
 
@@ -173,11 +179,39 @@ public:
 	 */
 	[[nodiscard]] bool CreateRenderTargetTexture2D(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outView);
 
+	/**
+	 * Resolve로 단일 샘플 결과에 합칠 RGBA8 UNORM MSAA 색상 텍스처와 RTV를 만든다.
+	 * 초기화한 장치의 소유 스레드에서 호출하고 각 크기 1~16384, 샘플 수 2~D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT를 요구한다.
+	 * 단일 밉, Quality 0, RENDER_TARGET 전용이며 반환 자원은 호출자가 소유한다.
+	 * 검사나 API 실패는 로그/false로 기존 출력을 유지하고 두 자원 생성에 모두 성공해야 출력을 교체한다.
+	 * 초기 내용은 미정이므로 사용 전 clear나 그리기가 필요하다. SRV 생성, 출력 바인딩, Resolve는 수행하지 않는다.
+	 */
+	[[nodiscard]] bool CreateMultisampleRenderTargetTexture2D(uint32 width, uint32 height, uint32 sampleCount, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outView);
+
 	/** D32_FLOAT 깊이 텍스처와 DSV를 만든다. 장치 미준비, 잘못된 크기, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateDepthStencilBuffer(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView);
 
+	/**
+	 * MSAA 색상 출력과 함께 사용할 D32_FLOAT 깊이 텍스처와 DSV를 만든다.
+	 * 초기화한 장치의 소유 스레드에서 호출하고 각 크기 1~16384, 샘플 수 2~D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT를 요구한다.
+	 * 단일 밉, Quality 0, DEPTH_STENCIL 전용이며 반환 자원은 호출자가 소유한다.
+	 * 검사나 API 실패는 로그/false로 기존 출력을 유지하고 두 자원 생성에 모두 성공해야 출력을 교체한다.
+	 * 초기 깊이는 미정이므로 사용 전 clear가 필요하다. clear나 출력 바인딩은 수행하지 않는다.
+	 * 함께 연결할 색상 출력의 크기, 샘플 수와 Quality를 맞추는 책임은 호출자에게 있다.
+	 */
+	[[nodiscard]] bool CreateMultisampleDepthStencilBuffer(uint32 width, uint32 height, uint32 sampleCount, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView);
+
 	/** 같은 장치 텍스처의 기본 SRV를 만든다. 장치 미준비, null, 소속 불일치, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outView);
+
+	/**
+	 * 현재 장치의 RGBA8 UNORM 다중 샘플 source를 단일 샘플 destination의 subresource 0에 합친다.
+	 * 초기화한 장치/컨텍스트의 소유 스레드에서 호출한다. 두 텍스처는 같은 크기, 단일 밉/장, DEFAULT를 요구한다.
+	 * 포인터는 호출 동안만 빌리고 저장하지 않는다. 호출자는 원본 내용 준비와 충돌 없는 자원 사용/바인딩 전환을 맡는다.
+	 * 검사 실패는 로그/false이며 대상 내용과 바인딩을 유지한다. 자원 생성이나 자동 바인딩 해제/복원은 하지 않는다.
+	 * true는 Resolve 명령 호출을 뜻하며 GPU 완료나 native void API의 모든 실행 오류 확인을 보장하지 않는다.
+	 */
+	[[nodiscard]] bool ResolveTexture2D(ID3D11Texture2D* destination, ID3D11Texture2D* source);
 
 	/**
 	 * 같은 장치의 SRV 범위에 하위 밉 생성 명령을 요청한다.

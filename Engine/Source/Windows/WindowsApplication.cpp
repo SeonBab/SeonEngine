@@ -41,16 +41,10 @@ namespace
 
 }
 
-#pragma region Lifecycle
-
 FWindowsApplication::FWindowsApplication(FInputState& input)
 	: inputState(input)
 {
 }
-
-#pragma endregion
-
-#pragma region Messages
 
 void FWindowsApplication::SetMessageHandler(FWindowsMessageHandler handler)
 {
@@ -149,10 +143,6 @@ LRESULT CALLBACK FWindowsApplication::WindowProc(HWND windowHandle, UINT message
 			return DefWindowProcW(windowHandle, message, wParam, lParam);
 	}
 }
-
-#pragma endregion
-
-#pragma region Window
 
 bool FWindowsApplication::Initialize(const FWindowDescription& description)
 {
@@ -269,5 +259,3 @@ bool FWindowsApplication::GetClientSize(int& outWidth, int& outHeight) const
 
 	return true;
 }
-
-#pragma endregion

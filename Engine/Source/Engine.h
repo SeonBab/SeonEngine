@@ -2,7 +2,7 @@
 
 #include "Core/Containers/SeonString.h"
 #include "Core/Templates/UniquePtr.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 class FInputState;
 class IRenderer;

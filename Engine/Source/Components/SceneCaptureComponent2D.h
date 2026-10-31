@@ -2,6 +2,7 @@
 
 #include "ActorComponent.h"
 #include "Camera/CameraViewInfo.h"
+#include "Core/Math/Vector3.h"
 #include "Core/Templates/SharedPtr.h"
 
 class IRenderer;
@@ -61,7 +62,13 @@ public:
 	/** 먼 클리핑 거리를 월드 단위로 저장한다. 값 검사는 하지 않는다. */
 	void SetFarClipDistance(float newFarClipDistance);
 
-	/** 소속 액터의 월드 위치·회전과 저장된 투영 설정을 사본으로 반환한다. */
+	/** 이 캡처의 배경 RGB를 사본으로 반환한다. */
+	FVector3 GetBackgroundColor() const;
+
+	/** 배경 RGB를 저장한다. 캡처를 즉시 수행하지는 않는다. */
+	void SetBackgroundColor(FVector3 color);
+
+	/** 소속 액터의 월드 위치·회전과 저장된 투영 설정 및 배경색을 사본으로 반환한다. */
 	[[nodiscard]] FCameraViewInfo GetCaptureView() const;
 
 	/**
@@ -82,6 +89,8 @@ private:
 	float orthographicWidth = 4.0f;
 	float nearClipDistance = 0.1f;
 	float farClipDistance = 1000.0f;
+	// 이 캡처의 배경 RGB 원본이다. 알파는 1을 사용한다.
+	FVector3 backgroundColor{0.0f, 0.0f, 0.0f};
 
 	// 캡처 결과를 받을 타겟의 공유 참조다. nullptr는 미지정 상태다.
 	TSharedPtr<UTextureRenderTarget2D> textureTarget;

@@ -1,9 +1,9 @@
-#include "Actor.h"
 #include "Maps/ActorTypeRegistry.h"
 #include "Maps/GameMapsSettings.h"
 #include "Maps/GameTypeRegistration.h"
+#include "Object/Actor.h"
 #include "SampleActor.h"
-#include "World.h"
+#include "World/World.h"
 
 namespace
 {

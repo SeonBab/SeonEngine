@@ -1,6 +1,5 @@
 #include "SampleGameInstance.h"
 
-#include "Actor.h"
 #include "AssetManager.h"
 #include "Components/ActorComponent.h"
 #include "Components/CameraComponent.h"
@@ -10,13 +9,14 @@
 #include "Engine.h"
 #include "GameClient.h"
 #include "GameInstanceFactory.h"
+#include "Object/Actor.h"
 #include "Renderer/Font.h"
 #include "Renderer/Texture2D.h"
 #include "SampleFPSWidget.h"
 #include "UI/ImageWidget.h"
 #include "UI/UserWidget.h"
 #include "UI/Widget.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <utility>
 

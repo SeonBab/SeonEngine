@@ -1,8 +1,8 @@
 #include "ActorTypeRegistry.h"
 
-#include "Actor.h"
 #include "Core/Logging/Log.h"
-#include "World.h"
+#include "Object/Actor.h"
+#include "World/World.h"
 
 namespace
 {

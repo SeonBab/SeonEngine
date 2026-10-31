@@ -37,6 +37,14 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 class FEditorViewportClient
 {
+#pragma region Lifecycle
+
+public:
+	/** 원근/직교의 초기 위치를 (0,0,-6)으로 준비한다. 회전과 투영 기본값은 유지하며 타깃 해제·Engine 재초기화에서는 시점을 재설정하지 않는다. */
+	FEditorViewportClient();
+
+#pragma endregion
+
 #pragma region View
 
 public:
@@ -46,7 +54,7 @@ public:
 	/** 현재 투영 방식의 편집 시점을 읽기 전용으로 반환한다. 참조의 수명과 모드 변경 시 동작은 비const 오버로드와 같다. */
 	const FViewportCameraTransform& GetViewTransform() const;
 
-	/** 선택한 편집 시점과 투영 설정의 사본을 반환한다. 반환값은 이후 편집 상태 변경을 추적하지 않으며 회전 각도는 그대로 복사한다. */
+	/** 선택한 편집 시점과 투영 설정 및 배경색의 사본을 반환한다. 반환값은 이후 편집 상태 변경을 추적하지 않으며 회전 각도는 그대로 복사한다. */
 	FCameraViewInfo GetCameraView() const;
 
 private:
@@ -90,6 +98,12 @@ public:
 	/** 먼 클리핑 거리를 월드 단위로 저장한다. 유효한 투영에는 유한한 0 < near < far가 필요하며 값 검사나 보정은 하지 않는다. */
 	void SetFarClipDistance(float newFarClipDistance);
 
+	/** 이 편집 뷰포트의 배경 RGB를 사본으로 반환한다. */
+	FVector3 GetBackgroundColor() const;
+
+	/** 배경 RGB를 저장한다. 화면 다시 그리기는 요청하지 않는다. */
+	void SetBackgroundColor(FVector3 color);
+
 private:
 	ECameraProjectionMode projectionMode = ECameraProjectionMode::Perspective;
 
@@ -101,6 +115,9 @@ private:
 	float nearClipDistance = 0.1f;
 
 	float farClipDistance = 1000.0f;
+
+	// 이 편집 뷰포트의 배경 RGB 원본이다. 알파는 1을 사용한다.
+	FVector3 backgroundColor{0.0f, 0.0f, 0.0f};
 
 #pragma endregion
 

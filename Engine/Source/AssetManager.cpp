@@ -17,6 +17,13 @@
 
 namespace
 {
+	bool IsDDSExtension(const std::filesystem::path& path)
+	{
+		const std::filesystem::path::string_type extension = path.extension().native();
+
+		return extension.size() == 4 && extension[0] == L'.' && (extension[1] == L'd' || extension[1] == L'D') && (extension[2] == L'd' || extension[2] == L'D') && (extension[3] == L's' || extension[3] == L'S');
+	}
+
 	bool ValidateSingleMeshModel(const FModelData& model)
 	{
 		if (model.meshes.size() != 1 || model.materials.size() != 1 || model.meshes.front().materialIndex != 0)
@@ -76,16 +83,10 @@ namespace
 	}
 }
 
-#pragma region Lifecycle
-
 UAssetManager::UAssetManager(IRenderer& inRenderer)
 	: renderer(inRenderer)
 {
 }
-
-#pragma endregion
-
-#pragma region Textures
 
 TSharedPtr<UTexture2D> UAssetManager::LoadTexture2D(FStringView contentPath)
 {
@@ -97,8 +98,7 @@ TSharedPtr<UTexture2D> UAssetManager::LoadTexture2D(FStringView contentPath)
 	if (!path) { return nullptr; }
 
 	TSharedPtr<UTexture2D> texture = MakeShared<UTexture2D>();
-	const std::filesystem::path::string_type extension = path->extension().native();
-	if (extension.size() == 4 && extension[0] == L'.' && (extension[1] == L'd' || extension[1] == L'D') && (extension[2] == L'd' || extension[2] == L'D') && (extension[3] == L's' || extension[3] == L'S'))
+	if (IsDDSExtension(*path))
 	{
 		TArray<uint8> bytes;
 		if (!FFileHelper::ReadBinaryFile(*path, bytes) || !renderer.CreateTexture2DFromDDS(bytes, *texture)) { return nullptr; }
@@ -118,10 +118,6 @@ TSharedPtr<UTexture2D> UAssetManager::LoadTexture2D(FStringView contentPath)
 
 	return texture;
 }
-
-#pragma endregion
-
-#pragma region StaticMeshes
 
 TSharedPtr<UStaticMesh> UAssetManager::LoadStaticMesh(FStringView contentPath)
 {
@@ -167,10 +163,6 @@ TSharedPtr<UStaticMesh> UAssetManager::LoadStaticMesh(FStringView contentPath)
 	return mesh;
 }
 
-#pragma endregion
-
-#pragma region Fonts
-
 TSharedPtr<UFont> UAssetManager::LoadFont(FStringView contentPath)
 {
 	const FString key(contentPath);
@@ -194,5 +186,3 @@ TSharedPtr<UFont> UAssetManager::LoadFont(FStringView contentPath)
 
 	return font;
 }
-
-#pragma endregion

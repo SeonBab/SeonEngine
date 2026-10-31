@@ -67,6 +67,9 @@
     <Filter Include="Engine\Source\Maps">
       <UniqueIdentifier>{D59CBC47-1A26-3B57-87F6-AB276BC4932B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Object">
+      <UniqueIdentifier>{74CBD78B-70BD-39EE-A83D-277D59BDA2DD}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Reflection">
       <UniqueIdentifier>{B136DBDF-C90A-3FEB-B04A-BE94004CBE46}</UniqueIdentifier>
     </Filter>
@@ -78,6 +81,9 @@
     </Filter>
     <Filter Include="Engine\Source\Windows">
       <UniqueIdentifier>{1D509D59-91BD-3DCC-826B-CD1C751DCB39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\World">
+      <UniqueIdentifier>{8E50D0C0-DF6D-357F-9CAF-47DB1B5E5A4F}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\ThirdParty">
       <UniqueIdentifier>{F520CCED-5486-31D7-960E-5F388253DB7A}</UniqueIdentifier>
@@ -105,9 +111,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Source\Actor.h">
-      <Filter>Engine\Source</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Source\AssetManager.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
@@ -294,11 +297,14 @@
     <ClInclude Include="Engine\Source\Maps\MapLoader.h">
       <Filter>Engine\Source\Maps</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Object.h">
-      <Filter>Engine\Source</Filter>
+    <ClInclude Include="Engine\Source\Object\Actor.h">
+      <Filter>Engine\Source\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\PlayState.h">
-      <Filter>Engine\Source</Filter>
+    <ClInclude Include="Engine\Source\Object\Object.h">
+      <Filter>Engine\Source\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Object\PlayState.h">
+      <Filter>Engine\Source\Object</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Reflection\PropertyInfo.h">
       <Filter>Engine\Source\Reflection</Filter>
@@ -429,8 +435,8 @@
     <ClInclude Include="Engine\Source\Windows\WindowsInput.h">
       <Filter>Engine\Source\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\World.h">
-      <Filter>Engine\Source</Filter>
+    <ClInclude Include="Engine\Source\World\World.h">
+      <Filter>Engine\Source\World</Filter>
     </ClInclude>
     <ClInclude Include="Game\Source\SampleActor.h">
       <Filter>Game\Source</Filter>
@@ -443,9 +449,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Source\Actor.cpp">
-      <Filter>Engine\Source</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Source\AssetManager.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
@@ -575,8 +578,11 @@
     <ClCompile Include="Engine\Source\Maps\MapLoader.cpp">
       <Filter>Engine\Source\Maps</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Object.cpp">
-      <Filter>Engine\Source</Filter>
+    <ClCompile Include="Engine\Source\Object\Actor.cpp">
+      <Filter>Engine\Source\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Object\Object.cpp">
+      <Filter>Engine\Source\Object</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Reflection\TypeInfo.cpp">
       <Filter>Engine\Source\Reflection</Filter>
@@ -647,8 +653,8 @@
     <ClCompile Include="Engine\Source\Windows\WindowsInput.cpp">
       <Filter>Engine\Source\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\World.cpp">
-      <Filter>Engine\Source</Filter>
+    <ClCompile Include="Engine\Source\World\World.cpp">
+      <Filter>Engine\Source\World</Filter>
     </ClCompile>
     <ClCompile Include="Game\Source\RendererFactory.cpp">
       <Filter>Game\Source</Filter>

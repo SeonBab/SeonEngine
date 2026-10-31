@@ -12,7 +12,7 @@ enum class ECameraProjectionMode : uint8
 	Orthographic
 };
 
-/** 월드 공간의 위치, 회전과 투영 설정을 보관한다 */
+/** 월드 공간의 위치, 회전과 투영 설정 및 배경색의 사본을 보관한다 */
 struct FCameraViewInfo
 {
 	FVector3 location{}; // 카메라의 월드 위치다.
@@ -22,6 +22,8 @@ struct FCameraViewInfo
 	float orthographicWidth = 4.0f;
 	float nearClipDistance = 0.1f;
 	float farClipDistance = 1000.0f;
+	// 이 시점을 그리기 전에 출력을 지울 RGB다. 알파는 1을 사용한다.
+	FVector3 backgroundColor{0.05f, 0.10f, 0.20f};
 
 	/** 월드 공간의 위치, 회전으로 뷰 행렬을 계산한다. 스케일은 사용하지 않는다 */
 	[[nodiscard]] FMatrix4 CalculateViewMatrix() const;

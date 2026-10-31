@@ -1,13 +1,11 @@
 #include "SkyLightComponent.h"
 
-#include "Actor.h"
+#include "Object/Actor.h"
 #include "Renderer/Scene.h"
 #include "Renderer/SkyLightSceneProxy.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <utility>
-
-#pragma region Lifecycle
 
 USkyLightComponent::USkyLightComponent(AActor& owner)
 	: URenderStateComponent(owner)
@@ -18,10 +16,6 @@ USkyLightComponent::~USkyLightComponent()
 {
 	DestroyRenderState();
 }
-
-#pragma endregion
-
-#pragma region Light
 
 FVector3 USkyLightComponent::GetLightColor() const
 {
@@ -42,10 +36,6 @@ void USkyLightComponent::SetIntensity(float newIntensity)
 {
 	intensity = newIntensity;
 }
-
-#pragma endregion
-
-#pragma region RenderState
 
 bool USkyLightComponent::CreateRenderState()
 {
@@ -85,5 +75,3 @@ bool USkyLightComponent::IsRenderStateCreated() const
 {
 	return sceneProxy != nullptr;
 }
-
-#pragma endregion

@@ -2,15 +2,9 @@
 
 #include "Reflection/TypeInfo.h"
 
-#pragma region Lifecycle
-
 void UObject::PostLoad()
 {
 }
-
-#pragma endregion
-
-#pragma region Reflection
 
 const FTypeInfo& UObject::StaticTypeInfo()
 {
@@ -23,5 +17,3 @@ const FTypeInfo& UObject::GetTypeInfo() const
 {
 	return StaticTypeInfo();
 }
-
-#pragma endregion

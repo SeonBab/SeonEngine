@@ -1,17 +1,11 @@
 #include "ActorComponent.h"
 
-#pragma region Lifecycle
-
 UActorComponent::UActorComponent(AActor& owner)
 	: owner(owner)
 {
 }
 
 UActorComponent::~UActorComponent() = default;
-
-#pragma endregion
-
-#pragma region ActorIntegration
 
 FStringView UActorComponent::GetName() const
 {
@@ -22,10 +16,6 @@ bool UActorComponent::AllowsMultipleComponents() const
 {
 	return false;
 }
-
-#pragma endregion
-
-#pragma region PlayLifecycle
 
 bool UActorComponent::HasBegunPlay() const
 {
@@ -55,5 +45,3 @@ bool UActorComponent::IsComponentTickEnabled() const
 void UActorComponent::TickComponent([[maybe_unused]] float deltaSeconds)
 {
 }
-
-#pragma endregion

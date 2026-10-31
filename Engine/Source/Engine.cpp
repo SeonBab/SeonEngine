@@ -7,12 +7,10 @@
 #include "Maps/ComponentTypeRegistry.h"
 #include "Maps/GameTypeRegistration.h"
 #include "Maps/MapLoader.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <cassert>
 #include <utility>
-
-#pragma region Lifecycle
 
 UEngine::UEngine() = default;
 
@@ -27,10 +25,6 @@ UEngine::~UEngine()
 	assetManager.reset();
 }
 
-#pragma endregion
-
-#pragma region Services
-
 UEngine* UEngine::activeEngine = nullptr;
 
 UEngine* UEngine::Get()
@@ -44,10 +38,6 @@ UAssetManager& UEngine::GetAssetManager() noexcept
 
 	return *assetManager;
 }
-
-#pragma endregion
-
-#pragma region Execution
 
 bool UEngine::Initialize(IRenderer& renderer)
 {
@@ -95,5 +85,3 @@ void UEngine::PreExit()
 	}
 	assetManager.reset();
 }
-
-#pragma endregion

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Actor.h"
+#include "Object/Actor.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 게임 Tick에서 기본 Transform을 회전시키는 최소 샘플 액터다.

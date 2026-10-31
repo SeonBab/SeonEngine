@@ -2,7 +2,7 @@
 
 #include "Core/Containers/Array.h"
 #include "Input/InputActionInstance.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 class FInputState;
 class UInputComponent;

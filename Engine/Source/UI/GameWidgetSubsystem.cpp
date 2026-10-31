@@ -5,8 +5,6 @@
 
 #include <utility>
 
-#pragma region Widgets
-
 bool FGameWidgetSubsystem::AddWidget(TUniquePtr<UUserWidget>& widget)
 {
 	if (!widget) { return false; }
@@ -33,10 +31,6 @@ bool FGameWidgetSubsystem::RemoveWidget(UUserWidget* widget)
 	return false;
 }
 
-#pragma endregion
-
-#pragma region Updating
-
 void FGameWidgetSubsystem::Tick(float deltaSeconds)
 {
 	for (const TUniquePtr<UUserWidget>& widget : widgets)
@@ -44,10 +38,6 @@ void FGameWidgetSubsystem::Tick(float deltaSeconds)
 		widget->Tick(deltaSeconds);
 	}
 }
-
-#pragma endregion
-
-#pragma region Drawing
 
 bool FGameWidgetSubsystem::Draw(IRenderer& renderer)
 {
@@ -60,5 +50,3 @@ bool FGameWidgetSubsystem::Draw(IRenderer& renderer)
 
 	return renderer.DrawUI(elements);
 }
-
-#pragma endregion

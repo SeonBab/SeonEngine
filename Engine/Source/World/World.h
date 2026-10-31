@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Actor.h"
 #include "Core/Containers/Array.h"
 #include "Core/Templates/UniquePtr.h"
-#include "Object.h"
+#include "Object/Actor.h"
+#include "Object/Object.h"
 #include "Renderer/Scene.h"
 
 #include <concepts>

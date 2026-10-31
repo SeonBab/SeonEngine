@@ -4,15 +4,9 @@
 
 #include <utility>
 
-#pragma region Lifecycle
-
 UStaticMesh::UStaticMesh() = default;
 
 UStaticMesh::~UStaticMesh() = default;
-
-#pragma endregion
-
-#pragma region RenderData
 
 const FStaticMeshRenderData* UStaticMesh::GetRenderData() const
 {
@@ -23,10 +17,6 @@ void UStaticMesh::SetRenderData(TUniquePtr<FStaticMeshRenderData>&& newRenderDat
 {
 	renderData = std::move(newRenderData);
 }
-
-#pragma endregion
-
-#pragma region Materials
 
 void UStaticMesh::SetStaticMaterials(TArray<TSharedPtr<UMaterialInterface>> materials)
 {
@@ -42,5 +32,3 @@ TSharedPtr<UMaterialInterface> UStaticMesh::GetMaterial(int32 materialIndex) con
 
 	return staticMaterials[materialIndex];
 }
-
-#pragma endregion

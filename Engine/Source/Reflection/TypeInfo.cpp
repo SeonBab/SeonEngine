@@ -2,18 +2,12 @@
 
 #include "Reflection/PropertyInfo.h"
 
-#pragma region Lifecycle
-
 FTypeInfo::FTypeInfo(FStringView name, const FTypeInfo* baseType, std::span<const FPropertyInfo> properties)
 	: name(name),
 	  baseType(baseType),
 	  properties(properties)
 {
 }
-
-#pragma endregion
-
-#pragma region Information
 
 const FPropertyInfo* FTypeInfo::FindProperty(FStringView propertyName) const
 {
@@ -27,5 +21,3 @@ const FPropertyInfo* FTypeInfo::FindProperty(FStringView propertyName) const
 
 	return nullptr;
 }
-
-#pragma endregion

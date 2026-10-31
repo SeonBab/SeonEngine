@@ -21,15 +21,10 @@ namespace
 }
 
 // unique_ptr 대상의 완전한 정의가 있는 cpp에서 생성/파괴한다.
-#pragma region Lifecycle
 
 FScene::FScene() = default;
 
 FScene::~FScene() = default;
-
-#pragma endregion
-
-#pragma region StaticMeshes
 
 bool FScene::AddStaticMesh(TUniquePtr<FStaticMeshSceneProxy>& proxy)
 {
@@ -88,10 +83,6 @@ bool FScene::RemoveStaticMesh(const FStaticMeshSceneProxy* proxy)
 	return true;
 }
 
-#pragma endregion
-
-#pragma region DirectionalLight
-
 bool FScene::AddDirectionalLight(const FDirectionalLightSceneProxy& proxy)
 {
 	if (directionalLight) { return false; }
@@ -114,10 +105,6 @@ const FDirectionalLightSceneProxy* FScene::GetDirectionalLight() const
 {
 	return directionalLight;
 }
-
-#pragma endregion
-
-#pragma region SkyLight
 
 bool FScene::SetSkyLight(const FSkyLightSceneProxy& proxy)
 {
@@ -149,10 +136,6 @@ const FSkyLightSceneProxy* FScene::GetSkyLight() const
 
 	return skyLightStack.back();
 }
-
-#pragma endregion
-
-#pragma region Rendering
 
 bool FScene::Draw(IRenderer& renderer, const FRenderView& view)
 {
@@ -194,5 +177,3 @@ bool FScene::Draw(IRenderer& renderer, const FRenderView& view)
 
 	return renderer.DrawScene(data);
 }
-
-#pragma endregion

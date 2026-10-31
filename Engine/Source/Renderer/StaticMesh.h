@@ -4,7 +4,7 @@
 #include "Core/CoreTypes.h"
 #include "Core/Templates/SharedPtr.h"
 #include "Core/Templates/UniquePtr.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 class FStaticMeshRenderData;
 class UMaterialInterface;

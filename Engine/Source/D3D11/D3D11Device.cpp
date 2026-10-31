@@ -8,8 +8,6 @@
 #include <type_traits>
 #include <utility>
 
-#pragma region Lifecycle
-
 bool FD3D11Device::Initialize()
 {
 	if (device || context)
@@ -47,9 +45,15 @@ void FD3D11Device::Shutdown()
 	device.Reset();
 }
 
-#pragma endregion
+bool FD3D11Device::IsMultisampleSupported(DXGI_FORMAT format, uint32 sampleCount) const
+{
+	if (!device || sampleCount == 0 || sampleCount > D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT) { return false; }
 
-#pragma region RenderTargets
+	UINT qualityLevels = 0;
+	const HRESULT result = device->CheckMultisampleQualityLevels(format, sampleCount, &qualityLevels);
+
+	return SUCCEEDED(result) && qualityLevels > 0;
+}
 
 void FD3D11Device::ClearRenderTargetView(ID3D11RenderTargetView* renderTargetView, const float color[4])
 {
@@ -81,10 +85,6 @@ void FD3D11Device::SetViewport(int width, int height)
 	viewport.MaxDepth = 1.0f;
 	context->RSSetViewports(1, &viewport);
 }
-
-#pragma endregion
-
-#pragma region Shaders
 
 bool FD3D11Device::CreateVertexShader(const TArray<uint8>& bytecode, Microsoft::WRL::ComPtr<ID3D11VertexShader>& outShader)
 {
@@ -138,10 +138,6 @@ void FD3D11Device::SetPixelShader(ID3D11PixelShader* shader)
 	context->PSSetShader(shader, nullptr, 0);
 }
 
-#pragma endregion
-
-#pragma region Drawing
-
 void FD3D11Device::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology)
 {
 	context->IASetPrimitiveTopology(topology);
@@ -156,10 +152,6 @@ void FD3D11Device::DrawIndexed(uint32 indexCount, uint32 startIndexLocation, int
 {
 	context->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 }
-
-#pragma endregion
-
-#pragma region Buffers
 
 bool FD3D11Device::CreateVertexBuffer(const TArray<FVertex>& vertices, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer)
 {
@@ -466,10 +458,6 @@ void FD3D11Device::SetPixelShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffe
 	context->PSSetConstantBuffers(slot, 1, &buffer);
 }
 
-#pragma endregion
-
-#pragma region Textures
-
 bool FD3D11Device::CreateTexture2D(uint32 width, uint32 height, const TArray<uint8>& rgbaPixels, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture)
 {
 	if (!device || !context)
@@ -582,6 +570,66 @@ bool FD3D11Device::CreateRenderTargetTexture2D(uint32 width, uint32 height, Micr
 	return true;
 }
 
+bool FD3D11Device::CreateMultisampleRenderTargetTexture2D(uint32 width, uint32 height, uint32 sampleCount, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outView)
+{
+	if (!device)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating a multisample render target requires an initialized device.");
+		return false;
+	}
+	if (width == 0 || height == 0 || width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample render target dimensions are outside the D3D11 2D range.");
+		return false;
+	}
+	if (sampleCount < 2 || sampleCount > D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT || !IsMultisampleSupported(DXGI_FORMAT_R8G8B8A8_UNORM, sampleCount))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "RGBA8 multisample render target sample count {} is not supported.", sampleCount);
+		return false;
+	}
+
+	UINT formatSupport = 0;
+	const HRESULT supportResult = device->CheckFormatSupport(DXGI_FORMAT_R8G8B8A8_UNORM, &formatSupport);
+	constexpr UINT RequiredSupport = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_RENDER_TARGET | D3D11_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET | D3D11_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE;
+	if (FAILED(supportResult) || (formatSupport & RequiredSupport) != RequiredSupport)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "RGBA8 multisample render targets with resolve support are not supported (HRESULT 0x{:08X}).", static_cast<unsigned long>(supportResult));
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC description{};
+	description.Width = width;
+	description.Height = height;
+	description.MipLevels = 1;
+	description.ArraySize = 1;
+	description.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	description.SampleDesc.Count = sampleCount;
+	description.SampleDesc.Quality = 0;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdTexture;
+	const HRESULT result = device->CreateTexture2D(&description, nullptr, createdTexture.GetAddressOf());
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample render target texture creation failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> createdView;
+	const HRESULT viewResult = device->CreateRenderTargetView(createdTexture.Get(), nullptr, createdView.GetAddressOf());
+	if (FAILED(viewResult))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample render target view creation failed (HRESULT 0x{:08X})", static_cast<unsigned long>(viewResult));
+		return false;
+	}
+
+	outTexture = std::move(createdTexture);
+	outView = std::move(createdView);
+
+	return true;
+}
+
 bool FD3D11Device::CreateDepthStencilBuffer(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView)
 {
 	if (!device || width == 0 || height == 0)
@@ -624,6 +672,66 @@ bool FD3D11Device::CreateDepthStencilBuffer(uint32 width, uint32 height, Microso
 	return true;
 }
 
+bool FD3D11Device::CreateMultisampleDepthStencilBuffer(uint32 width, uint32 height, uint32 sampleCount, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outView)
+{
+	if (!device)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Creating a multisample depth stencil buffer requires an initialized device.");
+		return false;
+	}
+	if (width == 0 || height == 0 || width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample depth stencil dimensions are outside the D3D11 2D range.");
+		return false;
+	}
+	if (sampleCount < 2 || sampleCount > D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT || !IsMultisampleSupported(DXGI_FORMAT_D32_FLOAT, sampleCount))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "D32 multisample depth stencil sample count {} is not supported.", sampleCount);
+		return false;
+	}
+
+	UINT formatSupport = 0;
+	const HRESULT supportResult = device->CheckFormatSupport(DXGI_FORMAT_D32_FLOAT, &formatSupport);
+	constexpr UINT RequiredSupport = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_DEPTH_STENCIL;
+	if (FAILED(supportResult) || (formatSupport & RequiredSupport) != RequiredSupport)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "D32 depth stencil textures are not supported (HRESULT 0x{:08X}).", static_cast<unsigned long>(supportResult));
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC description{};
+	description.Width = width;
+	description.Height = height;
+	description.MipLevels = 1;
+	description.ArraySize = 1;
+	description.Format = DXGI_FORMAT_D32_FLOAT;
+	description.SampleDesc.Count = sampleCount;
+	description.SampleDesc.Quality = 0;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> createdTexture;
+	const HRESULT result = device->CreateTexture2D(&description, nullptr, createdTexture.GetAddressOf());
+	if (FAILED(result))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample depth stencil texture creation failed (HRESULT 0x{:08X})", static_cast<unsigned long>(result));
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> createdView;
+	const HRESULT viewResult = device->CreateDepthStencilView(createdTexture.Get(), nullptr, createdView.GetAddressOf());
+	if (FAILED(viewResult))
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Multisample depth stencil view creation failed (HRESULT 0x{:08X})", static_cast<unsigned long>(viewResult));
+		return false;
+	}
+
+	outTexture = std::move(createdTexture);
+	outView = std::move(createdView);
+
+	return true;
+}
+
 bool FD3D11Device::CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outView)
 {
 	if (!device)
@@ -655,6 +763,52 @@ bool FD3D11Device::CreateShaderResourceView(ID3D11Texture2D* texture, Microsoft:
 	}
 
 	outView = std::move(createdView);
+
+	return true;
+}
+
+bool FD3D11Device::ResolveTexture2D(ID3D11Texture2D* destination, ID3D11Texture2D* source)
+{
+	if (!device || !context || !destination || !source || destination == source)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Resolving textures requires an initialized device/context and two distinct non-null textures.");
+		return false;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Device> destinationDevice;
+	Microsoft::WRL::ComPtr<ID3D11Device> sourceDevice;
+	destination->GetDevice(destinationDevice.GetAddressOf());
+	source->GetDevice(sourceDevice.GetAddressOf());
+	if (destinationDevice.Get() != device.Get() || sourceDevice.Get() != device.Get())
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Resolving textures requires both resources from the current device.");
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC destinationDescription{};
+	D3D11_TEXTURE2D_DESC sourceDescription{};
+	destination->GetDesc(&destinationDescription);
+	source->GetDesc(&sourceDescription);
+	if (destinationDescription.Width != sourceDescription.Width || destinationDescription.Height != sourceDescription.Height ||
+		destinationDescription.Format != DXGI_FORMAT_R8G8B8A8_UNORM || sourceDescription.Format != DXGI_FORMAT_R8G8B8A8_UNORM ||
+		destinationDescription.MipLevels != 1 || sourceDescription.MipLevels != 1 ||
+		destinationDescription.ArraySize != 1 || sourceDescription.ArraySize != 1 ||
+		destinationDescription.Usage != D3D11_USAGE_DEFAULT || sourceDescription.Usage != D3D11_USAGE_DEFAULT ||
+		destinationDescription.SampleDesc.Count != 1 || sourceDescription.SampleDesc.Count <= 1)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "Resolving requires same-sized RGBA8 DEFAULT textures with one mip/array element and MSAA source to single-sample destination.");
+		return false;
+	}
+
+	UINT formatSupport = 0;
+	const HRESULT supportResult = device->CheckFormatSupport(DXGI_FORMAT_R8G8B8A8_UNORM, &formatSupport);
+	if (FAILED(supportResult) || (formatSupport & D3D11_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE) == 0)
+	{
+		WriteLog("D3D11", ELogLevel::Error, "RGBA8 multisample resolve is not supported (HRESULT 0x{:08X}).", static_cast<unsigned long>(supportResult));
+		return false;
+	}
+
+	context->ResolveSubresource(destination, 0, source, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
 
 	return true;
 }
@@ -717,10 +871,6 @@ void FD3D11Device::SetPixelShaderSamplerState(ID3D11SamplerState* sampler)
 	context->PSSetSamplers(0, 1, &sampler);
 }
 
-#pragma endregion
-
-#pragma region PipelineState
-
 bool FD3D11Device::CreateBlendState(const D3D11_BLEND_DESC& description, Microsoft::WRL::ComPtr<ID3D11BlendState>& outState)
 {
 	if (!device)
@@ -773,5 +923,3 @@ void FD3D11Device::SetDepthStencilState(ID3D11DepthStencilState* state)
 {
 	context->OMSetDepthStencilState(state, 0);
 }
-
-#pragma endregion

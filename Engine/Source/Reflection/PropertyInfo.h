@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Containers/SeonString.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 #include <concepts>
 #include <type_traits>

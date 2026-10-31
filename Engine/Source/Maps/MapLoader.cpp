@@ -1,6 +1,5 @@
 #include "MapLoader.h"
 
-#include "Actor.h"
 #include "AssetManager.h"
 #include "Components/ActorComponent.h"
 #include "Core/Containers/Array.h"
@@ -13,6 +12,7 @@
 #include "Engine.h"
 #include "Maps/ActorTypeRegistry.h"
 #include "Maps/ComponentTypeRegistry.h"
+#include "Object/Actor.h"
 #include "Reflection/PropertyInfo.h"
 #include "Reflection/TypeInfo.h"
 #include "Renderer/StaticMesh.h"

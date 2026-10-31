@@ -1,8 +1,6 @@
 #include "TransformComponent.h"
 
-#include "Actor.h"
-
-#pragma region Lifecycle
+#include "Object/Actor.h"
 
 UTransformComponent::UTransformComponent(AActor& owner)
 	: UActorComponent(owner)
@@ -14,10 +12,6 @@ void UTransformComponent::PostLoad()
 	UActorComponent::PostLoad();
 	UpdateComponentToWorld();
 }
-
-#pragma endregion
-
-#pragma region RelativeTransform
 
 FTransform UTransformComponent::GetTransform() const
 {
@@ -76,10 +70,6 @@ void UTransformComponent::SetScale(FVector3 newScale)
 	UpdateComponentToWorld();
 }
 
-#pragma endregion
-
-#pragma region WorldTransform
-
 FTransform UTransformComponent::GetComponentTransform() const
 {
 	return componentToWorld;
@@ -124,5 +114,3 @@ void UTransformComponent::SetComponentTransform(const FTransform& newTransform)
 	const UTransformComponent* parentTransform = parent->GetComponent<UTransformComponent>();
 	SetTransform(newTransform.GetRelativeTransform(parentTransform->GetComponentTransform()));
 }
-
-#pragma endregion

@@ -4,8 +4,6 @@
 
 #include <utility>
 
-#pragma region Lifecycle
-
 bool FD3D11SwapChain::Initialize(ID3D11Device* device, HWND window)
 {
 	if (swapChain || renderTargetView)
@@ -87,10 +85,6 @@ void FD3D11SwapChain::Shutdown()
 	swapChain.Reset();
 }
 
-#pragma endregion
-
-#pragma region Presentation
-
 bool FD3D11SwapChain::Present()
 {
 	const HRESULT result = swapChain->Present(1, 0);
@@ -152,5 +146,3 @@ bool FD3D11SwapChain::CreateBackBufferRenderTargetView(ID3D11Device* device, IDX
 
 	return true;
 }
-
-#pragma endregion

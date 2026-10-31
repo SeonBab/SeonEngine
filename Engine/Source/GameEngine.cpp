@@ -9,9 +9,7 @@
 #include "Maps/GameMapsSettings.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderData.h"
-#include "World.h"
-
-#pragma region Lifecycle
+#include "World/World.h"
 
 UGameEngine::UGameEngine() = default;
 
@@ -19,10 +17,6 @@ UGameEngine::~UGameEngine()
 {
 	PreExit();
 }
-
-#pragma endregion
-
-#pragma region Execution
 
 bool UGameEngine::Initialize(IRenderer& renderer)
 {
@@ -83,6 +77,7 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, IRenderer& 
 		renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
 		renderView.location = view.location;
 		renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
+		renderView.backgroundColor = view.backgroundColor;
 	}
 
 	if (!world->SendAllEndOfFrameUpdates())
@@ -90,7 +85,7 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, IRenderer& 
 		return false;
 	}
 
-	if (!renderer.BeginFrame(width, height))
+	if (!renderer.BeginFrame(width, height, renderView.backgroundColor))
 	{
 		return false;
 	}
@@ -101,6 +96,11 @@ bool UGameEngine::Tick(float deltaSeconds, const FInputState& input, IRenderer& 
 	}
 
 	if (!world->GetScene().Draw(renderer, renderView))
+	{
+		return false;
+	}
+
+	if (!renderer.EndWorldRendering())
 	{
 		return false;
 	}
@@ -129,5 +129,3 @@ void UGameEngine::PreExit()
 	gameClient.reset();
 	UEngine::PreExit();
 }
-
-#pragma endregion

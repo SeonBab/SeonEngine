@@ -2,7 +2,7 @@
 
 #include "Input/InputActionTypes.h"
 #include "Input/InputActionValue.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 입력 행동의 정의, 값 형식, 결합 규칙을 표현한다. 현재 입력값이나 게임 콜백은 보관하지 않는다.

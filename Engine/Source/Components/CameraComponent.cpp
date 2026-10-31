@@ -1,18 +1,12 @@
 #include "CameraComponent.h"
 
-#include "Actor.h"
+#include "Object/Actor.h"
 #include "TransformComponent.h"
-
-#pragma region Lifecycle
 
 UCameraComponent::UCameraComponent(AActor& owner)
 	: UActorComponent(owner)
 {
 }
-
-#pragma endregion
-
-#pragma region Projection
 
 ECameraProjectionMode UCameraComponent::GetProjectionMode() const
 {
@@ -64,9 +58,15 @@ void UCameraComponent::SetFarClipDistance(float newFarClipDistance)
 	farClipDistance = newFarClipDistance;
 }
 
-#pragma endregion
+FVector3 UCameraComponent::GetBackgroundColor() const
+{
+	return backgroundColor;
+}
 
-#pragma region View
+void UCameraComponent::SetBackgroundColor(FVector3 color)
+{
+	backgroundColor = color;
+}
 
 FTransform UCameraComponent::GetCameraWorldTransform() const
 {
@@ -89,8 +89,7 @@ FCameraViewInfo UCameraComponent::GetCameraView() const
 	view.orthographicWidth = orthographicWidth;
 	view.nearClipDistance = nearClipDistance;
 	view.farClipDistance = farClipDistance;
+	view.backgroundColor = backgroundColor;
 
 	return view;
 }
-
-#pragma endregion

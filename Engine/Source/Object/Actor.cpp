@@ -2,12 +2,10 @@
 
 #include "Components/ActorComponent.h"
 #include "Components/TransformComponent.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <typeinfo>
 #include <utility>
-
-#pragma region Lifecycle
 
 AActor::AActor(UWorld& inWorld)
 	: world(&inWorld)
@@ -17,10 +15,6 @@ AActor::AActor(UWorld& inWorld)
 }
 
 AActor::~AActor() = default;
-
-#pragma endregion
-
-#pragma region WorldAndHierarchy
 
 UWorld& AActor::GetWorld() const
 {
@@ -52,10 +46,6 @@ bool AActor::SetParent(AActor* newParent, EActorTransformRule rule)
 	return GetWorld().SetActorParent(this, newParent, rule);
 }
 
-#pragma endregion
-
-#pragma region Destruction
-
 bool AActor::Destroy()
 {
 	return GetWorld().DestroyActor(this);
@@ -65,10 +55,6 @@ bool AActor::IsActorBeingDestroyed() const
 {
 	return bActorIsBeingDestroyed;
 }
-
-#pragma endregion
-
-#pragma region PlayLifecycle
 
 void AActor::SetActorTickEnabled(bool enabled)
 {
@@ -151,10 +137,6 @@ void AActor::RouteEndPlay(EEndPlayReason reason)
 	}
 }
 
-#pragma endregion
-
-#pragma region Components
-
 bool AActor::AddComponent(FStringView name, TUniquePtr<UActorComponent>& component)
 {
 	if (name.empty() || FindComponent(name) || !component || &component->GetOwner() != this)
@@ -197,5 +179,3 @@ UActorComponent* AActor::FindComponent(FStringView name) const
 
 	return nullptr;
 }
-
-#pragma endregion

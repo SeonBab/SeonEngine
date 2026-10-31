@@ -8,8 +8,6 @@
 
 #include <utility>
 
-#pragma region Lifecycle
-
 FEngineLoop::FEngineLoop()
 	: application(input)
 {
@@ -19,10 +17,6 @@ FEngineLoop::~FEngineLoop()
 {
 	(void)Exit();
 }
-
-#pragma endregion
-
-#pragma region Execution
 
 int FEngineLoop::Run(EEngineMode engineMode)
 {
@@ -151,5 +145,3 @@ bool FEngineLoop::Exit()
 
 	return bSuccess;
 }
-
-#pragma endregion

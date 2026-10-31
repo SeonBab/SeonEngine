@@ -55,7 +55,7 @@ RHI는 자체 렌더러 아래에서 그래픽스 API 구현을 교체하는 별
 |---|---|---|
 | [FStaticMeshData](../Engine/Source/Renderer/StaticMeshData.h), [FVertex](../Engine/Source/Renderer/Vertex.h) | CPU 정점과 인덱스. 정점에는 위치, 선형 RGBA 색상, 법선, UV가 있음 | 외부 정점 배치로 변환한다. 탄젠트 등 없는 속성이 필요하면 생성하거나 해당 기능의 요구를 별도로 조율한다. 색상 같은 기존 속성을 무시한 채 동등 지원으로 설명하지 않는다 |
 | [FImage](../Engine/Source/Image/Image.h) | 위쪽 행부터 저장한 패딩 없는 RGBA8, 비선행곱 알파, 크기와 픽셀 배열 | 색상 공간 메타데이터와 파일 경로는 없다. CPU 이미지 업로드 요청을 파일 로딩 요청으로 취급하지 않는다 |
-| `FRenderView` | 월드에서 뷰, 뷰에서 클립 행렬, 월드 시점 위치와 직교 여부 | 행벡터 기준의 행렬 순서와 외부 셰이더의 저장, 전치, 좌표 규칙을 대조한다 |
+| `FRenderView` | 월드에서 뷰, 뷰에서 클립 행렬, 월드 시점 위치, 직교 여부와 배경 RGB 사본 | 행벡터 기준의 행렬 순서와 외부 셰이더의 저장, 전치, 좌표 규칙을 대조한다 |
 | `FMeshDrawItem` | 빌린 형상, 로컬에서 월드 행렬, 색상 텍스처, 정반사 색상과 광택 지수 | 외부 재질 모델과 값의 의미를 대조한다. 서로 다른 재질 파라미터를 이름만 바꿔 같은 값으로 취급하지 않는다 |
 | `FSceneRenderData` | 한 시점의 메시 목록, 빛이 진행하는 방향, 세기가 반영된 방향광과 주변광 색상 | 필요한 패스, 정렬과 GPU 명령으로 바꾼다. 제출받은 Scene이나 Proxy 자체를 외부 월드로 소유 이전하는 계약은 아니다 |
 | [FUIDrawElementList](../Engine/Source/UI/UIDrawElementList.h) | 현재는 [이미지 요소](../Engine/Source/UI/UIImageDrawElement.h)의 목록 | 현재 출력 영역 왼쪽 위 기준 픽셀 위치와 크기, 비선행곱 알파, 추가 순서를 따른다 |
@@ -88,8 +88,9 @@ RHI는 자체 렌더러 아래에서 그래픽스 API 구현을 교체하는 별
 | `CreateTexture2DFromDDS` | 원본 DDS 바이트로 단일 2D GPU 텍스처 준비. 새 밉 생성·픽셀 변환 없이 원본 밉 유지. 크기와 Straight/Premultiplied 표현 저장. 미지정 표현은 Straight. 실패 시 기존 출력 유지 |
 | `CreateFontResource` | 지원하는 바이트 형식으로 생성. 입력은 호출 동안만 빌림. 헤더의 실패와 예외 계약 준수 |
 | `CreateRenderTarget2D` | 활성 프레임 밖에서 지정 크기의 RGBA8 UNORM 색상 타겟 준비 |
-| `BeginFrame`, `EndFrame` | 창 출력 준비와 지움, 프레임 상태 관리, 마지막 표시 요청 |
-| `BeginRenderTarget`, `EndRenderTarget` | 활성 프레임 안에서 타겟 전환과 지움, 창 출력과 기존 행렬 복원. 중첩 거부 |
+| `BeginFrame`, `EndFrame` | 창 출력 준비와 호출별 지정 RGB·알파1/깊이1 지움, 프레임 상태 관리, 마지막 표시 요청 |
+| `EndWorldRendering` | 창 월드 단계를 끝내고 UI용 창 출력 준비. MSAA 결과가 있으면 이때 합침. 중복/타겟 활성/미시작은 거부 |
+| `BeginRenderTarget`, `EndRenderTarget` | 활성 프레임 안에서 타겟용 출력 전환과 호출별 지정 RGB·알파1/깊이1 지움, 종료 시 결과 갱신과 창 출력·기존 행렬 복원. 중첩 거부. 종료 실패 시 그리기 중단·Shutdown |
 | `DrawScene`, `DrawUI` | 현재 출력에 장면과 UI 요청 제출. 입력 복사, 순서와 자원 수명 확보 |
 | `CreateImGuiRendererBackend` | 같은 구현과 장치에 맞는 미초기화 GPU backend 반환. 미지원이면 `nullptr` |
 
@@ -102,14 +103,21 @@ Loop가 창을 준비한 다음 생성 함수를 호출하고, 받은 객체에 
 게임의 기본 렌더 순서는 다음과 같다.
 
 ```text
-BeginFrame
+BeginFrame(width, height, renderView.backgroundColor)
   → 장면 캡처가 있으면 타겟별 BeginRenderTarget / DrawScene / EndRenderTarget
   → 창의 DrawScene
+  → EndWorldRendering
   → 게임 DrawUI
 EndFrame
 ```
 
-에디터는 UI 프레임 구성 중 패널 크기를 구해 Renderer 프레임 시작 전에 타겟을 준비한다. 이후 캡처와 편집 장면을 타겟에 그리고 창 출력을 복원한 다음, 타겟 이미지를 포함한 ImGui를 창에 제출하고 `EndFrame`으로 표시한다. 접힌 패널은 해당 편집 타겟의 장면과 이미지를 생략한다.
+에디터는 UI 프레임 구성 중 패널 크기를 구해 Renderer 프레임 시작 전에 타겟을 준비한다. 이후 캡처와 편집 장면을 타겟에 그리고 창 월드 출력을 복원한다. `EndWorldRendering`으로 UI용 창 출력을 준비한 다음, 타겟 이미지를 포함한 ImGui를 창에 제출하고 `EndFrame`으로 표시한다. 접힌 패널도 월드 종료 단계는 호출하고 해당 편집 타겟의 장면과 이미지만 생략한다.
+
+`BeginFrame(width, height, backgroundColor)`과 `BeginRenderTarget(target, backgroundColor)`는 호출마다 RGB를 받고 알파1과 깊이1로 해당 출력을 지운다. 배경색을 렌더러의 지속 설정으로 저장하지 않는다. 게임 카메라·장면 캡처·편집 뷰포트의 설정은 `FCameraViewInfo`와 `FRenderView`를 거쳐 출력 시작에 전달된다. `DrawScene`이 배경색을 보고 다시 지우는 계약은 아니다. 에디터 바깥 창은 기본 RGB(.05,.10,.20)를 별도로 전달한다.
+
+`EndWorldRendering`은 `IRenderer`의 필수 구현이다. MSAA를 사용하지 않는 구현도 이 단계에서 창 월드 종료와 UI 출력 준비를 완료해야 한다. 창 장면은 종료 전, 실제 창 UI 배치와 표시 요청은 종료 후에 제출한다. 한 프레임의 중복 월드 종료와 종료 뒤 창 장면 제출은 거부한다. 별도 렌더 타겟은 월드 종료 뒤에도 사용할 수 있으며, 타겟 종료 시에는 현재 창 단계의 출력으로 돌아온다. 빈 UI 목록은 계속 상태 변경 없는 성공이다. 월드 종료 중 자원 조회/Resolve가 실패하면 프레임을 재개하지 않고 공통 종료 경로에서 `Shutdown`한다.
+
+기본 D3D11 구현은 지원 장치의 창 월드와 캡처·에디터 뷰포트 작업 출력에 MSAA 4×를 적용하고, 창 UI는 단일 샘플 백 버퍼에 합성한다. `CreateRenderTarget2D`로 만든 결과 텍스처는 단일 샘플이다. 캡처는 공유4× 작업 자원에 그린 뒤 `EndRenderTarget`에서 결과 텍스처로 Resolve하며, 성공 뒤 UI·ImGui에서 결과를 읽는다. 미지원 장치는 기존1× 출력을 사용한다. `EndRenderTarget` 실패 시 일부 GPU 상태가 이미 바뀌었을 수 있으므로 그리기를 재개하지 않고 `Shutdown`한다. 활성 결과 텍스처를 캡처 도중 재질·UI 입력으로 읽는 것은 계속 거부한다.
 
 구현이 GPU 제출을 지연하더라도 **타겟 쓰기, UI에서 해당 타겟 읽기, 표시 요청의 순서**를 유지해야 한다. 장면만 마지막으로 미루면서 ImGui를 먼저 즉시 제출하면 이 순서가 깨질 수 있다.
 

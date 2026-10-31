@@ -37,8 +37,6 @@ private:
 	UMaterial* material;
 };
 
-#pragma region Lifecycle
-
 UMaterial::UMaterial()
 	: renderProxy(MakeUnique<FDefaultMaterialInstance>(this))
 {
@@ -54,10 +52,6 @@ UMaterial* UMaterial::GetDefaultMaterial()
 	return &defaultMaterial;
 }
 
-#pragma endregion
-
-#pragma region BaseColor
-
 void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture> texture)
 {
 	baseColorTexture = std::move(texture);
@@ -67,10 +61,6 @@ TSharedPtr<UTexture> UMaterial::GetBaseColorTexture() const
 {
 	return baseColorTexture;
 }
-
-#pragma endregion
-
-#pragma region Specular
 
 void UMaterial::SetSpecularColor(FVector3 color)
 {
@@ -99,10 +89,6 @@ float UMaterial::GetShininess() const
 	return shininess;
 }
 
-#pragma endregion
-
-#pragma region AlphaMask
-
 void UMaterial::SetAlphaMasked(bool bNewAlphaMasked)
 {
 	bAlphaMasked = bNewAlphaMasked;
@@ -125,13 +111,7 @@ float UMaterial::GetAlphaCutoff() const
 	return alphaCutoff;
 }
 
-#pragma endregion
-
-#pragma region RenderProxy
-
 FMaterialRenderProxy* UMaterial::GetRenderProxy() const
 {
 	return renderProxy.get();
 }
-
-#pragma endregion

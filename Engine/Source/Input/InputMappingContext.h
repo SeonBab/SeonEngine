@@ -2,7 +2,7 @@
 
 #include "Core/Containers/Array.h"
 #include "Input/InputActionKeyMapping.h"
-#include "Object.h"
+#include "Object/Object.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // 키와 액션의 매핑 목록을 소유한다. 입력 평가는 수행하지 않는다.

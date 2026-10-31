@@ -35,6 +35,8 @@ SeonEngine/
 │  ├─ Build/BatchFiles/         프로젝트 파일 생성 도구
 │  ├─ Source/                  엔진 소스와 공통 include 기준
 │  │  ├─ Core/                 공통 타입·컨테이너·수학·도구
+│  │  ├─ Object/               UObject·Actor와 공통 플레이 상태
+│  │  ├─ World/                월드와 액터 소유·실행 조율
 │  │  ├─ Components/           Actor 컴포넌트
 │  │  ├─ Launch/               엔진 진입점·실행부
 │  │  └─ …                     D3D11·Renderer·Image·Input·UI·Windows 등
@@ -113,7 +115,7 @@ SeonEngine/
 
 참여 헤더마다 전역 UCLASS 클래스 하나, GENERATED_BODY 하나, 일반 float, 엔진 FVector3/FRotator 또는 TSharedPtr<UStaticMesh> 인스턴스 필드를 지원한다. FVector3/FRotator는 값 전체를 복사하며 내부 성분의 프로퍼티 정보를 생성하지 않는다. FRotator의 pitch/yaw/roll은 도 단위 저장값을 그대로 유지하며 정규화나 쿼터니언 변환을 수행하지 않는다. 실제 엔진 전역 정의와 필드 타입을 확인하고 동명 사용자 구조체·사용자 타입 별칭·본인/조상의 해당 타입 이름 가림은 거부한다. TSharedPtr<UStaticMesh>는 엔진 별칭 템플릿 한 종류를 명시적으로 허용하는 예외다. Core/Templates/SharedPtr.h와 Renderer/StaticMesh.h의 실제 전역 정의가 분석에 포함돼야 하며 단순 전방 선언은 허용하지 않는다. 원본 헤더에서 두 정의를 자기 generated.h보다 먼저 포함한다. 공유 참조의 읽기·대입 코드를 생성하며 메시 복제·파일 로딩·변경 알림을 수행하지 않는다. 직접 std::shared_ptr 표기, 다른 자산 타입, 별칭을 다시 씌운 타입, const 자산/참조·포인터 변형은 지원하지 않는다. 원본 헤더에서 사용할 타입의 Core/Math/Vector3.h 또는 Core/Math/Rotator.h를 포함해 타입을 먼저 선언한 뒤 자기 generated.h를 마지막으로 포함한다. 부모는 UObject 또는 UCLASS/GENERATED_BODY를 선언한 전역 참여 클래스이며 public 비가상 단일 상속이어야 한다. UObject까지 조상의 선언 계약을 확인하고 실제 직접 부모의 StaticTypeInfo를 연결한다. 참여하지 않은 부모·조상은 기반 정보를 대신 연결하지 않고 오류로 거부한다. 프로퍼티가 없는 참여 클래스도 허용한다. 클래스·필드·헤더 파일 이름은 ASCII 식별자이며 namespace/템플릿/중첩 참여 클래스·부모 타입 별칭·다중 상속·가상 상속·const/volatile/mutable/static/배열/비트필드 프로퍼티·매크로 옵션·#line은 지원하지 않는다. 지원하지 않는 입력은 오류로 거부한다. 일반 C++ 문법 자체는 Clang이 분석하며 조건부 컴파일은 전달한 구성에서 활성인 선언을 기준으로 한다. Clang AST JSON 읽기의 최대 깊이는128이며 초과 시 생성 오류로 중단하고 기존 결과를 유지한다. 경로/인수 JSON이나 맵 JSON의 제한과는 별개다.
 
-사용자 헤더는 Object.h 뒤에 자기 `Example.generated.h`를 마지막 include로 두고, 클래스 안의 GENERATED_BODY 뒤에 public/private 등 접근 지정자를 명시한다. 생성 헤더가 공통 ReflectionMacros.h를 포함하므로 별도 include는 필수가 아니다. 표기와 SE_REFLECTION 계열 매크로를 사용자 코드에서 재정의하지 않는다.
+사용자 헤더는 `Object/Object.h` 뒤에 자기 `Example.generated.h`를 마지막 include로 두고, 클래스 안의 GENERATED_BODY 뒤에 public/private 등 접근 지정자를 명시한다. 생성 헤더가 공통 ReflectionMacros.h를 포함하므로 별도 include는 필수가 아니다. 표기와 SE_REFLECTION 계열 매크로를 사용자 코드에서 재정의하지 않는다.
 
 컴파일 환경은 JSON 문자열 배열 파일로 전달한다. 예를 들어 `Intermediate/Reflection/DebugArgs.json`의 최소 구성은 다음과 같다. 포함하는 헤더가 요구하는 include·플랫폼 정의는 실제 C++ 구성과 일치시킨다.
 

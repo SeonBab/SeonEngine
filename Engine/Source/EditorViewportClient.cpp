@@ -24,7 +24,11 @@ void FViewportCameraTransform::SetRotation(FRotator newRotation)
 	viewRotation = newRotation;
 }
 
-#pragma region View
+FEditorViewportClient::FEditorViewportClient()
+{
+	viewTransformPerspective.SetLocation({0.0f, 0.0f, -6.0f});
+	viewTransformOrthographic.SetLocation({0.0f, 0.0f, -6.0f});
+}
 
 FViewportCameraTransform& FEditorViewportClient::GetViewTransform()
 {
@@ -48,13 +52,10 @@ FCameraViewInfo FEditorViewportClient::GetCameraView() const
 	view.orthographicWidth = orthographicWidth;
 	view.nearClipDistance = nearClipDistance;
 	view.farClipDistance = farClipDistance;
+	view.backgroundColor = backgroundColor;
 
 	return view;
 }
-
-#pragma endregion
-
-#pragma region Projection
 
 ECameraProjectionMode FEditorViewportClient::GetProjectionMode() const
 {
@@ -106,9 +107,15 @@ void FEditorViewportClient::SetFarClipDistance(float newFarClipDistance)
 	farClipDistance = newFarClipDistance;
 }
 
-#pragma endregion
+FVector3 FEditorViewportClient::GetBackgroundColor() const
+{
+	return backgroundColor;
+}
 
-#pragma region RenderTarget
+void FEditorViewportClient::SetBackgroundColor(FVector3 color)
+{
+	backgroundColor = color;
+}
 
 bool FEditorViewportClient::ResizeRenderTarget(IRenderer& renderer, int32 width, int32 height)
 {
@@ -132,10 +139,6 @@ void FEditorViewportClient::ReleaseRenderTarget()
 	renderTarget.SetRenderData(nullptr);
 }
 
-#pragma endregion
-
-#pragma region Drawing
-
 bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer) const
 {
 	const int32 width = renderTarget.GetWidth();
@@ -149,13 +152,12 @@ bool FEditorViewportClient::Draw(FScene& scene, IRenderer& renderer) const
 	renderView.viewToClip = view.CalculateProjectionMatrix(aspectRatio);
 	renderView.location = view.location;
 	renderView.bOrthographic = view.projectionMode == ECameraProjectionMode::Orthographic;
+	renderView.backgroundColor = view.backgroundColor;
 
-	if (!renderer.BeginRenderTarget(renderTarget)) { return false; }
+	if (!renderer.BeginRenderTarget(renderTarget, renderView.backgroundColor)) { return false; }
 
 	const bool drawn = scene.Draw(renderer, renderView);
 	const bool restored = renderer.EndRenderTarget();
 
 	return drawn && restored;
 }
-
-#pragma endregion

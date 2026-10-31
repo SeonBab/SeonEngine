@@ -1,16 +1,14 @@
 #include "StaticMeshComponent.h"
 
-#include "Actor.h"
+#include "Object/Actor.h"
 #include "Renderer/Scene.h"
 #include "Renderer/StaticMesh.h"
 #include "Renderer/StaticMeshSceneProxy.h"
 #include "Renderer/StaticMeshSceneProxyDesc.h"
 #include "TransformComponent.h"
-#include "World.h"
+#include "World/World.h"
 
 #include <utility>
-
-#pragma region Lifecycle
 
 UStaticMeshComponent::UStaticMeshComponent(AActor& owner)
 	: URenderStateComponent(owner)
@@ -28,10 +26,6 @@ void UStaticMeshComponent::PostLoad()
 	MarkRenderStateDirty();
 }
 
-#pragma endregion
-
-#pragma region Mesh
-
 bool UStaticMeshComponent::SetStaticMesh(TSharedPtr<UStaticMesh> newStaticMesh)
 {
 	if (staticMesh == newStaticMesh) { return false; }
@@ -46,10 +40,6 @@ UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
 	return staticMesh.get();
 }
-
-#pragma endregion
-
-#pragma region Material
 
 void UStaticMeshComponent::SetMaterial(int32 materialIndex, TSharedPtr<UMaterialInterface> newMaterial)
 {
@@ -85,10 +75,6 @@ TSharedPtr<UMaterialInterface> UStaticMeshComponent::ResolveMaterial(int32 mater
 
 	return staticMesh->GetMaterial(materialIndex);
 }
-
-#pragma endregion
-
-#pragma region RenderState
 
 bool UStaticMeshComponent::CreateRenderState()
 {
@@ -186,5 +172,3 @@ bool UStaticMeshComponent::ApplyRenderState()
 
 	return true;
 }
-
-#pragma endregion

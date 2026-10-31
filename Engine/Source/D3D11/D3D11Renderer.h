@@ -50,7 +50,11 @@ public:
 
 	FD3D11Renderer& operator=(FD3D11Renderer&&) = delete;
 
-	/** 유효한 창과 양수 크기로 준비한다. 중복 초기화는 거부한다. 일반 실패는 부분 정리 후 false이며 DirectXTK 생성 예외는 전파한다. 예외 후 정리는 호출자가 맡는다. */
+	/**
+	 * 유효한 창과 양수 크기로 준비한다. 중복 초기화는 거부한다.
+	 * 지원 시 창 크기의 MSAA 4× 작업 자원도 준비한다. 미지원은 경고 후 기존 단일 샘플을 유지한다.
+	 * 일반 생성 실패는 부분 정리 후 false이며 DirectXTK 생성 예외는 전파한다. 예외 후 정리는 호출자가 맡는다.
+	 */
 	[[nodiscard]] bool Initialize(void* nativeWindowHandle, int32 width, int32 height) override;
 
 	/** 초기화된 장치에 맞는 미초기화 backend를 만든다. 반환 객체는 이 Renderer보다 먼저 정리해야 한다. */
@@ -64,6 +68,14 @@ public:
 
 	/** 초기화 성공 후 종료 전 같은 스레드에서 빌려 사용한다. COM 참조를 추가하지 않는다. */
 	[[nodiscard]] ID3D11DeviceContext* GetD3D11DeviceContext() const { return graphics.GetContext(); }
+
+private:
+	/**
+	 * 준비된 장치에서 MSAA 4× 색상/깊이 자원 네 개를 지정한 출력 참조에 함께 교체한다. 바인딩은 바꾸지 않는다.
+	 * 미지원이면 출력 참조를 비우고 경고/true, 잘못된 입력이나 생성 실패는 기존 출력 참조를 유지하고 false다.
+	 * 색상과 깊이 텍스처의 출력은 서로 다른 변수여야 한다. 크기는 각 축 1~16384이며 크기 기록은 호출자가 갱신한다.
+	 */
+	[[nodiscard]] bool CreateMultisampleResources(uint32 width, uint32 height, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outColorTexture, Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& outRenderTargetView, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outDepthTexture, Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& outDepthStencilView);
 
 #pragma endregion
 
@@ -154,22 +166,30 @@ private:
 #pragma region Frame
 
 public:
-	/** 초기화 후 양수 크기로 프레임을 시작한다. 크기 변화 처리와 화면 지우기를 수행하며 이미 시작한 프레임은 거부한다. */
-	[[nodiscard]] bool BeginFrame(int32 width, int32 height) override;
+	/**
+	 * 초기화 후 양수 크기로 프레임을 시작한다. 크기 변화 처리와 지정 RGB·알파1 및 깊이1로 화면 지우기를 수행하며 이미 시작한 프레임은 거부한다.
+	 * 크기 변경 시 창용 MSAA 작업 자원도 다시 준비하고 지원 시 MSAA 출력, 미지원 시 단일 샘플 출력을 연결·지운다.
+	 * 새 프레임은 창 월드 단계이며 UI/Present 전에 EndWorldRendering을 호출해야 한다.
+	 * 크기 변경 중 실패하면 그리기를 재개하지 않고 Shutdown해야 한다.
+	 */
+	[[nodiscard]] bool BeginFrame(int32 width, int32 height, FVector3 backgroundColor) override;
 
 	/**
 	 * 활성 프레임에서 같은 D3D11 장치의 SRV와 RTV가 준비된 렌더 타겟으로 출력을 전환한다.
-	 * 타겟 크기의 깊이 버퍼와 뷰포트를 연결하고 검정색, 알파 1과 깊이 1로 지운다.
+	 * 타겟 크기의 깊이 버퍼와 뷰포트를 연결하고 지정 RGB, 알파 1과 깊이 1로 지운다. 색은 이번 호출에만 사용한다.
+	 * 공유 캡처 작업 자원을 같은 크기로 준비·재사용하고 지원 시 4× 출력, 미지원 시 단일 샘플 출력을 사용한다.
+	 * 4× 출력의 결과 텍스처 갱신은 EndRenderTarget에서 요청한다.
 	 * 중첩 호출은 거부하며 준비 실패 시 기존 출력과 변환 행렬을 유지한다.
 	 * 성공 후 EndRenderTarget으로 창 출력과 기존 변환 행렬을 복원해야 한다.
 	 * true는 출력 전환과 초기화 요청 성공이며 GPU 완료를 뜻하지 않는다.
 	 */
-	[[nodiscard]] bool BeginRenderTarget(const UTextureRenderTarget2D& target) override;
+	[[nodiscard]] bool BeginRenderTarget(const UTextureRenderTarget2D& target, FVector3 backgroundColor) override;
 
 	/**
 	 * 활성 렌더 타겟 출력을 끝내고 창 출력과 저장한 변환 행렬을 복원한다.
-	 * 창의 내용은 지우지 않고 Present도 하지 않는다.
-	 * 복원 실패 시 false를 반환하며 렌더 타겟 활성 상태를 유지한다.
+	 * 4× 캡처는 출력 연결을 해제하고 단일 샘플 결과 텍스처로 Resolve한 뒤 창 출력을 복원한다.
+	 * 월드 단계 중에는 창의 MSAA/1× 출력, 종료 뒤에는 단일 샘플 창 출력으로 돌아간다. clear·Present는 하지 않는다.
+	 * 실패 시 false와 활성 상태를 유지하지만 일부 GPU 상태는 바뀔 수 있으므로 그리기를 재개하지 않고 Shutdown해야 한다.
 	 * true는 복원 요청 성공이며 GPU 완료를 뜻하지 않는다.
 	 */
 	[[nodiscard]] bool EndRenderTarget() override;
@@ -183,13 +203,35 @@ public:
 	[[nodiscard]] bool DrawScene(const FSceneRenderData& data) override;
 
 	/**
+	 * 타겟이 비활성인 프레임의 창 월드를 한 번 끝낸다. MSAA 지원 시 백 버퍼에 Resolve한 뒤 단일 샘플 출력을 연결한다.
+	 * 미시작/타겟 활성/중복 호출은 상태 유지·false다. 자원 조회나 Resolve 실패 뒤에는 Shutdown해야 한다.
+	 * 성공 뒤 창 장면 제출은 금지하고 UI/Present를 허용한다. true는 GPU 완료나 화면 표시를 뜻하지 않는다.
+	 */
+	[[nodiscard]] bool EndWorldRendering() override;
+
+	/**
 	 * 시작한 프레임을 닫고 Present한다. 그리기 없는 프레임도 허용한다.
-	 * 렌더 타겟 활성 중에는 상태를 유지하고 false로 거부한다. EndRenderTarget 후 다시 호출한다.
+	 * 렌더 타겟 활성/월드 미종료는 상태를 유지하고 false로 거부한다. 타겟 종료·EndWorldRendering 후 다시 호출한다.
 	 * Present 실패 시에도 false를 반환하며 이 경우 프레임은 이미 종료된 상태다.
 	 */
 	[[nodiscard]] bool EndFrame() override;
 
 private:
+	/**
+	 * 준비된 장치에서 현재 장치의 유효한 RTV와 호환되는 선택적 DSV를 연결한다. 크기는 양수 픽셀 값이며 뷰포트 지원 범위여야 한다.
+	 * 원점 (0, 0)·깊이 0~1의 뷰포트와 UI에도 쓰는 현재 출력 크기를 함께 설정한다. 입력 검사는 호출자가 맡는다.
+	 * 사용할 타겟의 선택·clear·Resolve·깊이/블렌드 상태·프레임 플래그는 변경하지 않으며 같은 스레드에서 호출한다.
+	 */
+	void BindOutput(ID3D11RenderTargetView* renderTarget, ID3D11DepthStencilView* depthStencil, int32 width, int32 height);
+
+	/**
+	 * 준비된 장치에서 양수 크기의 캡처 깊이/MSAA 작업 자원을 준비한다. 같은 크기의 준비된 자원은 재사용한다.
+	 * 모든 후보 생성 성공 후 자원과 크기를 함께 교체하며 실패 시 기존 자원과 크기를 유지한다.
+	 * MSAA 미지원은 빈 MSAA 참조를 갖는 정상 1× 준비 상태다. 출력 바인딩과 변환 행렬은 변경하지 않는다.
+	 * BeginRenderTarget의 상태·대상 검사 후 같은 스레드에서 호출한다.
+	 */
+	[[nodiscard]] bool PrepareCaptureResources(int32 width, int32 height);
+
 	/** 준비된 프레임에서 형상·텍스처의 구현·장치를 검사하고 재질·시점 값을 VS b3에 업로드한 뒤 그린다. 텍스처 X/Y로 샘플러를 선택하며 미준비는 흰색 대체다. 시점은 스케일 없는 뷰를 요구한다. */
 	[[nodiscard]] bool DrawMesh(const FMeshDrawItem& item, const FRenderView& view);
 
@@ -204,6 +246,7 @@ public:
 	/**
 	 * 이미지 목록을 공통 CPU 배치로 변환하고 Straight/Premultiplied 자원에 맞춰 제출한다. 빈 목록은 상태 변경 없이 true다.
 	 * 모든 배치의 자원을 그리기 전에 검사한다. 준비 실패는 이번 호출을 그리지 않으며 제출 중 실패는 앞선 결과를 롤백하지 않는다.
+	 * 실제 창 UI 배치는 EndWorldRendering 성공 뒤에 제출한다. 타겟 UI는 해당 타겟 활성 중 제출할 수 있다.
 	 * 제출 뒤 성공/실패 모두 불투명 기본 블렌드와 월드 깊이 상태로 복원하고 UI PS b0를 해제한다. 임의의 이전 GPU 상태를 저장하지 않는다.
 	 */
 	[[nodiscard]] bool DrawUI(const FUIDrawElementList& elements) override;
@@ -228,17 +271,37 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 
+	// 창 크기의 MSAA 4× 월드 색상이다. EndWorldRendering에서 백 버퍼로 합친다. 미지원/미준비면 네 MSAA 참조가 모두 비어 있다.
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> msaaColorTexture;
+
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> msaaRenderTargetView;
+
+	// 위 색상 자원과 크기·샘플 수·Quality가 같은 작업 깊이다. 기존 단일 샘플 깊이와 별도로 소유한다.
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> msaaDepthTexture;
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> msaaDepthStencilView;
+
 	// 창용 깊이 자원과 별개이며 같은 크기의 캡처에서 재사용한다.
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> captureDepthStencilTexture;
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> captureDepthStencilView;
 
-	// 깊이 자원의 픽셀 크기이며 0은 아직 준비되지 않았음을 뜻한다.
+	// 순차 캡처에서 공유하는 MSAA 4× 색상이다. EndRenderTarget에서 활성 결과 텍스처로 합친다.
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> captureMsaaColorTexture;
+
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> captureMsaaRenderTargetView;
+
+	// 위 작업 색상과 같은 크기·샘플 수·Quality의 깊이다. 미지원이면 캡처 MSAA 참조 네 개가 모두 비어 있다.
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> captureMsaaDepthTexture;
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> captureMsaaDepthStencilView;
+
+	// 캡처 단일 샘플 깊이와 MSAA 작업 자원의 공통 픽셀 크기다. 0은 아직 준비되지 않았음을 뜻한다.
 	int32 captureDepthWidth = 0;
 
 	int32 captureDepthHeight = 0;
 
-	// 출력 중인 자원과 읽기 입력을 비교한다. 렌더 타겟 활성 기간에만 COM 참조를 유지한다.
+	// 활성 타겟의 단일 샘플 결과다. Resolve 대상 수명 유지와 자기 참조 읽기 검사에 사용하며 End 성공/Shutdown에서 비운다.
 	Microsoft::WRL::ComPtr<ID3D11Resource> activeRenderTargetResource;
 
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> staticMeshVertexShader;
@@ -264,7 +327,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> worldDepthStencilState;
 
-	// Point 필터의 [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. 메시 텍스처의 주소 설정에 따라 선택한다.
+	// AF 8× 필터의 [U][V] 순서이며 각 축의 0은 Clamp, 1은 Wrap이다. 메시 텍스처의 주소 설정에 따라 선택한다.
 	std::array<std::array<Microsoft::WRL::ComPtr<ID3D11SamplerState>, 2>, 2> samplerStates;
 
 	FMatrix4 localToWorld{};
@@ -288,6 +351,9 @@ private:
 	bool bInitialized = false;
 
 	bool bFrameActive = false;
+
+	// 활성 프레임의 EndWorldRendering 성공 뒤 true다. 창 월드 재제출을 막고 UI/Present를 허용한다.
+	bool bWorldRenderingFinished = false;
 
 	// BeginRenderTarget 성공부터 EndRenderTarget 성공까지 true로 유지한다.
 	bool bRenderTargetActive = false;

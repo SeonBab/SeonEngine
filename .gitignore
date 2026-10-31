@@ -8,6 +8,7 @@
 *.suo
 *.user
 *.userosscache
+imgui.ini
 *.sln.docstates
 *.env
 
