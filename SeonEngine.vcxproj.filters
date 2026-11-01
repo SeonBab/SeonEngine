@@ -79,6 +79,9 @@
     <Filter Include="Engine\Source\UI">
       <UniqueIdentifier>{15BC3F41-338E-3222-9CFD-CD9FCA1FE857}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Viewport">
+      <UniqueIdentifier>{FA0AE2AF-B7E4-3950-BE03-EA84C1DCEA63}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Windows">
       <UniqueIdentifier>{1D509D59-91BD-3DCC-826B-CD1C751DCB39}</UniqueIdentifier>
     </Filter>
@@ -429,6 +432,9 @@
     <ClInclude Include="Engine\Source\UI\Widget.h">
       <Filter>Engine\Source\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Viewport\ViewportClient.h">
+      <Filter>Engine\Source\Viewport</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Windows\WindowsApplication.h">
       <Filter>Engine\Source\Windows</Filter>
     </ClInclude>
@@ -652,6 +658,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Source\UI\UserWidget.cpp">
       <Filter>Engine\Source\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Viewport\ViewportClient.cpp">
+      <Filter>Engine\Source\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Windows\WindowsApplication.cpp">
       <Filter>Engine\Source\Windows</Filter>

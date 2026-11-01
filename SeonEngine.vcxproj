@@ -166,6 +166,7 @@
     <ClInclude Include="Engine\Source\UI\UITextDrawElement.h" />
     <ClInclude Include="Engine\Source\UI\UserWidget.h" />
     <ClInclude Include="Engine\Source\UI\Widget.h" />
+    <ClInclude Include="Engine\Source\Viewport\ViewportClient.h" />
     <ClInclude Include="Engine\Source\Windows\WindowsApplication.h" />
     <ClInclude Include="Engine\Source\Windows\WindowsHWrapper.h" />
     <ClInclude Include="Engine\Source\Windows\WindowsInput.h" />
@@ -242,6 +243,7 @@
     <ClCompile Include="Engine\Source\UI\TextWidget.cpp" />
     <ClCompile Include="Engine\Source\UI\UIElementBatcher.cpp" />
     <ClCompile Include="Engine\Source\UI\UserWidget.cpp" />
+    <ClCompile Include="Engine\Source\Viewport\ViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Engine\Source\Windows\WindowsInput.cpp" />
     <ClCompile Include="Engine\Source\World\World.cpp" />
