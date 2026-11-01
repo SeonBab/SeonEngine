@@ -22,6 +22,14 @@ public:
 	/** 같은 스레드에서 재질의 현재 색상 텍스처 공유 참조를 얻는다. GPU 유효성은 검사하지 않는다. */
 	TSharedPtr<UTexture> GetBaseColorTexture() const override { return material->GetBaseColorTexture(); }
 
+	/** 같은 스레드에서 소유 재질의 현재 두 번째 텍스처 공유 참조를 얻는다. 별도 사본을 저장하지 않는다. */
+	TSharedPtr<UTexture> GetBlendTexture() const override { return material->GetBlendTexture(); }
+
+	/** 소유 재질에 저장된 현재 혼합 비율을 값으로 조회한다. GPU 작업은 하지 않는다. */
+	float GetBlendFactor() const override { return material->GetBlendFactor(); }
+
+	ETextureBlendMode GetTextureBlendMode() const override { return material->GetTextureBlendMode(); }
+
 	/** 소유 재질의 현재 정반사 색·세기를 값으로 조회한다. GPU 갱신은 하지 않는다. */
 	FVector3 GetSpecularColor() const override { return material->GetSpecularColor(); }
 
@@ -60,6 +68,40 @@ void UMaterial::SetBaseColorTexture(TSharedPtr<UTexture> texture)
 TSharedPtr<UTexture> UMaterial::GetBaseColorTexture() const
 {
 	return baseColorTexture;
+}
+
+void UMaterial::SetBlendTexture(TSharedPtr<UTexture> texture)
+{
+	blendTexture = std::move(texture);
+}
+
+TSharedPtr<UTexture> UMaterial::GetBlendTexture() const
+{
+	return blendTexture;
+}
+
+void UMaterial::SetBlendFactor(float newBlendFactor)
+{
+	if (!std::isfinite(newBlendFactor)) { return; }
+
+	blendFactor = std::clamp(newBlendFactor, 0.0f, 1.0f);
+}
+
+float UMaterial::GetBlendFactor() const
+{
+	return blendFactor;
+}
+
+void UMaterial::SetTextureBlendMode(ETextureBlendMode newMode)
+{
+	if (newMode != ETextureBlendMode::Lerp && newMode != ETextureBlendMode::AddSmooth) { return; }
+
+	textureBlendMode = newMode;
+}
+
+ETextureBlendMode UMaterial::GetTextureBlendMode() const
+{
+	return textureBlendMode;
 }
 
 void UMaterial::SetSpecularColor(FVector3 color)

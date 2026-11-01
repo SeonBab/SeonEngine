@@ -168,6 +168,9 @@ bool FScene::Draw(IRenderer& renderer, const FRenderView& view)
 		item.mesh = renderData;
 		item.localToWorld = proxy->GetLocalToWorld();
 		item.baseColorTexture = materialProxy->GetBaseColorTexture();
+		item.blendTexture = materialProxy->GetBlendTexture();
+		item.blendFactor = materialProxy->GetBlendFactor();
+		item.textureBlendMode = materialProxy->GetTextureBlendMode();
 		item.specularColor = materialProxy->GetSpecularColor();
 		item.shininess = materialProxy->GetShininess();
 		item.bAlphaMasked = materialProxy->IsAlphaMasked();

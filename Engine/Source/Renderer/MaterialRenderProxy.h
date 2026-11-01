@@ -2,12 +2,13 @@
 
 #include "Core/Math/Vector3.h"
 #include "Core/Templates/SharedPtr.h"
+#include "Renderer/TextureBlendMode.h"
 
 class UTexture;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 재질의 렌더 조회 경계를 위한 공통 Proxy 타입 선언.
-// 구체 Proxy가 색상 텍스처, 정반사와 알파 마스킹 설정 조회를 구현하며 같은 스레드에서 사용한다.
+// 구체 Proxy가 색상/혼합 텍스처, 혼합 비율, 정반사와 알파 마스킹 설정 조회를 구현하며 같은 스레드에서 사용한다.
 ////////////////////////////////////////////////////////////////////////////////
 class FMaterialRenderProxy
 {
@@ -17,6 +18,15 @@ public:
 
 	/** 색상 텍스처의 공유 참조를 반환한다. 미지정이면 nullptr이며 반환 참조가 객체 수명을 유지한다. GPU 유효성은 검사하지 않는다. */
 	virtual TSharedPtr<UTexture> GetBaseColorTexture() const = 0;
+
+	/** 두 번째 텍스처의 현재 공유 참조를 반환한다. 미지정이면 nullptr이며 반환 사본이 객체 수명을 유지한다. GPU 유효성은 검사하지 않는다. */
+	virtual TSharedPtr<UTexture> GetBlendTexture() const = 0;
+
+	/** 현재 재질의 0~1 RGBA 보간 비율 또는 AddSmooth 마스크 강도를 반환한다. GPU 갱신은 하지 않는다. */
+	virtual float GetBlendFactor() const = 0;
+
+	/** 현재 연산을 값으로 반환한다. AddSmooth는 첫 텍스처 알파를 유지하며 기본은 Lerp다. */
+	virtual ETextureBlendMode GetTextureBlendMode() const = 0;
 
 	/** 선형 RGB 정반사 반사율의 값 사본을 반환한다. 각 성분은 유한한 0~1이며 검정은 기여 없음이다. */
 	virtual FVector3 GetSpecularColor() const = 0;

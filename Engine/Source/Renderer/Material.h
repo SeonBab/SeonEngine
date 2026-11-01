@@ -4,12 +4,14 @@
 #include "Core/Templates/SharedPtr.h"
 #include "Core/Templates/UniquePtr.h"
 #include "MaterialInterface.h"
+#include "TextureBlendMode.h"
 
 class FMaterialRenderProxy;
 class UTexture;
 
 ////////////////////////////////////////////////////////////////////////////////
-// 고정 셰이더용 색상 텍스처를 공유 참조하고 정반사 색, 광택 지수와 알파 마스킹 설정을 보관하는 구체 재질이다.
+// 고정 셰이더용 두 색상 텍스처, 혼합 비율, 정반사와 알파 마스킹 설정을 보관하는 구체 재질이다.
+// 픽셀 셰이더가 선택한 연산 뒤 정점 셰이더의 색을 곱하고 알파 마스킹을 적용한다.
 // 설정과 조회는 같은 스레드에서 사용하며 GPU 생성이나 그리기를 수행하지 않는다.
 ////////////////////////////////////////////////////////////////////////////////
 class UMaterial : public UMaterialInterface
@@ -56,6 +58,36 @@ private:
 
 #pragma endregion
 
+#pragma region TextureBlend
+
+public:
+	/** 두 번째 텍스처를 공유한다. nullptr는 Lerp에서 첫 번째 대체, AddSmooth에서 효과 없음이다. GPU 작업은 하지 않는다. */
+	void SetBlendTexture(TSharedPtr<UTexture> texture);
+
+	/** 공유 참조의 사본을 반환한다. 기본 nullptr이며 사본을 유지하는 동안 텍스처 객체가 살아 있다. */
+	TSharedPtr<UTexture> GetBlendTexture() const;
+
+	/** 유한한 입력을 0~1로 보정해 저장한다. NaN과 무한대는 무시하며 GPU 작업은 하지 않는다. */
+	void SetBlendFactor(float newBlendFactor);
+
+	/** 기본 0이다. Lerp는 RGBA 보간 비율, AddSmooth는 두 번째 RGB 마스크 강도이며 두 번째 미지정은 효과 없음이다. */
+	float GetBlendFactor() const;
+
+	/** 지원하는 연산만 저장한다. 잘못된 enum 값은 무시하고 텍스처와 비율은 유지한다. 기본은 Lerp다. */
+	void SetTextureBlendMode(ETextureBlendMode newMode);
+
+	/** 현재 연산을 값으로 반환한다. AddSmooth는 RGB만 합성하고 첫 텍스처의 알파를 유지한다. */
+	ETextureBlendMode GetTextureBlendMode() const;
+
+private:
+	// 텍스처 객체의 수명을 공유한다. AddSmooth는 RGB를 마스크로 사용하며 알파는 읽지 않는다.
+	TSharedPtr<UTexture> blendTexture;
+	// 단위 없는 유한한 0~1 혼합 비율이다. 텍스처를 해제하거나 교체해도 값을 유지한다.
+	float blendFactor = 0.0f;
+	ETextureBlendMode textureBlendMode = ETextureBlendMode::Lerp;
+
+#pragma endregion
+
 #pragma region Specular
 
 public:
@@ -92,7 +124,7 @@ public:
 	/** 유한한 입력을 0~1로 보정한다. NaN과 무한대는 무시하며 GPU 작업은 하지 않는다. */
 	void SetAlphaCutoff(float newAlphaCutoff);
 
-	/** 기본 0.5다. 마스킹 시 텍스처와 정점색을 곱한 알파가 기준값보다 낮으면 색과 깊이를 기록하지 않는다. */
+	/** 기본 0.5다. 마스킹 시 혼합된 텍스처와 정점색을 곱한 알파가 기준값보다 낮으면 색과 깊이를 기록하지 않는다. */
 	float GetAlphaCutoff() const;
 
 private:

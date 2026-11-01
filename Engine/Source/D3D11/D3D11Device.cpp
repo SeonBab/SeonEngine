@@ -861,14 +861,14 @@ bool FD3D11Device::CreateSamplerState(const D3D11_SAMPLER_DESC& description, Mic
 	return true;
 }
 
-void FD3D11Device::SetPixelShaderResourceView(ID3D11ShaderResourceView* view)
+void FD3D11Device::SetPixelShaderResourceView(ID3D11ShaderResourceView* view, uint32 slot)
 {
-	context->PSSetShaderResources(0, 1, &view);
+	context->PSSetShaderResources(slot, 1, &view);
 }
 
-void FD3D11Device::SetPixelShaderSamplerState(ID3D11SamplerState* sampler)
+void FD3D11Device::SetPixelShaderSamplerState(ID3D11SamplerState* sampler, uint32 slot)
 {
-	context->PSSetSamplers(0, 1, &sampler);
+	context->PSSetSamplers(slot, 1, &sampler);
 }
 
 bool FD3D11Device::CreateBlendState(const D3D11_BLEND_DESC& description, Microsoft::WRL::ComPtr<ID3D11BlendState>& outState)

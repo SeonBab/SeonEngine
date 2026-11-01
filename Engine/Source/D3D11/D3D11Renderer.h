@@ -323,6 +323,9 @@ private:
 	// 메시 PS b1. 마스킹 플래그와 기준값을 담는 16바이트이며 불투명 메시도 매번 갱신한다.
 	Microsoft::WRL::ComPtr<ID3D11Buffer> alphaMaskConstantBuffer;
 
+	// 메시 PS b2의 16바이트 혼합 비율·연산 버퍼다. 기본 0/Lerp로 생성하고 메시마다 갱신·연결한다.
+	Microsoft::WRL::ComPtr<ID3D11Buffer> textureBlendConstantBuffer;
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> whiteTextureView;
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> worldDepthStencilState;

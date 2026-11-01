@@ -4,6 +4,7 @@
 #include "Core/Math/Matrix4.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Templates/SharedPtr.h"
+#include "Renderer/TextureBlendMode.h"
 
 class FStaticMeshRenderData;
 class UTexture;
@@ -26,7 +27,7 @@ struct FRenderView
 	FVector3 backgroundColor{0.05f, 0.10f, 0.20f};
 };
 
-/** 메시 하나의 형상을 빌리고 변환, 정반사와 알파 마스킹 설정 사본과 색상 텍스처의 공유 참조를 보관한다. */
+/** 메시 형상을 빌리고 변환·혼합·정반사·마스킹 설정 사본과 색상 텍스처의 공유 참조를 보관한다. */
 struct FMeshDrawItem
 {
 	FMeshDrawItem()
@@ -39,13 +40,20 @@ struct FMeshDrawItem
 	FMatrix4 localToWorld;
 	// 자산 수명을 유지하지만 내부 렌더 데이터의 교체까지 막지는 않는다. nullptr는 흰색 대체다.
 	TSharedPtr<UTexture> baseColorTexture;
+	// 두 번째 텍스처의 공유 참조다. nullptr는 Lerp에서 첫 번째 대체, AddSmooth에서 효과 없음이다.
+	// 내부 GPU 데이터 교체까지 막지는 않는다. DX11은 t1/s1에 연결하고 같은 UV의 선택 연산에 사용한다.
+	TSharedPtr<UTexture> blendTexture;
+	// 유한한 0~1 RGBA 보간 비율 또는 AddSmooth 마스크 강도 사본이다. 기본 0이다.
+	float blendFactor = 0.0f;
+	// 같은 요청 작성 시 복사한 유효한 연산이다. 이후 재질 변경과 독립적이며 기본은 기존 Lerp다.
+	ETextureBlendMode textureBlendMode = ETextureBlendMode::Lerp;
 	// 그리기 요청 작성 시 조회한 선형 RGB 반사율 사본이다. 각 성분은 유한한 0~1이며 기본 검정은 기여 없음이다.
 	FVector3 specularColor{};
 	// 같은 시점의 Blinn-Phong 광택 지수 사본이다. 유한한 1 이상이며 기본값은 32다.
 	float shininess = 32.0f;
 	// 마스킹을 꺼도 기준값은 보관한다. 값은 같은 요청을 작성할 때 재질에서 복사한다.
 	bool bAlphaMasked = false;
-	// 유한한 0~1 값이다. 마스킹 시 텍스처와 정점색의 곱 알파가 이 값보다 낮으면 제거한다.
+	// 유한한 0~1 값이다. 연산 결과×정점색의 알파가 이 값보다 낮으면 제거한다. AddSmooth는 첫 알파를 쓴다.
 	float alphaCutoff = 0.5f;
 };
 

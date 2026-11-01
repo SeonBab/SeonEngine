@@ -387,6 +387,9 @@
     <ClInclude Include="Engine\Source\Renderer\TextureAlphaRepresentation.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\TextureBlendMode.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\TextureRenderData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>

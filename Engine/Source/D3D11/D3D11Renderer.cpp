@@ -57,6 +57,22 @@ namespace
 	static_assert(offsetof(FAlphaMaskConstants, alphaCutoff) == 4);
 	static_assert(offsetof(FAlphaMaskConstants, padding) == 8);
 
+	// StaticMeshPixelShader의 PS b2와 같은 배치다. 메시마다 갱신하며 텍스처 RGBA 혼합에 사용한다.
+	struct FTextureBlendConstants
+	{
+		// 단위 없는 0~1 RGBA 혼합 비율이다. 기본 0은 첫 번째 텍스처를 뜻한다.
+		float blendFactor = 0.0f;
+		// HLSL의 uint와 같은 4바이트다. 모드 값은 TextureBlendMode.h와 셰이더가 공유한다.
+		uint32 textureBlendMode = static_cast<uint32>(ETextureBlendMode::Lerp);
+		float padding[2]{};
+	};
+
+	static_assert(std::is_standard_layout_v<FTextureBlendConstants> && std::is_trivially_copyable_v<FTextureBlendConstants>);
+	static_assert(sizeof(FTextureBlendConstants) == 16);
+	static_assert(offsetof(FTextureBlendConstants, blendFactor) == 0);
+	static_assert(offsetof(FTextureBlendConstants, textureBlendMode) == 4);
+	static_assert(offsetof(FTextureBlendConstants, padding) == 8);
+
 	struct FDirectionalLightConstants
 	{
 		FVector3 direction;
@@ -254,6 +270,15 @@ bool FD3D11Renderer::Initialize(void* nativeWindowHandle, int32 width, int32 hei
 		return false;
 	}
 
+	constexpr uint32 TextureBlendBufferByteSize = static_cast<uint32>(sizeof(FTextureBlendConstants));
+	const FTextureBlendConstants initialTextureBlendConstants{};
+	if (!graphics.CreateConstantBuffer(TextureBlendBufferByteSize, textureBlendConstantBuffer) ||
+		!graphics.UpdateConstantBuffer(textureBlendConstantBuffer.Get(), &initialTextureBlendConstants, TextureBlendBufferByteSize))
+	{
+		Shutdown();
+		return false;
+	}
+
 	D3D11_DEPTH_STENCIL_DESC depthDescription{};
 	depthDescription.DepthEnable = TRUE;
 	depthDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -343,13 +368,16 @@ void FD3D11Renderer::Shutdown()
 		graphics.SetBlendState(nullptr);
 		graphics.SetDepthStencilState(nullptr);
 		graphics.SetPixelShaderResourceView(nullptr);
+		graphics.SetPixelShaderResourceView(nullptr, 1);
 		graphics.SetPixelShaderSamplerState(nullptr);
+		graphics.SetPixelShaderSamplerState(nullptr, 1);
 		graphics.SetIndexBuffer(nullptr);
 		graphics.SetVertexShaderConstantBuffer(0, nullptr);
 		graphics.SetVertexShaderConstantBuffer(1, nullptr);
 		graphics.SetVertexShaderConstantBuffer(2, nullptr);
 		graphics.SetVertexShaderConstantBuffer(3, nullptr);
 		graphics.SetPixelShaderConstantBuffer(0, nullptr);
+		graphics.SetPixelShaderConstantBuffer(2, nullptr);
 		graphics.SetVertexBuffer(nullptr);
 		graphics.SetInputLayout(nullptr);
 		graphics.SetRenderTarget(nullptr);
@@ -386,6 +414,7 @@ void FD3D11Renderer::Shutdown()
 	skyLightConstantBuffer.Reset();
 	specularConstantBuffer.Reset();
 	alphaMaskConstantBuffer.Reset();
+	textureBlendConstantBuffer.Reset();
 	inputLayout.Reset();
 	staticMeshPixelShader.Reset();
 	staticMeshVertexShader.Reset();
@@ -838,6 +867,7 @@ bool FD3D11Renderer::BeginRenderTarget(const UTextureRenderTarget2D& target, FVe
 	targetData->renderTargetView->GetResource(activeRenderTargetResource.ReleaseAndGetAddressOf());
 
 	graphics.SetPixelShaderResourceView(nullptr);
+	graphics.SetPixelShaderResourceView(nullptr, 1);
 
 	ID3D11RenderTargetView* captureOutput = captureMsaaRenderTargetView ? captureMsaaRenderTargetView.Get() : targetData->renderTargetView.Get();
 	ID3D11DepthStencilView* captureDepth = captureMsaaDepthStencilView ? captureMsaaDepthStencilView.Get() : captureDepthStencilView.Get();
@@ -924,6 +954,12 @@ bool FD3D11Renderer::DrawScene(const FSceneRenderData& data)
 
 bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view)
 {
+	if (item.textureBlendMode != ETextureBlendMode::Lerp && item.textureBlendMode != ETextureBlendMode::AddSmooth)
+	{
+		WriteLog("Renderer", ELogLevel::Error, "Drawing requires a supported texture blend mode.");
+		return false;
+	}
+
 	const FD3D11StaticMeshRenderData* d3d11Mesh = dynamic_cast<const FD3D11StaticMeshRenderData*>(item.mesh);
 	if (!d3d11Mesh)
 	{
@@ -945,29 +981,34 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view
 		return false;
 	}
 
-	// 요청이 보관한 공유 참조가 그리기 요청이 끝날 때까지 텍스처 객체를 유지한다.
-	const TSharedPtr<UTexture>& texture = item.baseColorTexture;
-	const FTextureRenderData* textureData = texture ? texture->GetRenderData() : nullptr;
-	const FD3D11TextureRenderData* d3d11Texture = dynamic_cast<const FD3D11TextureRenderData*>(textureData);
-	if (textureData && !d3d11Texture)
+	// 요청의 공유 참조가 호출 동안 객체 수명을 유지하므로 주소만 빌린다. 두 번째 미지정은 첫 번째로 대체한다.
+	const std::array<const UTexture*, 2> textures{item.baseColorTexture.get(), item.blendTexture ? item.blendTexture.get() : item.baseColorTexture.get()};
+	std::array<const FD3D11TextureRenderData*, 2> d3d11Textures{};
+	for (size_t index = 0; index < textures.size(); ++index)
 	{
-		WriteLog("Renderer", ELogLevel::Error, "Drawing requires D3D11 material texture data.");
-		return false;
-	}
-	if (d3d11Texture && d3d11Texture->textureView)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
-		d3d11Texture->textureView->GetDevice(textureDevice.GetAddressOf());
-		if (textureDevice.Get() != graphics.GetDevice())
+		const FTextureRenderData* textureData = textures[index] ? textures[index]->GetRenderData() : nullptr;
+		d3d11Textures[index] = dynamic_cast<const FD3D11TextureRenderData*>(textureData);
+		if (textureData && !d3d11Textures[index])
 		{
-			WriteLog("Renderer", ELogLevel::Error, "Drawing requires a material texture from the current renderer device.");
+			WriteLog("Renderer", ELogLevel::Error, "Drawing requires D3D11 material texture data.");
 			return false;
 		}
 
-		if (IsActiveRenderTargetResource(d3d11Texture->textureView.Get()))
+		if (d3d11Textures[index] && d3d11Textures[index]->textureView)
 		{
-			WriteLog("Renderer", ELogLevel::Error, "Drawing cannot sample the active render target.");
-			return false;
+			Microsoft::WRL::ComPtr<ID3D11Device> textureDevice;
+			d3d11Textures[index]->textureView->GetDevice(textureDevice.GetAddressOf());
+			if (textureDevice.Get() != graphics.GetDevice())
+			{
+				WriteLog("Renderer", ELogLevel::Error, "Drawing requires a material texture from the current renderer device.");
+				return false;
+			}
+
+			if (IsActiveRenderTargetResource(d3d11Textures[index]->textureView.Get()))
+			{
+				WriteLog("Renderer", ELogLevel::Error, "Drawing cannot sample the active render target.");
+				return false;
+			}
 		}
 	}
 
@@ -991,22 +1032,40 @@ bool FD3D11Renderer::DrawMesh(const FMeshDrawItem& item, const FRenderView& view
 		return false;
 	}
 
+	// AddSmooth의 미지정 두 번째 텍스처는 검은 마스크와 같은 효과로 처리한다.
+	const float effectiveBlendFactor = item.textureBlendMode == ETextureBlendMode::AddSmooth && !item.blendTexture ? 0.0f : item.blendFactor;
+	const FTextureBlendConstants textureBlendConstants{
+		.blendFactor = effectiveBlendFactor,
+		.textureBlendMode = static_cast<uint32>(item.textureBlendMode)};
+	if (!graphics.UpdateConstantBuffer(textureBlendConstantBuffer.Get(), &textureBlendConstants, static_cast<uint32>(sizeof(textureBlendConstants))))
+	{
+		return false;
+	}
+
 	graphics.SetVertexShader(staticMeshVertexShader.Get());
 	graphics.SetPixelShader(staticMeshPixelShader.Get());
 	graphics.SetInputLayout(inputLayout.Get());
 	graphics.SetVertexBuffer(d3d11Mesh->vertexBuffer.Get());
-	graphics.SetPixelShaderResourceView(d3d11Texture && d3d11Texture->textureView ? d3d11Texture->textureView.Get() : whiteTextureView.Get());
-	const size_t addressU = texture && texture->GetTextureAddressX() == ETextureAddress::Wrap ? 1 : 0;
-	const size_t addressV = texture && texture->GetTextureAddressY() == ETextureAddress::Wrap ? 1 : 0;
-	graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get());
+	for (uint32 slot = 0; slot < textures.size(); ++slot)
+	{
+		const FD3D11TextureRenderData* textureData = d3d11Textures[slot];
+		graphics.SetPixelShaderResourceView(textureData && textureData->textureView ? textureData->textureView.Get() : whiteTextureView.Get(), slot);
+		const size_t addressU = textures[slot] && textures[slot]->GetTextureAddressX() == ETextureAddress::Wrap ? 1 : 0;
+		const size_t addressV = textures[slot] && textures[slot]->GetTextureAddressY() == ETextureAddress::Wrap ? 1 : 0;
+		graphics.SetPixelShaderSamplerState(samplerStates[addressU][addressV].Get(), slot);
+	}
 	graphics.SetVertexShaderConstantBuffer(0, transformConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(1, directionalLightConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(2, skyLightConstantBuffer.Get());
 	graphics.SetVertexShaderConstantBuffer(3, specularConstantBuffer.Get());
 	graphics.SetPixelShaderConstantBuffer(1, alphaMaskConstantBuffer.Get());
+	graphics.SetPixelShaderConstantBuffer(2, textureBlendConstantBuffer.Get());
 	graphics.SetIndexBuffer(d3d11Mesh->indexBuffer.Get());
 	graphics.SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	graphics.DrawIndexed(d3d11Mesh->indexCount, 0, 0);
+	// 추가 슬롯은 후속 UI와 출력 전환에 남기지 않는다. 기존 0번 슬롯의 동작은 유지한다.
+	graphics.SetPixelShaderResourceView(nullptr, 1);
+	graphics.SetPixelShaderSamplerState(nullptr, 1);
 
 	return true;
 }

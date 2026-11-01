@@ -56,7 +56,7 @@ RHI는 자체 렌더러 아래에서 그래픽스 API 구현을 교체하는 별
 | [FStaticMeshData](../Engine/Source/Renderer/StaticMeshData.h), [FVertex](../Engine/Source/Renderer/Vertex.h) | CPU 정점과 인덱스. 정점에는 위치, 선형 RGBA 색상, 법선, UV가 있음 | 외부 정점 배치로 변환한다. 탄젠트 등 없는 속성이 필요하면 생성하거나 해당 기능의 요구를 별도로 조율한다. 색상 같은 기존 속성을 무시한 채 동등 지원으로 설명하지 않는다 |
 | [FImage](../Engine/Source/Image/Image.h) | 위쪽 행부터 저장한 패딩 없는 RGBA8, 비선행곱 알파, 크기와 픽셀 배열 | 색상 공간 메타데이터와 파일 경로는 없다. CPU 이미지 업로드 요청을 파일 로딩 요청으로 취급하지 않는다 |
 | `FRenderView` | 월드에서 뷰, 뷰에서 클립 행렬, 월드 시점 위치, 직교 여부와 배경 RGB 사본 | 행벡터 기준의 행렬 순서와 외부 셰이더의 저장, 전치, 좌표 규칙을 대조한다 |
-| `FMeshDrawItem` | 빌린 형상, 로컬에서 월드 행렬, 색상 텍스처, 정반사 색상과 광택 지수 | 외부 재질 모델과 값의 의미를 대조한다. 서로 다른 재질 파라미터를 이름만 바꿔 같은 값으로 취급하지 않는다 |
+| `FMeshDrawItem` | 빌린 형상·행렬, 두 텍스처 공유 참조, 비율/마스크 강도, ETextureBlendMode, 정반사·광택·알파 마스킹 설정 | 기본 Lerp는 두 RGBA를 보간한다. AddSmooth는 두 번째 RGB×강도로 first+mask-first*mask를 계산하고 첫 알파를 유지한다. blendTexture=nullptr는 Lerp에서 첫 입력 대체, AddSmooth에서 강도0이다. 모드는 유효한 enum이어야 하며 DX11은 잘못된 값을 거부한다. PS b2는 float 비율·uint 모드·float2 패딩의16바이트다. 기존 조명·마스킹·정반사 순서를 유지하며 외부 파라미터의 의미를 대조한다 |
 | `FSceneRenderData` | 한 시점의 메시 목록, 빛이 진행하는 방향, 세기가 반영된 방향광과 주변광 색상 | 필요한 패스, 정렬과 GPU 명령으로 바꾼다. 제출받은 Scene이나 Proxy 자체를 외부 월드로 소유 이전하는 계약은 아니다 |
 | [FUIDrawElementList](../Engine/Source/UI/UIDrawElementList.h) | 현재는 [이미지 요소](../Engine/Source/UI/UIImageDrawElement.h)의 목록 | 현재 출력 영역 왼쪽 위 기준 픽셀 위치와 크기, 비선행곱 알파, 추가 순서를 따른다 |
 | DDS 바이트 | 원본 파일의 헤더와 픽셀/밉 데이터. 단일 2D RGBA/BGRA/BGRX8 및 BC1/2/3 색상 DDS | `CreateTexture2DFromDDS`에서 형식과 자원 종류를 검사한다. 원본 밉과 픽셀을 유지하며 입력은 호출 동안만 빌린다. 배열·큐브·볼륨·Custom 알파 표현은 거부한다 |

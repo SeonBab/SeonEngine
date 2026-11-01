@@ -155,7 +155,7 @@ public:
 	/** 준비된 컨텍스트의 지정된 VS 슬롯에 같은 장치의 상수 버퍼를 연결한다. nullptr면 연결을 해제한다. */
 	void SetVertexShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffer);
 
-	/** 준비된 컨텍스트의 지정된 PS 상수 버퍼 슬롯 1에 같은 장치의 버퍼를 연결한다. nullptr면 연결을 해제한다. */
+	/** 준비된 컨텍스트의 지정된 PS 상수 버퍼 슬롯 하나에 같은 장치의 버퍼를 연결한다. nullptr면 해당 슬롯의 연결을 해제한다. */
 	void SetPixelShaderConstantBuffer(uint32 slot, ID3D11Buffer* buffer);
 
 #pragma endregion
@@ -225,11 +225,17 @@ public:
 	/** 호출자가 지정한 설정으로 샘플러를 만든다. 장치 미준비, API 실패 시 로그/false이며 기존 출력은 유지한다. */
 	[[nodiscard]] bool CreateSamplerState(const D3D11_SAMPLER_DESC& description, Microsoft::WRL::ComPtr<ID3D11SamplerState>& outState);
 
-	/** 준비된 컨텍스트의 PS t0에 같은 장치의 SRV를 연결한다. 출력 자원과 겹치지 않아야 하며 nullptr면 해제한다. */
-	void SetPixelShaderResourceView(ID3D11ShaderResourceView* view);
+	/**
+	 * 준비된 컨텍스트의 PS t 슬롯에 같은 장치의 SRV를 연결한다. 기본 슬롯은 0이며 slot은 0~127이어야 한다.
+	 * 컨텍스트 소유 스레드에서 호출하며 출력 자원과 겹치면 안 된다. nullptr면 지정 슬롯만 해제한다.
+	 */
+	void SetPixelShaderResourceView(ID3D11ShaderResourceView* view, uint32 slot = 0);
 
-	/** 준비된 컨텍스트의 PS s0에 같은 장치의 샘플러를 연결한다. nullptr면 명시적 상태를 해제해 D3D11 기본 샘플러를 사용한다. */
-	void SetPixelShaderSamplerState(ID3D11SamplerState* sampler);
+	/**
+	 * 준비된 컨텍스트의 PS s 슬롯에 같은 장치의 샘플러를 연결한다. 기본 슬롯은 0이며 slot은 0~15여야 한다.
+	 * 컨텍스트 소유 스레드에서 호출한다. nullptr면 지정 슬롯의 명시적 상태만 해제해 D3D11 기본 샘플러를 사용한다.
+	 */
+	void SetPixelShaderSamplerState(ID3D11SamplerState* sampler, uint32 slot = 0);
 
 #pragma endregion
 

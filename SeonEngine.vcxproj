@@ -152,6 +152,7 @@
     <ClInclude Include="Engine\Source\Renderer\Texture2D.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureAddressMode.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureAlphaRepresentation.h" />
+    <ClInclude Include="Engine\Source\Renderer\TextureBlendMode.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureRenderData.h" />
     <ClInclude Include="Engine\Source\Renderer\TextureRenderTarget2D.h" />
     <ClInclude Include="Engine\Source\Renderer\Vertex.h" />
