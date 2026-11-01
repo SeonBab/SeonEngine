@@ -11,6 +11,6 @@ class UInputAction;
 struct FInputActionKeyMapping
 {
 	TSharedPtr<const UInputAction> action;
-	EKey key = EKey::Invalid;
+	FKey key;
 	float scale = 1.0f;
 };

@@ -3,10 +3,9 @@
 #include <cmath>
 #include <utility>
 
-bool UInputMappingContext::MapKey(TSharedPtr<const UInputAction> action, EKey key, float scale)
+bool UInputMappingContext::MapKey(TSharedPtr<const UInputAction> action, const FKey& key, float scale)
 {
-	const uint8 keyIndex = static_cast<uint8>(key);
-	if (!action || key == EKey::Invalid || keyIndex >= static_cast<uint8>(EKey::Count) || !std::isfinite(scale))
+	if (!action || !key.IsValid() || !std::isfinite(scale))
 	{
 		return false;
 	}

@@ -27,7 +27,7 @@ using FInputCallback = std::function<void(float)>;
 /** 엔진 키, 실행 조건, 콜백을 묶는다. 기본값은 미지원 키, Held, 빈 콜백이다. */
 struct FInputKeyBinding
 {
-	EKey key = EKey::Invalid;
+	FKey key;
 	EInputTrigger trigger = EInputTrigger::Held;
 	FInputCallback callback;
 };
@@ -60,7 +60,7 @@ public:
 
 public:
 	/** 유효 키, 실행 조건, 콜백을 등록 순서대로 저장한다. 중복을 허용하며 처리 중이거나 잘못된 키/조건, 빈 콜백이면 false다. */
-	[[nodiscard]] bool BindKey(EKey key, EInputTrigger trigger, FInputCallback callback);
+	[[nodiscard]] bool BindKey(const FKey& key, EInputTrigger trigger, FInputCallback callback);
 
 	/** 유효 액션, Started/Triggered/Completed, 콜백을 등록 순서대로 저장한다. 중복은 허용하고 처리 중 등록, 빈 액션/콜백, 잘못된 이벤트는 false다. */
 	[[nodiscard]] bool BindAction(TSharedPtr<const UInputAction> action, EInputActionEvent event, FInputActionCallback callback);

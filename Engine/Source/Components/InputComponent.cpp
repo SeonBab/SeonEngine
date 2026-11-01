@@ -10,10 +10,9 @@ UInputComponent::UInputComponent(AActor& owner)
 {
 }
 
-bool UInputComponent::BindKey(EKey key, EInputTrigger trigger, FInputCallback callback)
+bool UInputComponent::BindKey(const FKey& key, EInputTrigger trigger, FInputCallback callback)
 {
-	const uint8 index = static_cast<uint8>(key);
-	if (bProcessingInput || key == EKey::Invalid || index >= static_cast<uint8>(EKey::Count) || !callback)
+	if (bProcessingInput || !key.IsValid() || !callback)
 	{
 		return false;
 	}

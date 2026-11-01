@@ -1,31 +1,33 @@
 #include "Input/InputState.h"
 
-bool FInputState::IsKeyDown(EKey key) const
-{
-	const uint8 index = static_cast<uint8>(key);
-	if (key == EKey::Invalid || index >= static_cast<uint8>(EKey::Count))
-	{
-		return false;
-	}
+#include <algorithm>
 
-	return keyStates[index];
+bool FInputState::IsKeyDown(const FKey& key) const
+{
+	return key.IsValid() && std::find(pressedKeys.begin(), pressedKeys.end(), key) != pressedKeys.end();
 }
 
-void FInputState::SetKeyDown(EKey key, bool isDown)
+void FInputState::SetKeyDown(const FKey& key, bool isDown)
 {
-	const uint8 index = static_cast<uint8>(key);
-	if (key == EKey::Invalid || index >= static_cast<uint8>(EKey::Count))
-	{
-		return;
-	}
+	if (!key.IsValid()) { return; }
 
-	keyStates[index] = isDown;
+	const TArray<FKey>::iterator found = std::find(pressedKeys.begin(), pressedKeys.end(), key);
+	if (isDown)
+	{
+		if (found == pressedKeys.end())
+		{
+			pressedKeys.push_back(key);
+		}
+	}
+	else if (found != pressedKeys.end())
+	{
+		pressedKeys.erase(found);
+	}
 }
 
 void FInputState::AddKeyEvent(FKeyEvent event)
 {
-	const uint8 index = static_cast<uint8>(event.key);
-	if (event.key == EKey::Invalid || index >= static_cast<uint8>(EKey::Count)) { return; }
+	if (!event.key.IsValid()) { return; }
 
 	if (event.type != EKeyEventType::Pressed && event.type != EKeyEventType::Released && event.type != EKeyEventType::Repeat) { return; }
 
@@ -41,14 +43,34 @@ const TArray<FKeyEvent>& FInputState::GetKeyEvents() const
 void FInputState::ResetFrameState()
 {
 	keyEvents.clear();
+	mouseDelta = {};
+	mouseWheelDelta = 0.0f;
+}
+
+void FInputState::AddMouseDelta(FVector2 delta)
+{
+	mouseDelta.x += delta.x;
+	mouseDelta.y += delta.y;
+}
+
+FVector2 FInputState::GetMouseDelta() const
+{
+	return mouseDelta;
+}
+
+void FInputState::AddMouseWheelDelta(float delta)
+{
+	mouseWheelDelta += delta;
+}
+
+float FInputState::GetMouseWheelDelta() const
+{
+	return mouseWheelDelta;
 }
 
 void FInputState::Reset()
 {
-	for (bool& isDown : keyStates)
-	{
-		isDown = false;
-	}
+	pressedKeys.clear();
 
 	ResetFrameState();
 }

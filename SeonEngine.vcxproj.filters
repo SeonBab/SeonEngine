@@ -560,6 +560,9 @@
     <ClCompile Include="Engine\Source\Input\InputState.cpp">
       <Filter>Engine\Source\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Input\Key.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Input\PlayerInput.cpp">
       <Filter>Engine\Source\Input</Filter>
     </ClCompile>

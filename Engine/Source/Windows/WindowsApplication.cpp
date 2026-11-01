@@ -5,6 +5,8 @@
 #include "Windows/WindowsInput.h"
 #include "WindowsHWrapper.h"
 
+#include <windowsx.h>
+
 #include <utility>
 
 namespace
@@ -80,6 +82,20 @@ bool FWindowsApplication::PumpMessages(int& outExitCode)
 			else if (message.message == WM_KEYUP)
 			{
 				inputState.AddKeyEvent({TranslateWindowsKey(message.wParam), EKeyEventType::Released});
+			}
+			else if (message.message == WM_RBUTTONDOWN)
+			{
+				inputState.AddKeyEvent({EKeys::RightMouseButton, EKeyEventType::Pressed});
+			}
+			else if (message.message == WM_RBUTTONUP)
+			{
+				inputState.AddKeyEvent({EKeys::RightMouseButton, EKeyEventType::Released});
+			}
+			else if (message.message == WM_MOUSEWHEEL)
+			{
+				const short wheelDelta = GET_WHEEL_DELTA_WPARAM(message.wParam);
+				// Windows 회전량을 한 눈금이 1인 단위로 변환한다.
+				inputState.AddMouseWheelDelta(static_cast<float>(wheelDelta) / static_cast<float>(WHEEL_DELTA));
 			}
 		}
 
