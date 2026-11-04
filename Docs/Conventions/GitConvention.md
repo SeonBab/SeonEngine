@@ -28,13 +28,13 @@
 ```
 
 - **제목** — 무엇을 했는지 한 줄로 쓴다. 명사형으로 끝내고(`추가`, `수정`, `분리`) 마침표를 찍지 않는다.
-- **본문** — 제목만으로 부족할 때 쓴다. 무엇을 했는지보다 **왜** 했는지를 쓴다(Code Convention 1.3 Comment와 같은 원칙). 제목과 본문 사이에 빈 줄을 둔다.
+- **본문** — 제목만으로 부족할 때 쓴다. 무엇을 했는지보다 **왜** 했는지를 쓴다. 제목과 본문 사이에 빈 줄을 둔다.
 - **푸터** — 쓰지 않는다(`Co-Authored-By`, `Signed-off-by` 등).
 
 ```text
-feat(core): 로그 카테고리 추가
-fix(renderer): 창 크기가 0일 때 스왑체인 재생성 실패 수정
-refactor(platform): Windows 헤더 래퍼 분리
+feat(window): 창 생성 추가
+fix(window): 창 닫기 처리 수정
+refactor(launch): 실행 흐름 정리
 docs: Git 컨벤션 작성
 build: 경고 레벨을 /W4로 변경
 ```
@@ -49,14 +49,14 @@ build: 경고 레벨을 /W4로 변경
 | `perf` | 성능 개선 |
 | `test` | 테스트 추가 / 수정 |
 | `docs` | 문서 |
-| `build` | 빌드 설정, 프로젝트 파일(`.vcxproj`, `.clang-format` 등) |
+| `build` | 빌드 설정과 프로젝트 파일(`.vcxproj` 등) |
 | `ci` | CI 설정 |
-| `style` | 서식만 변경 (컨벤션 변경 후 일괄 수정 등, Code Convention 6.3 예외 조항) |
+| `style` | 서식만 변경 (컨벤션 변경 후 일괄 수정 등) |
 | `chore` | 그 외 (`.gitignore` 등) |
 
 ### 2.3 범위
 
-- 바뀐 모듈이나 폴더 이름을 소문자로 쓴다(`core`, `engine`, `game`, `platform`, `renderer` 등). 모듈 구성과 경로는 [빌드·개발 설정의 폴더 구조](../BuildSetup.md#폴더-구조)를 참고한다.
+- 바뀐 기능이나 폴더를 나타내는 이름을 소문자로 쓴다(예: `window`, `launch`).
 - 여러 모듈에 걸친 변경이나 `docs`, `build`, `chore`처럼 모듈과 관계없는 변경은 범위를 생략한다.
 
 ### 2.4 커밋 단위
@@ -89,8 +89,7 @@ git commit
 
 ### 3.2 커밋 전 확인
 
-- 코드나 빌드 설정을 변경했다면 Debug / Release 빌드가 경고 없이 성공한다(Code Convention 6.1). 문서만 바꾼 경우에는 내용과 링크를 확인한다.
-- 바뀐 C++ 파일에 clang-format을 적용했다(Code Convention 6.2).
+- 코드나 빌드 설정을 변경했다면 Debug / Release 빌드가 경고 없이 성공한다. 문서만 바꾼 경우에는 내용과 링크를 확인한다.
 - 컨벤션이나 설정을 바꿨다면 관련 문서도 함께 고쳤다.
 
 ### 3.3 작업 브랜치를 사용한 경우

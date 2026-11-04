@@ -1,63 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 모든 .vcxproj에 자동으로 적용되는 공통 설정. 프로젝트별 설정(종류, include 경로, 링커)은 각 .vcxproj에 둔다. -->
-<!-- VS 속성 페이지에서 바꾼 값은 이 파일이 아니라 .vcxproj에 저장된다. 공통 설정은 이 파일을 직접 고친다. -->
 <Project>
-  <!-- 이 파일은 C# 프로젝트(dotnet run으로 실행하는 도구 스크립트 포함)에도 import된다. OutDir는 C#도 쓰는 속성이라 C++ 프로젝트로 한정한다. -->
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
-    <!-- 저장소 루트. 프로젝트에서 다른 폴더를 가리킬 때 쓴다. -->
-    <SERootDir>$(MSBuildThisFileDirectory)</SERootDir>
-    <!-- VS 2022는 v143, VS 2026은 v145를 사용한다. 프로젝트 본문과 출력 경로가 같은 선택을 공유한다. -->
-    <SEPlatformToolset>v145</SEPlatformToolset>
+    <!-- VisualStudioVersion은 제품 연도가 아닌 내부 버전이다. -->
     <SEPlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</SEPlatformToolset>
-    <OutDir>$(SERootDir)Binaries\$(SEPlatformToolset)\$(Platform)\$(Configuration)\</OutDir>
-    <!-- ProjectName은 이 파일이 import되는 시점에 아직 정의되지 않으므로 MSBuildProjectName을 쓴다. -->
-    <IntDir>$(SERootDir)Intermediate\$(SEPlatformToolset)\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
-  </PropertyGroup>
+    <SEPlatformToolset Condition="'$(VisualStudioVersion)' == '18.0'">v145</SEPlatformToolset>
 
-  <!-- vcpkg: 저장소의 manifest(Engine/ThirdParty/vcpkg.json)로 외부 라이브러리를 받는다. 연결(import)은 Directory.Build.targets에서 한다. -->
-  <!-- 이 파일은 사용자 전역 통합(%LOCALAPPDATA%\vcpkg\vcpkg.user.props)보다 먼저 읽히므로, 여기서 정한 값이 vcpkg의 기본값보다 우선한다. -->
-  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
-    <!-- 개발 PC의 사용자 전역 통합(classic 창고)을 쓰지 않는다. -->
-    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
-    <VcpkgManifestRoot>$(SERootDir)Engine\ThirdParty\</VcpkgManifestRoot>
-    <!-- 빌드할 때 생기는 설치 폴더는 빌드 중간물과 함께 둔다. -->
-    <VcpkgManifestInstalledBaseDir>$(SERootDir)Intermediate\vcpkg_installed\$(SEPlatformToolset)\</VcpkgManifestInstalledBaseDir>
-    <!-- VS 2022에 포함된 구형 vcpkg도 같은 설치 루트를 사용하도록 지정한다. -->
-    <VcpkgInstalledDir>$(VcpkgManifestInstalledBaseDir)</VcpkgInstalledDir>
-    <!-- x64-windows-static-md: 라이브러리는 정적 링크, CRT는 엔진과 같은 /MD -->
-    <VcpkgUseStatic>true</VcpkgUseStatic>
-    <VcpkgUseMD>true</VcpkgUseMD>
+    <OutDir>$(MSBuildThisFileDirectory)Binaries\$(SEPlatformToolset)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)Intermediate\$(SEPlatformToolset)\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
-
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SE_PLATFORM_WINDOWS=1;SE_PLATFORM_HEADER_NAME=Windows;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <!-- 표준 준수 전처리기(/Zc:preprocessor). 기본 전처리기는 빈 __VA_ARGS__ 앞의 쉼표를 몰래 지우는 등 표준과 다르게 동작하고 __VA_OPT__를 지원하지 않는다. -->
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalOptions>/utf-8 /w14668 /w14265 %(AdditionalOptions)</AdditionalOptions>
-      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
-    <ClCompile>
-      <PreprocessorDefinitions>SE_BUILD_DEBUG=1;SE_BUILD_RELEASE=0;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
-    <ClCompile>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>SE_BUILD_DEBUG=0;SE_BUILD_RELEASE=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
 </Project>

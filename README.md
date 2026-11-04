@@ -1,14 +1,12 @@
 # SeonEngine
 
-## 개발 환경
+C++ 자체 게임 엔진입니다.
 
-- Windows x64
-- Visual Studio 2022 17.14 이상 또는 Visual Studio 2026 — C++를 사용한 데스크톱 개발 워크로드
-- C++20 / MSVC 플랫폼 도구 집합: VS 2022는 v143, VS 2026은 v145
-- .NET 10 이상 SDK — 프로젝트 파일 생성 스크립트 실행에 필요
+- 대상 플랫폼: Windows x64
+- 개발 환경: C++20, Visual Studio 2022 / 2026
 
-`SeonEngine.slnx`를 열면 루트 `SeonEngine.vcxproj` 실행 프로젝트를 사용한다. 엔진 소스는 `Engine/Source`, 게임 소스는 `Game/Source`에 둔다.
+개발 환경 설정과 빌드 방법은 [빌드 안내](Docs/BuildSetup.md)를 참고하세요.
 
-상세 설정은 [빌드·개발 설정](Docs/BuildSetup.md)을 참고한다. 다른 렌더러의 연결 안내와 개발 규칙은 [개발 문서 목록](Docs/README.md)에서 찾을 수 있다.
+코드 작성 기준은 [코드 컨벤션](Docs/Conventions/CodeConvention.md)을 참고하세요.
 
-외부 라이브러리 사용·배포 정보: [Assimp와 의존 라이브러리 고지](Engine/ThirdParty/Assimp/README.md).
+브랜치와 커밋 기준은 [Git 컨벤션](Docs/Conventions/GitConvention.md)을 참고하세요.
