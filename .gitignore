@@ -1,0 +1,7 @@
+# Visual Studio 개인 설정과 캐시
+.vs/
+*.vcxproj.user
+
+# 빌드 출력 (Directory.Build.props의 OutDir, IntDir)
+/Binaries/
+/Intermediate/

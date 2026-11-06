@@ -1,5 +1,103 @@
 #include "WindowsApplication.h"
 
+#include "Input/Key.h"
+
+namespace
+{
+	constexpr wchar_t WindowClassName[] = L"SeonEngineWindow";
+
+	static_assert(static_cast<int>(Key::Z) - static_cast<int>(Key::A) == 'Z' - 'A', "A부터 Z까지 Key 값이 연속해야 한다.");
+	static_assert(static_cast<int>(Key::Number9) - static_cast<int>(Key::Number0) == '9' - '0', "Number0부터 Number9까지 Key 값이 연속해야 한다.");
+
+	/** 지원하지 않는 가상 키는 Key::Unknown으로 바꾼다. 왼쪽과 오른쪽 수정 키는 구분하지 않는다. */
+	Key TranslateKey(WPARAM virtualKey)
+	{
+		// Windows의 문자와 숫자 가상 키 코드는 ASCII 대문자와 숫자 코드와 같다.
+		if (virtualKey >= 'A' && virtualKey <= 'Z')
+		{
+			return static_cast<Key>(static_cast<int>(Key::A) + static_cast<int>(virtualKey - 'A'));
+		}
+
+		if (virtualKey >= '0' && virtualKey <= '9')
+		{
+			return static_cast<Key>(static_cast<int>(Key::Number0) + static_cast<int>(virtualKey - '0'));
+		}
+
+		switch (virtualKey)
+		{
+		case VK_SPACE:
+			return Key::Space;
+		case VK_RETURN:
+			return Key::Enter;
+		case VK_ESCAPE:
+			return Key::Escape;
+		case VK_TAB:
+			return Key::Tab;
+		case VK_SHIFT:
+			return Key::Shift;
+		case VK_CONTROL:
+			return Key::Control;
+		case VK_MENU:
+			return Key::Alt;
+		case VK_UP:
+			return Key::Up;
+		case VK_DOWN:
+			return Key::Down;
+		case VK_LEFT:
+			return Key::Left;
+		case VK_RIGHT:
+			return Key::Right;
+		default:
+			return Key::Unknown;
+		}
+	}
+
+	/**
+	 * 키 메시지와 포커스 상실을 입력 상태에 기록한다. 그 밖의 메시지는 무시한다.
+	 * Alt와 함께 누른 키는 WM_SYSKEYDOWN으로 들어오므로 일반 키 메시지와 같이 기록한다.
+	 * 창 프로시저는 Windows가 호출하므로 예외가 그 밖으로 나가지 않게 noexcept로 둔다.
+	 * 이벤트 목록 할당에 실패하면 std::terminate로 프로그램을 종료한다.
+	 */
+	void RecordInputMessage(InputState& inputState, UINT message, WPARAM wParam) noexcept
+	{
+		switch (message)
+		{
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			inputState.PressKey(TranslateKey(wParam));
+			break;
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			inputState.ReleaseKey(TranslateKey(wParam));
+			break;
+		case WM_KILLFOCUS:
+			inputState.ReleaseAllKeys();
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+WindowsApplication::~WindowsApplication()
+{
+	if (window != nullptr)
+	{
+		if (!DestroyWindow(window))
+		{
+			// TODO: 창 파괴 실패 로그를 남긴다.
+		}
+	}
+
+	if (isWindowClassRegistered)
+	{
+		if (!UnregisterClassW(WindowClassName, instance))
+		{
+			// TODO: 창 클래스 해제 실패 로그를 남긴다.
+		}
+	}
+}
+
 bool WindowsApplication::Initialize()
 {
 	return Create();
@@ -7,8 +105,10 @@ bool WindowsApplication::Initialize()
 
 bool WindowsApplication::Create()
 {
-	HINSTANCE instance = GetModuleHandleW(nullptr);
-	constexpr wchar_t WindowClassName[] = L"SeonEngineWindow";
+	if (isWindowClassRegistered) { return false; }
+
+	instance = GetModuleHandleW(nullptr);
+	if (instance == nullptr) { return false; }
 
 	WNDCLASSEXW windowClass = {};
 	windowClass.cbSize = sizeof(windowClass);
@@ -24,15 +124,34 @@ bool WindowsApplication::Create()
 		return false;
 	}
 
+	isWindowClassRegistered = true;
+
 	const DWORD windowStyle = WS_OVERLAPPEDWINDOW;
 	const DWORD windowExStyle = 0;
 
 	const int windowWidth = 1280;
 	const int windowHeight = 720;
-	window = CreateWindowExW(windowExStyle, WindowClassName, L"SeonEngine", windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, this);
+	window = CreateWindowExW(windowExStyle, WindowClassName, L"SeonEngine", windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, nullptr);
 	if (window == nullptr)
 	{
 		// @TODO 실패 로그
+		return false;
+	}
+
+	// 창 생성이 끝난 뒤, 이후 메시지에서 소유 객체를 찾을 수 있도록 연결한다.
+	SetLastError(ERROR_SUCCESS);
+	const LONG_PTR previousData = SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+	if (previousData == 0 && GetLastError() != ERROR_SUCCESS)
+	{
+		// 연결되지 않은 창이므로 파괴 성공 시 여기서 직접 핸들을 비운다.
+		if (DestroyWindow(window))
+		{
+			window = nullptr;
+		}
+		else
+		{
+			// TODO: 창 파괴 실패 로그를 남긴다. 핸들을 유지해 소멸자에서 다시 정리한다.
+		}
 		return false;
 	}
 
@@ -41,13 +160,76 @@ bool WindowsApplication::Create()
 	return true;
 }
 
-LRESULT WindowsApplication::WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+bool WindowsApplication::ProcessMessages(int& outExitCode)
 {
+	inputState.ClearFrameEvents();
+
+	MSG message = {};
+
+	while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+	{
+		if (message.message == WM_QUIT)
+		{
+			outExitCode = static_cast<int>(message.wParam);
+			return false;
+		}
+
+		TranslateMessage(&message);
+		DispatchMessageW(&message);
+	}
+
+	return true;
+}
+
+HWND WindowsApplication::GetWindowHandle() const
+{
+	return window;
+}
+
+bool WindowsApplication::GetClientSize(int& outWidth, int& outHeight) const
+{
+	if (window == nullptr) { return false; }
+
+	RECT clientRect = {};
+	if (!GetClientRect(window, &clientRect)) { return false; }
+
+	outWidth = clientRect.right - clientRect.left;
+	outHeight = clientRect.bottom - clientRect.top;
+	return true;
+}
+
+LRESULT WindowsApplication::WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// 창 생성 중 객체 주소를 연결하기 전과 연결을 해제한 뒤의 메시지는 기록할 대상이 없다.
+	WindowsApplication* windowsApplication = reinterpret_cast<WindowsApplication*>(GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
+	if (windowsApplication != nullptr)
+	{
+		// 기록 후에도 아래 DefWindowProcW로 넘겨 Alt+F4 같은 시스템 키 처리를 유지한다.
+		RecordInputMessage(windowsApplication->inputState, message, wParam);
+	}
+
 	if (message == WM_DESTROY)
 	{
 		PostQuitMessage(0);
+
 		return 0;
 	}
 
-	return DefWindowProcW(window, message, wParam, lParam);
+	if (message == WM_NCDESTROY)
+	{
+		WindowsApplication* application = reinterpret_cast<WindowsApplication*>(GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
+		if (application != nullptr)
+		{
+			application->window = nullptr;
+
+			SetWindowLongPtrW(windowHandle, GWLP_USERDATA, 0);
+		}
+	}
+
+	return DefWindowProcW(windowHandle, message, wParam, lParam);
+}
+
+const InputState& WindowsApplication::GetInputState() const
+{
+	return inputState;
 }

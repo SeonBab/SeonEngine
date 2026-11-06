@@ -4,24 +4,102 @@
     <Filter Include="Engine">
       <UniqueIdentifier>{f8b23e92-c7f9-412a-ace9-3c42c08fa714}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Source">
+      <UniqueIdentifier>{0bc5d6c8-f10b-4c48-bd57-3298348ea81a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Game">
       <UniqueIdentifier>{b8f07297-01c3-4ade-beaf-48c2a3dd78f5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Source">
       <UniqueIdentifier>{2e324943-078b-4bc4-a761-e0331e6269d9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Component">
+      <UniqueIdentifier>{6dd01cc8-6567-4af5-bf83-a8ad01ac577b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Core">
+      <UniqueIdentifier>{2b431d6f-7eca-4fb1-9fca-2c51ec006850}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Input">
+      <UniqueIdentifier>{7d3a9c41-5e2b-4f86-9a1d-c2b8e6f04a57}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Source\EngineMain.cpp">
+    <ClCompile Include="Game\Source\GameMain.cpp">
+      <Filter>Game\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Source\PlayerObject.cpp">
+      <Filter>Game\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\World.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\WindowsApplication.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Component\Component.cpp">
+      <Filter>Engine\Source\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Component\TransformComponent.cpp">
+      <Filter>Engine\Source\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Core\Vector3.cpp">
+      <Filter>Engine\Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\GameObject.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\FrameTimer.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Input\InputState.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Input\InputDispatcher.cpp">
+      <Filter>Engine\Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Component\InputComponent.cpp">
+      <Filter>Engine\Source\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Source\PlayerObject.h">
+      <Filter>Game\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\World.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\WindowsApplication.h">
       <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Component\Component.h">
+      <Filter>Engine\Source\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Component\TransformComponent.h">
+      <Filter>Engine\Source\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Core\Vector3.h">
+      <Filter>Engine\Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\GameObject.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\FrameTimer.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Input\InputState.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Input\Key.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Input\InputDispatcher.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Input\KeyBinding.h">
+      <Filter>Engine\Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Component\InputComponent.h">
+      <Filter>Engine\Source\Component</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

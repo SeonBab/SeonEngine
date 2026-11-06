@@ -18,6 +18,12 @@ Visual Studio Installer에서 워크로드와 해당 구성 요소를 설치합�
 2. 구성을 `Debug` 또는 `Release`, 플랫폼을 `x64`로 선택합니다.
 3. **빌드 → 솔루션 빌드**를 실행합니다.
 
+## 소스와 헤더 경로
+
+프로세스 진입점은 `Game/Source/GameMain.cpp`에 둡니다. `Engine/Source`에는 게임에서 사용하는 창 처리와 시간 측정 코드를 둡니다. 현재는 하나의 실행 프로젝트에서 두 경로의 소스를 함께 빌드합니다.
+
+Debug·Release의 추가 포함 디렉터리에 `$(ProjectDir)Engine\Source`를 지정합니다. 게임 소스에서는 `#include "WindowsApplication.h"`처럼 엔진 헤더를 포함하며 기존 상속 경로도 유지합니다.
+
 ## 도구 집합 선택과 출력 경로
 
 MSBuild가 자동으로 읽는 [Directory.Build.props](../Directory.Build.props)에서 `VisualStudioVersion`에 따라 `SEPlatformToolset`을 선택합니다. [SeonEngine.vcxproj](../SeonEngine.vcxproj)의 Debug·Release는 `PlatformToolset`에 `$(SEPlatformToolset)`을 사용합니다. [MSBuild 공통 설정 안내](https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory)
@@ -33,6 +39,8 @@ MSBuild가 자동으로 읽는 [Directory.Build.props](../Directory.Build.props)
 | --- | --- |
 | `OutDir` | `Binaries/<도구 집합>/<플랫폼>/<구성>/` |
 | `IntDir` | `Intermediate/<도구 집합>/<프로젝트 이름>/<플랫폼>/<구성>/` |
+
+두 폴더는 빌드 결과물이므로 `.gitignore`로 버전 관리에서 제외합니다.
 
 ## 설정 확인
 
