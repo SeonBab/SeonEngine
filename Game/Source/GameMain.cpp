@@ -1,36 +1,22 @@
-#include "FrameTimer.h"
-#include "Input/InputDispatcher.h"
+#include "Component/CameraComponent.h"
+#include "Engine.h"
 #include "PlayerObject.h"
-#include "WindowsApplication.h"
-#include "World.h"
 
 #include <memory>
 
 int main()
 {
-	WindowsApplication windowsApplication;
-	if (!windowsApplication.Initialize())
+	Engine engine;
+	if (!engine.Initialize())
 	{
 		// @TODO 실패 로그
 		return 1;
 	}
 
-	World world;
-	world.AddGameObject(std::make_unique<PlayerObject>(world));
+	World& world = engine.GetWorld();
+	GameObject* player = world.AddGameObject(std::make_unique<PlayerObject>(world));
+	// World에 등록된 객체의 카메라만 지정할 수 있으므로 AddGameObject 뒤에 지정한다.
+	if (player != nullptr) { world.SetActiveCamera(player->GetComponent<CameraComponent>()); }
 
-	FrameTimer frameTimer;
-	int exitCode = 0;
-
-	while (windowsApplication.ProcessMessages(exitCode))
-	{
-		const float deltaTime = frameTimer.Tick();
-
-		// 입력 바인딩을 먼저 실행한 뒤 일반 갱신을 한다.
-		world.GetInputDispatcher().Dispatch(windowsApplication.GetInputState(), deltaTime);
-		world.Tick(deltaTime);
-
-		// TODO: 렌더링을 연결한다.
-	}
-
-	return exitCode;
+	return engine.Run();
 }

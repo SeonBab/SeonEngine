@@ -11,4 +11,4 @@ C++ 자체 게임 엔진입니다.
 
 브랜치와 커밋 기준은 [Git 컨벤션](Docs/Conventions/GitConvention.md)을 참고하세요.
 
-공간의 축 방향과 길이 단위는 [좌표계와 단위](Docs/CoordinateSystem.md)를 참고하세요.
+공간의 축 방향, 길이 단위, 회전 표현과 행렬 규칙은 [좌표계와 단위](Docs/CoordinateSystem.md)를 참고하세요.

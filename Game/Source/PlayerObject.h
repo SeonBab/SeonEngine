@@ -6,12 +6,12 @@
 class TransformComponent;
 class World;
 
-/** 입력 확인용 게임 객체다. WASD로 수평 이동하고 Space의 누름과 뗌을 콘솔에 출력한다. */
+/** 입력 확인용 게임 객체다. WASD로 수평 이동하고 Space의 누름과 뗌을 콘솔에 출력한다. 1인칭 카메라를 가진다. */
 class PlayerObject : public GameObject
 {
 	// 생성과 소멸
 public:
-	/** 위치와 입력 컴포넌트를 부착하고 키 바인딩을 등록한다. */
+	/** 위치, 입력, 카메라 컴포넌트를 부착하고 키 바인딩을 등록한다. */
 	explicit PlayerObject(World& targetWorld);
 
 	// 이동

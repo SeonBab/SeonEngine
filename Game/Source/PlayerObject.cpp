@@ -1,5 +1,6 @@
 #include "PlayerObject.h"
 
+#include "Component/CameraComponent.h"
 #include "Component/InputComponent.h"
 #include "Component/TransformComponent.h"
 #include "Input/Key.h"
@@ -34,6 +35,9 @@ PlayerObject::PlayerObject(World& targetWorld)
 	input->BindKey(Key::D, KeyTrigger::Held, [this](float deltaTime) { Move(Vector3{ 1.0f, 0.0f, 0.0f }, deltaTime); });
 	input->BindKey(Key::Space, KeyTrigger::Pressed, [this](float) { PrintPosition("Space Pressed"); });
 	input->BindKey(Key::Space, KeyTrigger::Released, [this](float) { PrintPosition("Space Released"); });
+
+	// 플레이어 위치와 회전을 그대로 쓰는 1인칭 시점 카메라다. 활성 지정은 World 등록 뒤 GameMain이 한다.
+	AddComponent(std::make_unique<CameraComponent>());
 }
 
 void PlayerObject::Move(const Vector3& direction, float deltaTime)

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Component/Component.h"
+
+#include <concepts>
 #include <memory>
 #include <vector>
 
-class Component;
 class World;
 
 class GameObject
@@ -35,6 +37,14 @@ public:
 	 */
 	Component* AddComponent(std::unique_ptr<Component> newComponent);
 
+	/**
+	 * 붙은 컴포넌트를 추가 순서대로 확인해 T 타입인 첫 번째를 빌려준다. 없으면 nullptr이다.
+	 * 반환 포인터는 이 객체의 수명 동안만 유효하다.
+	 */
+	template <typename T>
+		requires std::derived_from<T, Component>
+	T* GetComponent() const;
+
 private:
 	std::vector<std::unique_ptr<Component>> components;
 
@@ -47,3 +57,17 @@ protected:
 	/** 파생 타입의 갱신 지점. 부모 호출은 필요 없다. */
 	virtual void OnTick(float deltaTime);
 };
+
+template <typename T>
+	requires std::derived_from<T, Component>
+T* GameObject::GetComponent() const
+{
+	for (const std::unique_ptr<Component>& component : components)
+	{
+		if (T* found = dynamic_cast<T*>(component.get()))
+		{
+			return found;
+		}
+	}
+	return nullptr;
+}

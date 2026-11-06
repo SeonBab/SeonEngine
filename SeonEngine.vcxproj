@@ -11,20 +11,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Source\Camera\CameraViewInfo.cpp" />
+    <ClCompile Include="Engine\Source\Core\Matrix4x4.cpp" />
+    <ClCompile Include="Engine\Source\Core\Quaternion.cpp" />
+    <ClCompile Include="Engine\Source\Core\Transform.cpp" />
     <ClCompile Include="Game\Source\GameMain.cpp" />
     <ClCompile Include="Game\Source\PlayerObject.cpp" />
+    <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\FrameTimer.cpp" />
     <ClCompile Include="Engine\Source\Input\InputState.cpp" />
     <ClCompile Include="Engine\Source\Input\InputDispatcher.cpp" />
     <ClCompile Include="Engine\Source\Component\InputComponent.cpp" />
+    <ClCompile Include="Engine\Source\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Source\Component\Component.cpp" />
+    <ClCompile Include="Engine\Source\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Source\Component\TransformComponent.cpp" />
     <ClCompile Include="Engine\Source\Core\Vector3.cpp" />
     <ClCompile Include="Engine\Source\GameObject.cpp" />
     <ClCompile Include="Engine\Source\WindowsApplication.cpp" />
     <ClCompile Include="Engine\Source\World.cpp" />
+    <ClCompile Include="Engine\Source\Renderer\RenderScene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Source\Camera\CameraViewInfo.h" />
+    <ClInclude Include="Engine\Source\Core\MathUtility.h" />
+    <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="Engine\Source\FrameTimer.h" />
     <ClInclude Include="Game\Source\PlayerObject.h" />
     <ClInclude Include="Engine\Source\Input\InputState.h" />
@@ -32,12 +43,24 @@
     <ClInclude Include="Engine\Source\Input\InputDispatcher.h" />
     <ClInclude Include="Engine\Source\Input\KeyBinding.h" />
     <ClInclude Include="Engine\Source\Component\InputComponent.h" />
+    <ClInclude Include="Engine\Source\Component\CameraComponent.h" />
     <ClInclude Include="Engine\Source\Component\Component.h" />
+    <ClInclude Include="Engine\Source\Component\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Source\Component\TransformComponent.h" />
+    <ClInclude Include="Engine\Source\Core\EulerAngles.h" />
+    <ClInclude Include="Engine\Source\Core\Matrix4x4.h" />
+    <ClInclude Include="Engine\Source\Core\Quaternion.h" />
+    <ClInclude Include="Engine\Source\Core\Transform.h" />
+    <ClInclude Include="Engine\Source\Core\Vector2.h" />
     <ClInclude Include="Engine\Source\Core\Vector3.h" />
     <ClInclude Include="Engine\Source\GameObject.h" />
     <ClInclude Include="Engine\Source\WindowsApplication.h" />
     <ClInclude Include="Engine\Source\World.h" />
+    <ClInclude Include="Engine\Source\Renderer\RenderScene.h" />
+    <ClInclude Include="Engine\Source\Renderer\RenderView.h" />
+    <ClInclude Include="Engine\Source\Renderer\SceneRenderData.h" />
+    <ClInclude Include="Engine\Source\Mesh\MeshVertex.h" />
+    <ClInclude Include="Engine\Source\Mesh\StaticMeshData.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
