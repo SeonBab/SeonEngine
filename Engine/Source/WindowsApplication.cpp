@@ -6,13 +6,13 @@ namespace
 {
 	constexpr wchar_t WindowClassName[] = L"SeonEngineWindow";
 
-	static_assert(static_cast<int>(Key::Z) - static_cast<int>(Key::A) == 'Z' - 'A', "AºÎÅÍ Z±îÁö Key °ªÀÌ ¿¬¼ÓÇØ¾ß ÇÑ´Ù.");
-	static_assert(static_cast<int>(Key::Number9) - static_cast<int>(Key::Number0) == '9' - '0', "Number0ºÎÅÍ Number9±îÁö Key °ªÀÌ ¿¬¼ÓÇØ¾ß ÇÑ´Ù.");
+	static_assert(static_cast<int>(Key::Z) - static_cast<int>(Key::A) == 'Z' - 'A', "Aë¶€í„° Zê¹Œì§€ Key ê°’ì´ ì—°ì†í•´ì•¼ í•œë‹¤.");
+	static_assert(static_cast<int>(Key::Number9) - static_cast<int>(Key::Number0) == '9' - '0', "Number0ë¶€í„° Number9ê¹Œì§€ Key ê°’ì´ ì—°ì†í•´ì•¼ í•œë‹¤.");
 
-	/** Áö¿øÇÏÁö ¾Ê´Â °¡»ó Å°´Â Key::UnknownÀ¸·Î ¹Ù²Û´Ù. ¿ŞÂÊ°ú ¿À¸¥ÂÊ ¼öÁ¤ Å°´Â ±¸ºĞÇÏÁö ¾Ê´Â´Ù. */
+	/** ì§€ì›í•˜ì§€ ì•ŠëŠ” ê°€ìƒ í‚¤ëŠ” Key::Unknownìœ¼ë¡œ ë°”ê¾¼ë‹¤. ì™¼ìª½ê³¼ ì˜¤ë¥¸ìª½ ìˆ˜ì • í‚¤ëŠ” êµ¬ë¶„í•˜ì§€ ì•ŠëŠ”ë‹¤. */
 	Key TranslateKey(WPARAM virtualKey)
 	{
-		// WindowsÀÇ ¹®ÀÚ¿Í ¼ıÀÚ °¡»ó Å° ÄÚµå´Â ASCII ´ë¹®ÀÚ¿Í ¼ıÀÚ ÄÚµå¿Í °°´Ù.
+		// Windowsì˜ ë¬¸ìì™€ ìˆ«ì ê°€ìƒ í‚¤ ì½”ë“œëŠ” ASCII ëŒ€ë¬¸ìì™€ ìˆ«ì ì½”ë“œì™€ ê°™ë‹¤.
 		if (virtualKey >= 'A' && virtualKey <= 'Z')
 		{
 			return static_cast<Key>(static_cast<int>(Key::A) + static_cast<int>(virtualKey - 'A'));
@@ -53,10 +53,10 @@ namespace
 	}
 
 	/**
-	 * Å° ¸Ş½ÃÁö¿Í Æ÷Ä¿½º »ó½ÇÀ» ÀÔ·Â »óÅÂ¿¡ ±â·ÏÇÑ´Ù. ±× ¹ÛÀÇ ¸Ş½ÃÁö´Â ¹«½ÃÇÑ´Ù.
-	 * Alt¿Í ÇÔ²² ´©¸¥ Å°´Â WM_SYSKEYDOWNÀ¸·Î µé¾î¿À¹Ç·Î ÀÏ¹İ Å° ¸Ş½ÃÁö¿Í °°ÀÌ ±â·ÏÇÑ´Ù.
-	 * Ã¢ ÇÁ·Î½ÃÀú´Â Windows°¡ È£ÃâÇÏ¹Ç·Î ¿¹¿Ü°¡ ±× ¹ÛÀ¸·Î ³ª°¡Áö ¾Ê°Ô noexcept·Î µĞ´Ù.
-	 * ÀÌº¥Æ® ¸ñ·Ï ÇÒ´ç¿¡ ½ÇÆĞÇÏ¸é std::terminate·Î ÇÁ·Î±×·¥À» Á¾·áÇÑ´Ù.
+	 * í‚¤ ë©”ì‹œì§€ì™€ í¬ì»¤ìŠ¤ ìƒì‹¤ì„ ì…ë ¥ ìƒíƒœì— ê¸°ë¡í•œë‹¤. ê·¸ ë°–ì˜ ë©”ì‹œì§€ëŠ” ë¬´ì‹œí•œë‹¤.
+	 * Altì™€ í•¨ê»˜ ëˆ„ë¥¸ í‚¤ëŠ” WM_SYSKEYDOWNìœ¼ë¡œ ë“¤ì–´ì˜¤ë¯€ë¡œ ì¼ë°˜ í‚¤ ë©”ì‹œì§€ì™€ ê°™ì´ ê¸°ë¡í•œë‹¤.
+	 * ì°½ í”„ë¡œì‹œì €ëŠ” Windowsê°€ í˜¸ì¶œí•˜ë¯€ë¡œ ì˜ˆì™¸ê°€ ê·¸ ë°–ìœ¼ë¡œ ë‚˜ê°€ì§€ ì•Šê²Œ noexceptë¡œ ë‘”ë‹¤.
+	 * ì´ë²¤íŠ¸ ëª©ë¡ í• ë‹¹ì— ì‹¤íŒ¨í•˜ë©´ std::terminateë¡œ í”„ë¡œê·¸ë¨ì„ ì¢…ë£Œí•œë‹¤.
 	 */
 	void RecordInputMessage(InputState& inputState, UINT message, WPARAM wParam) noexcept
 	{
@@ -85,7 +85,7 @@ WindowsApplication::~WindowsApplication()
 	{
 		if (!DestroyWindow(window))
 		{
-			// TODO: Ã¢ ÆÄ±« ½ÇÆĞ ·Î±×¸¦ ³²±ä´Ù.
+			// TODO: ì°½ íŒŒê´´ ì‹¤íŒ¨ ë¡œê·¸ë¥¼ ë‚¨ê¸´ë‹¤.
 		}
 	}
 
@@ -93,7 +93,7 @@ WindowsApplication::~WindowsApplication()
 	{
 		if (!UnregisterClassW(WindowClassName, instance))
 		{
-			// TODO: Ã¢ Å¬·¡½º ÇØÁ¦ ½ÇÆĞ ·Î±×¸¦ ³²±ä´Ù.
+			// TODO: ì°½ í´ë˜ìŠ¤ í•´ì œ ì‹¤íŒ¨ ë¡œê·¸ë¥¼ ë‚¨ê¸´ë‹¤.
 		}
 	}
 }
@@ -120,7 +120,7 @@ bool WindowsApplication::Create()
 
 	if (RegisterClassExW(&windowClass) == 0)
 	{
-		// @TODO ½ÇÆĞ ·Î±×
+		// @TODO ì‹¤íŒ¨ ë¡œê·¸
 		return false;
 	}
 
@@ -134,23 +134,23 @@ bool WindowsApplication::Create()
 	window = CreateWindowExW(windowExStyle, WindowClassName, L"SeonEngine", windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, nullptr);
 	if (window == nullptr)
 	{
-		// @TODO ½ÇÆĞ ·Î±×
+		// @TODO ì‹¤íŒ¨ ë¡œê·¸
 		return false;
 	}
 
-	// Ã¢ »ı¼ºÀÌ ³¡³­ µÚ, ÀÌÈÄ ¸Ş½ÃÁö¿¡¼­ ¼ÒÀ¯ °´Ã¼¸¦ Ã£À» ¼ö ÀÖµµ·Ï ¿¬°áÇÑ´Ù.
+	// ì°½ ìƒì„±ì´ ëë‚œ ë’¤, ì´í›„ ë©”ì‹œì§€ì—ì„œ ì†Œìœ  ê°ì²´ë¥¼ ì°¾ì„ ìˆ˜ ìˆë„ë¡ ì—°ê²°í•œë‹¤.
 	SetLastError(ERROR_SUCCESS);
 	const LONG_PTR previousData = SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 	if (previousData == 0 && GetLastError() != ERROR_SUCCESS)
 	{
-		// ¿¬°áµÇÁö ¾ÊÀº Ã¢ÀÌ¹Ç·Î ÆÄ±« ¼º°ø ½Ã ¿©±â¼­ Á÷Á¢ ÇÚµéÀ» ºñ¿î´Ù.
+		// ì—°ê²°ë˜ì§€ ì•Šì€ ì°½ì´ë¯€ë¡œ íŒŒê´´ ì„±ê³µ ì‹œ ì—¬ê¸°ì„œ ì§ì ‘ í•¸ë“¤ì„ ë¹„ìš´ë‹¤.
 		if (DestroyWindow(window))
 		{
 			window = nullptr;
 		}
 		else
 		{
-			// TODO: Ã¢ ÆÄ±« ½ÇÆĞ ·Î±×¸¦ ³²±ä´Ù. ÇÚµéÀ» À¯ÁöÇØ ¼Ò¸êÀÚ¿¡¼­ ´Ù½Ã Á¤¸®ÇÑ´Ù.
+			// TODO: ì°½ íŒŒê´´ ì‹¤íŒ¨ ë¡œê·¸ë¥¼ ë‚¨ê¸´ë‹¤. í•¸ë“¤ì„ ìœ ì§€í•´ ì†Œë©¸ìì—ì„œ ë‹¤ì‹œ ì •ë¦¬í•œë‹¤.
 		}
 		return false;
 	}
@@ -200,11 +200,11 @@ bool WindowsApplication::GetClientSize(int& outWidth, int& outHeight) const
 
 LRESULT WindowsApplication::WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	// Ã¢ »ı¼º Áß °´Ã¼ ÁÖ¼Ò¸¦ ¿¬°áÇÏ±â Àü°ú ¿¬°áÀ» ÇØÁ¦ÇÑ µÚÀÇ ¸Ş½ÃÁö´Â ±â·ÏÇÒ ´ë»óÀÌ ¾ø´Ù.
+	// ì°½ ìƒì„± ì¤‘ ê°ì²´ ì£¼ì†Œë¥¼ ì—°ê²°í•˜ê¸° ì „ê³¼ ì—°ê²°ì„ í•´ì œí•œ ë’¤ì˜ ë©”ì‹œì§€ëŠ” ê¸°ë¡í•  ëŒ€ìƒì´ ì—†ë‹¤.
 	WindowsApplication* windowsApplication = reinterpret_cast<WindowsApplication*>(GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
 	if (windowsApplication != nullptr)
 	{
-		// ±â·Ï ÈÄ¿¡µµ ¾Æ·¡ DefWindowProcW·Î ³Ñ°Ü Alt+F4 °°Àº ½Ã½ºÅÛ Å° Ã³¸®¸¦ À¯ÁöÇÑ´Ù.
+		// ê¸°ë¡ í›„ì—ë„ ì•„ë˜ DefWindowProcWë¡œ ë„˜ê²¨ Alt+F4 ê°™ì€ ì‹œìŠ¤í…œ í‚¤ ì²˜ë¦¬ë¥¼ ìœ ì§€í•œë‹¤.
 		RecordInputMessage(windowsApplication->inputState, message, wParam);
 	}
 

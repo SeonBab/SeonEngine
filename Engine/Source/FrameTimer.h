@@ -5,7 +5,7 @@
 class FrameTimer
 {
 public:
-	/** »ı¼º ½Ã Ã¹ ÃøÁ¤ÀÇ ±âÁØ ½ÃÁ¡À» ÀúÀåÇÑ´Ù. */
+	/** ìƒì„± ì‹œ ì²« ì¸¡ì •ì˜ ê¸°ì¤€ ì‹œì ì„ ì €ì¥í•œë‹¤. */
 	FrameTimer();
 	virtual ~FrameTimer() = default;
 
@@ -14,7 +14,7 @@ public:
 	FrameTimer(FrameTimer&&) = delete;
 	FrameTimer& operator=(FrameTimer&&) = delete;
 
-	/** Á÷Àü ÃøÁ¤(Ã¹ È£ÃâÀº »ı¼º)ºÎÅÍ °æ°úÇÑ ÃÊ¸¦ ¹İÈ¯ÇÏ°í ±âÁØ ½ÃÁ¡À» °»½ÅÇÑ´Ù. */
+	/** ì§ì „ ì¸¡ì •(ì²« í˜¸ì¶œì€ ìƒì„±)ë¶€í„° ê²½ê³¼í•œ ì´ˆë¥¼ ë°˜í™˜í•˜ê³  ê¸°ì¤€ ì‹œì ì„ ê°±ì‹ í•œë‹¤. */
 	float Tick();
 
 private:

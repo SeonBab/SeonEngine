@@ -8,9 +8,9 @@ class World;
 
 class GameObject
 {
-	// »ı¼º°ú ¼Ò¸ê
+	// ìƒì„±ê³¼ ì†Œë©¸
 public:
-	/** ¿ùµå´Â ÀÌ °´Ã¼º¸´Ù ¿À·¡ »ì¾Æ ÀÖ¾î¾ß ÇÑ´Ù. »ı¼º°ú µî·ÏÀº º°°³´Ù. */
+	/** ì›”ë“œëŠ” ì´ ê°ì²´ë³´ë‹¤ ì˜¤ë˜ ì‚´ì•„ ìˆì–´ì•¼ í•œë‹¤. ìƒì„±ê³¼ ë“±ë¡ì€ ë³„ê°œë‹¤. */
 	explicit GameObject(World& targetWorld);
 	virtual ~GameObject();
 
@@ -19,31 +19,31 @@ public:
 	GameObject(GameObject&&) = delete;
 	GameObject& operator=(GameObject&&) = delete;
 
-	// ¼Ò¼Ó ¿ùµå
+	// ì†Œì† ì›”ë“œ
 public:
 	World& GetWorld() const;
 
 private:
 	World& world;
 
-	// ÄÄÆ÷³ÍÆ®
+	// ì»´í¬ë„ŒíŠ¸
 public:
 	/**
-	 * ¼ÒÀ¯±ÇÀ» ¹Ş¾Æ µî·ÏÇÏ°í ÀÌ °´Ã¼¸¦ ¼Ò¼ÓÀ¸·Î ¼³Á¤ÇÑ µÚ ÄÄÆ÷³ÍÆ®ÀÇ OnRegister¸¦ È£ÃâÇÑ´Ù.
-	 * ¹İÈ¯ Æ÷ÀÎÅÍ´Â ÀÌ °´Ã¼ÀÇ ¼ö¸í µ¿¾È¸¸ ºô·Á ¾´´Ù.
-	 * ºó ÀÔ·ÂÀº nullptr¸¦ ¹İÈ¯ÇÑ´Ù.
+	 * ì†Œìœ ê¶Œì„ ë°›ì•„ ë“±ë¡í•˜ê³  ì´ ê°ì²´ë¥¼ ì†Œì†ìœ¼ë¡œ ì„¤ì •í•œ ë’¤ ì»´í¬ë„ŒíŠ¸ì˜ OnRegisterë¥¼ í˜¸ì¶œí•œë‹¤.
+	 * ë°˜í™˜ í¬ì¸í„°ëŠ” ì´ ê°ì²´ì˜ ìˆ˜ëª… ë™ì•ˆë§Œ ë¹Œë ¤ ì“´ë‹¤.
+	 * ë¹ˆ ì…ë ¥ì€ nullptrë¥¼ ë°˜í™˜í•œë‹¤.
 	 */
 	Component* AddComponent(std::unique_ptr<Component> newComponent);
 
 private:
 	std::vector<std::unique_ptr<Component>> components;
 
-	// °»½Å
+	// ê°±ì‹ 
 public:
-	/** ¿ùµå°¡ ÇÁ·¹ÀÓ¸¶´Ù È£ÃâÇÑ´Ù. deltaTime´Â ÃÊ ´ÜÀ§´Ù. */
+	/** ì›”ë“œê°€ í”„ë ˆì„ë§ˆë‹¤ í˜¸ì¶œí•œë‹¤. deltaTimeëŠ” ì´ˆ ë‹¨ìœ„ë‹¤. */
 	void Tick(float deltaTime);
 
 protected:
-	/** ÆÄ»ı Å¸ÀÔÀÇ °»½Å ÁöÁ¡. ºÎ¸ğ È£ÃâÀº ÇÊ¿ä ¾ø´Ù. */
+	/** íŒŒìƒ íƒ€ì…ì˜ ê°±ì‹  ì§€ì . ë¶€ëª¨ í˜¸ì¶œì€ í•„ìš” ì—†ë‹¤. */
 	virtual void OnTick(float deltaTime);
 };

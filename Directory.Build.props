@@ -7,4 +7,9 @@
     <OutDir>$(MSBuildThisFileDirectory)Binaries\$(SEPlatformToolset)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)Intermediate\$(SEPlatformToolset)\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <ClCompile>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

@@ -11,7 +11,7 @@
 
 namespace
 {
-	// ´ÜÀ§´Â cm/s´Ù. 1 unit = 1cm ±âÁØÀ¸·Î ÃÊ´ç 3m ÀÌµ¿ÇÑ´Ù.
+	// ë‹¨ìœ„ëŠ” cm/së‹¤. 1 unit = 1cm ê¸°ì¤€ìœ¼ë¡œ ì´ˆë‹¹ 3m ì´ë™í•œë‹¤.
 	constexpr float MoveSpeed = 300.0f;
 }
 
@@ -24,10 +24,10 @@ PlayerObject::PlayerObject(World& targetWorld)
 
 	std::unique_ptr<InputComponent> newInput = std::make_unique<InputComponent>();
 	InputComponent* input = newInput.get();
-	// ºÎÂø ½Ã OnRegister°¡ È£ÃâµÇ¾î ¼Ò¼Ó WorldÀÇ Àü´ŞÀÚ¿¡ Ãß°¡µÈ´Ù.
+	// ë¶€ì°© ì‹œ OnRegisterê°€ í˜¸ì¶œë˜ì–´ ì†Œì† Worldì˜ ì „ë‹¬ìì— ì¶”ê°€ëœë‹¤.
 	AddComponent(std::move(newInput));
 
-	// ¿Ş¼Õ ÁÂÇ¥°è¿¡¼­ +Z´Â ¾ÕÂÊ, +X´Â ¿À¸¥ÂÊÀÌ´Ù.
+	// ì™¼ì† ì¢Œí‘œê³„ì—ì„œ +ZëŠ” ì•ìª½, +XëŠ” ì˜¤ë¥¸ìª½ì´ë‹¤.
 	input->BindKey(Key::W, KeyTrigger::Held, [this](float deltaTime) { Move(Vector3{ 0.0f, 0.0f, 1.0f }, deltaTime); });
 	input->BindKey(Key::S, KeyTrigger::Held, [this](float deltaTime) { Move(Vector3{ 0.0f, 0.0f, -1.0f }, deltaTime); });
 	input->BindKey(Key::A, KeyTrigger::Held, [this](float deltaTime) { Move(Vector3{ -1.0f, 0.0f, 0.0f }, deltaTime); });

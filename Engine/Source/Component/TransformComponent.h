@@ -6,7 +6,7 @@
 class TransformComponent : public Component
 {
 public:
-	/** ¿ùµå À§Ä¡ÀÇ º¹»çº»À» ¹İÈ¯ÇÑ´Ù. */
+	/** ì›”ë“œ ìœ„ì¹˜ì˜ ë³µì‚¬ë³¸ì„ ë°˜í™˜í•œë‹¤. */
 	Vector3 GetPosition() const;
 
 	void SetPosition(const Vector3& newPosition);

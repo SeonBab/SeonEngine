@@ -11,7 +11,7 @@ int main()
 	WindowsApplication windowsApplication;
 	if (!windowsApplication.Initialize())
 	{
-		// @TODO ½ÇÆĞ ·Î±×
+		// @TODO ì‹¤íŒ¨ ë¡œê·¸
 		return 1;
 	}
 
@@ -25,11 +25,11 @@ int main()
 	{
 		const float deltaTime = frameTimer.Tick();
 
-		// ÀÔ·Â ¹ÙÀÎµùÀ» ¸ÕÀú ½ÇÇàÇÑ µÚ ÀÏ¹İ °»½ÅÀ» ÇÑ´Ù.
+		// ì…ë ¥ ë°”ì¸ë”©ì„ ë¨¼ì € ì‹¤í–‰í•œ ë’¤ ì¼ë°˜ ê°±ì‹ ì„ í•œë‹¤.
 		world.GetInputDispatcher().Dispatch(windowsApplication.GetInputState(), deltaTime);
 		world.Tick(deltaTime);
 
-		// TODO: ·»´õ¸µÀ» ¿¬°áÇÑ´Ù.
+		// TODO: ë Œë”ë§ì„ ì—°ê²°í•œë‹¤.
 	}
 
 	return exitCode;

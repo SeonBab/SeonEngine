@@ -17,7 +17,7 @@ namespace
 
 void InputState::ClearFrameEvents()
 {
-	// clear�� ���Ҹ� ����� �Ҵ��� �޸𸮴� �����ϹǷ� ���� �����ӿ� �����Ѵ�.
+	// clear는 원소만 지우고 할당한 메모리는 유지하므로 다음 프레임에 재사용한다.
 	frameEvents.clear();
 }
 
@@ -27,10 +27,10 @@ void InputState::PressKey(Key key)
 
 	bool& isDown = downKeys[ToIndex(key)];
 
-	// �̹� ������ ���̸� Windows �ڵ� �ݺ� ���� �ߺ� �����̹Ƿ� �� �̺�Ʈ�� ������ �ʴ´�.
+	// 이미 누르는 중이면 Windows 자동 반복 같은 중복 누름이므로 새 이벤트를 만들지 않는다.
 	if (isDown) { return; }
 
-	// �̺�Ʈ �߰��� �����ϸ� ���µ� �ٲ��� �ʵ��� �߰��� ���� �Ѵ�.
+	// 이벤트 추가가 실패하면 상태도 바꾸지 않도록 추가를 먼저 한다.
 	frameEvents.push_back(KeyEvent{ key, KeyEventType::Pressed });
 	isDown = true;
 }

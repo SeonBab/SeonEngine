@@ -33,13 +33,13 @@ void InputDispatcher::RemoveInputComponent(InputComponent* inputComponent)
 	auto found = std::find(inputComponents.begin(), inputComponents.end(), inputComponent);
 	if (found == inputComponents.end()) { return; }
 
-	// ³²Àº ÄÄÆ÷³ÍÆ®ÀÇ Ãß°¡ ¼ø¼­¸¦ À¯ÁöÇÏ·Á°í erase¸¦ ¾´´Ù.
+	// ë‚¨ì€ ì»´í¬ë„ŒíŠ¸ì˜ ì¶”ê°€ ìˆœì„œë¥¼ ìœ ì§€í•˜ë ¤ê³  eraseë¥¼ ì“´ë‹¤.
 	inputComponents.erase(found);
 }
 
 void InputDispatcher::Dispatch(const InputState& inputState, float deltaTime) const
 {
-	// ÀÌº¥Æ®¸¦ ¹Ù±ù ¹İº¹¿¡ µÎ¾î, Å°°¡ ´Ş¶óµµ ¾Õ¼± ÀÌº¥Æ®¸¦ ¸ğµç ÄÄÆ÷³ÍÆ®°¡ Ã³¸®ÇÑ µÚ ´ÙÀ½ ÀÌº¥Æ®·Î ³Ñ¾î°£´Ù.
+	// ì´ë²¤íŠ¸ë¥¼ ë°”ê¹¥ ë°˜ë³µì— ë‘ì–´, í‚¤ê°€ ë‹¬ë¼ë„ ì•ì„  ì´ë²¤íŠ¸ë¥¼ ëª¨ë“  ì»´í¬ë„ŒíŠ¸ê°€ ì²˜ë¦¬í•œ ë’¤ ë‹¤ìŒ ì´ë²¤íŠ¸ë¡œ ë„˜ì–´ê°„ë‹¤.
 	for (const KeyEvent& keyEvent : inputState.GetFrameEvents())
 	{
 		const KeyTrigger trigger = ToKeyTrigger(keyEvent.type);
@@ -49,7 +49,7 @@ void InputDispatcher::Dispatch(const InputState& inputState, float deltaTime) co
 		}
 	}
 
-	// Held´Â ÀÌº¥Æ®°¡ ¾Æ´Ï¶ó Àü´Ş ½ÃÁ¡ÀÇ ´­¸² »óÅÂ·Î Á¤ÇÏ¹Ç·Î, ÇÑ ÇÁ·¹ÀÓ ¾È¿¡ ´­·¶´Ù ¶¾ Å°´Â ½ÇÇàÇÏÁö ¾Ê´Â´Ù.
+	// HeldëŠ” ì´ë²¤íŠ¸ê°€ ì•„ë‹ˆë¼ ì „ë‹¬ ì‹œì ì˜ ëˆŒë¦¼ ìƒíƒœë¡œ ì •í•˜ë¯€ë¡œ, í•œ í”„ë ˆì„ ì•ˆì— ëˆŒë €ë‹¤ ë—€ í‚¤ëŠ” ì‹¤í–‰í•˜ì§€ ì•ŠëŠ”ë‹¤.
 	for (std::size_t index = 0; index < KeyCount; ++index)
 	{
 		const Key key = static_cast<Key>(index);
