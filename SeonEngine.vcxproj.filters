@@ -28,6 +28,12 @@
     <Filter Include="Engine\Source\Mesh">
       <UniqueIdentifier>{c4a1d7e9-5b23-4f86-a0d1-7e3b9c25f614}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\ThirdParty">
+      <UniqueIdentifier>{2dcb4069-d326-49c4-bab3-b25f9bff6062}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ThirdParty\RapidJSON">
+      <UniqueIdentifier>{5524bed6-7f14-4614-95a1-1a4ad9a7ed87}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\Source\GameMain.cpp">
@@ -182,5 +188,13 @@
     <ClInclude Include="Engine\Source\Component\InputComponent.h">
       <Filter>Engine\Source\Component</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Engine\ThirdParty\RapidJSON\README.md">
+      <Filter>Engine\ThirdParty\RapidJSON</Filter>
+    </None>
+    <Text Include="Engine\ThirdParty\RapidJSON\license.txt">
+      <Filter>Engine\ThirdParty\RapidJSON</Filter>
+    </Text>
   </ItemGroup>
 </Project>

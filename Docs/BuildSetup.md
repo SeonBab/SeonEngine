@@ -24,6 +24,16 @@ Visual Studio Installer에서 워크로드와 해당 구성 요소를 설치합�
 
 Debug, Release의 추가 포함 디렉터리에 `$(ProjectDir)Engine\Source`를 지정합니다. 게임 소스에서는 `#include "WindowsApplication.h"`처럼 엔진 헤더를 포함하며 기존 상속 경로도 유지합니다.
 
+## 외부 라이브러리
+
+외부 라이브러리는 `Engine/ThirdParty/<라이브러리>/`에 원본 그대로 두고, 각 폴더의 README에 출처, 버전, 받은 파일의 해시와 포함한 범위를 적습니다. 별도 설치는 필요하지 않습니다.
+
+| 라이브러리 | 용도 | 버전 | 추가 포함 디렉터리 |
+| --- | --- | --- | --- |
+| RapidJSON | JSON 읽기 | 커밋 `24b5e7a8` ([README](../Engine/ThirdParty/RapidJSON/README.md)) | `$(ProjectDir)Engine\ThirdParty\RapidJSON\include` |
+
+헤더 전용 라이브러리이므로 링크 설정은 없습니다. 소스에서는 `#include "rapidjson/document.h"`처럼 포함합니다.
+
 ## 도구 집합 선택과 출력 경로
 
 MSBuild가 자동으로 읽는 [Directory.Build.props](../Directory.Build.props)에서 `VisualStudioVersion`에 따라 `SEPlatformToolset`을 선택합니다. [SeonEngine.vcxproj](../SeonEngine.vcxproj)의 Debug, Release는 `PlatformToolset`에 `$(SEPlatformToolset)`을 사용합니다. [MSBuild 공통 설정 안내](https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory)
