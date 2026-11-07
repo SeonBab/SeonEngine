@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Source\Camera\CameraViewInfo.cpp" />
+    <ClCompile Include="Engine\Source\CameraViewInfo.cpp" />
     <ClCompile Include="Engine\Source\Core\Matrix4x4.cpp" />
     <ClCompile Include="Engine\Source\Core\Quaternion.cpp" />
     <ClCompile Include="Engine\Source\Core\Transform.cpp" />
@@ -33,7 +33,7 @@
     <ClCompile Include="Engine\Source\Renderer\RenderScene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Source\Camera\CameraViewInfo.h" />
+    <ClInclude Include="Engine\Source\CameraViewInfo.h" />
     <ClInclude Include="Engine\Source\Core\MathUtility.h" />
     <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="Engine\Source\FrameTimer.h" />

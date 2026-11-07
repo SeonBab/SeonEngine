@@ -25,9 +25,6 @@
     <Filter Include="Engine\Source\Renderer">
       <UniqueIdentifier>{3be6eb0d-16e0-42ae-8ffb-ddf98ddda2a4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Source\Camera">
-      <UniqueIdentifier>{8e5a4f27-93c1-4d6b-b0e2-5f17a9c3d846}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Source\Mesh">
       <UniqueIdentifier>{c4a1d7e9-5b23-4f86-a0d1-7e3b9c25f614}</UniqueIdentifier>
     </Filter>
@@ -48,8 +45,8 @@
     <ClCompile Include="Engine\Source\WindowsApplication.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Camera\CameraViewInfo.cpp">
-      <Filter>Engine\Source\Camera</Filter>
+    <ClCompile Include="Engine\Source\CameraViewInfo.cpp">
+      <Filter>Engine\Source</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Renderer\RenderScene.cpp">
       <Filter>Engine\Source\Renderer</Filter>
@@ -116,8 +113,8 @@
     <ClInclude Include="Engine\Source\WindowsApplication.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Camera\CameraViewInfo.h">
-      <Filter>Engine\Source\Camera</Filter>
+    <ClInclude Include="Engine\Source\CameraViewInfo.h">
+      <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Component\CameraComponent.h">
       <Filter>Engine\Source\Component</Filter>

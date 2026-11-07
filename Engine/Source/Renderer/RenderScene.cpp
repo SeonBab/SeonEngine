@@ -1,6 +1,6 @@
 #include "RenderScene.h"
 
-#include "Camera/CameraViewInfo.h"
+#include "CameraViewInfo.h"
 #include "Component/CameraComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TransformComponent.h"
