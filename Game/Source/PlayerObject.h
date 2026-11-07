@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Vector3.h"
+#include "Core/Math/Vector3.h"
 #include "GameObject.h"
 
 class TransformComponent;

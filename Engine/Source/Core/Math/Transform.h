@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core/Matrix4x4.h"
-#include "Core/Quaternion.h"
-#include "Core/Vector3.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Quaternion.h"
+#include "Core/Math/Vector3.h"
 
 /**
  * 위치, 회전, 크기를 묶은 값이다. 기본값은 위치 0, 회전 없음, 크기 1배다.

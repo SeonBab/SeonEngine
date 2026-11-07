@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core/Matrix4x4.h"
-#include "Core/Quaternion.h"
-#include "Core/Vector3.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Quaternion.h"
+#include "Core/Math/Vector3.h"
 
 /**
  * 한 카메라 시점의 원본 값 사본이다. 위치와 회전은 월드 기준이다.

@@ -1,6 +1,6 @@
 #include "TransformComponent.h"
 
-#include "Core/Quaternion.h"
+#include "Core/Math/Quaternion.h"
 
 Transform TransformComponent::GetTransform() const
 {

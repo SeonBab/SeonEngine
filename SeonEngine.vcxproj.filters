@@ -19,6 +19,9 @@
     <Filter Include="Engine\Source\Core">
       <UniqueIdentifier>{2b431d6f-7eca-4fb1-9fca-2c51ec006850}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Source\Core\Math">
+      <UniqueIdentifier>{936c21e2-30ad-4a38-a249-5fcdfafbf5f3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Input">
       <UniqueIdentifier>{7d3a9c41-5e2b-4f86-9a1d-c2b8e6f04a57}</UniqueIdentifier>
     </Filter>
@@ -69,23 +72,23 @@
     <ClCompile Include="Engine\Source\Component\TransformComponent.cpp">
       <Filter>Engine\Source\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Core\Matrix4x4.cpp">
-      <Filter>Engine\Source\Core</Filter>
+    <ClCompile Include="Engine\Source\Core\Math\Matrix4x4.cpp">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Core\Quaternion.cpp">
-      <Filter>Engine\Source\Core</Filter>
+    <ClCompile Include="Engine\Source\Core\Math\Quaternion.cpp">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Core\Transform.cpp">
-      <Filter>Engine\Source\Core</Filter>
+    <ClCompile Include="Engine\Source\Core\Math\Transform.cpp">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\Core\Vector3.cpp">
-      <Filter>Engine\Source\Core</Filter>
+    <ClCompile Include="Engine\Source\Core\Math\Vector3.cpp">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\GameObject.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Source\FrameTimer.cpp">
-      <Filter>Engine\Source</Filter>
+    <ClCompile Include="Engine\Source\Core\FrameTimer.cpp">
+      <Filter>Engine\Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Paths.cpp">
       <Filter>Engine\Source</Filter>
@@ -137,26 +140,26 @@
     <ClInclude Include="Engine\Source\Component\TransformComponent.h">
       <Filter>Engine\Source\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\EulerAngles.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\EulerAngles.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\MathUtility.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\MathUtility.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\Matrix4x4.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\Matrix4x4.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\Quaternion.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\Quaternion.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\Transform.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\Transform.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\Vector2.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\Vector2.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Core\Vector3.h">
-      <Filter>Engine\Source\Core</Filter>
+    <ClInclude Include="Engine\Source\Core\Math\Vector3.h">
+      <Filter>Engine\Source\Core\Math</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Mesh\MeshVertex.h">
       <Filter>Engine\Source\Mesh</Filter>
@@ -167,8 +170,8 @@
     <ClInclude Include="Engine\Source\GameObject.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\FrameTimer.h">
-      <Filter>Engine\Source</Filter>
+    <ClInclude Include="Engine\Source\Core\FrameTimer.h">
+      <Filter>Engine\Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Paths.h">
       <Filter>Engine\Source</Filter>

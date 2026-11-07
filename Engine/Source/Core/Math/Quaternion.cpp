@@ -1,7 +1,7 @@
 #include "Quaternion.h"
 
-#include "Core/EulerAngles.h"
-#include "Core/MathUtility.h"
+#include "Core/Math/EulerAngles.h"
+#include "Core/Math/MathUtility.h"
 
 #include <algorithm>
 #include <cmath>

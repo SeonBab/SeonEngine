@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Component.h"
-#include "Core/EulerAngles.h"
-#include "Core/Transform.h"
-#include "Core/Vector3.h"
+#include "Core/Math/EulerAngles.h"
+#include "Core/Math/Transform.h"
+#include "Core/Math/Vector3.h"
 
 class TransformComponent : public Component
 {

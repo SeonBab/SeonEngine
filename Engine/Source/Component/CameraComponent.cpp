@@ -2,7 +2,7 @@
 
 #include "CameraViewInfo.h"
 #include "Component/TransformComponent.h"
-#include "Core/Transform.h"
+#include "Core/Math/Transform.h"
 #include "GameObject.h"
 
 bool CameraComponent::SetVerticalFovDegrees(float newVerticalFovDegrees)

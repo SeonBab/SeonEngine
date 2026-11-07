@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core/Vector2.h"
-#include "Core/Vector3.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Vector3.h"
 
 /**
  * 정적 메시의 정점 하나다. 위치와 방향은 메시의 로컬 좌표(왼손, cm) 기준이다.

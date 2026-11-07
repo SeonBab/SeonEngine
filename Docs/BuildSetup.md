@@ -22,7 +22,7 @@ Visual Studio Installer에서 워크로드와 해당 구성 요소를 설치합�
 
 프로세스 진입점은 `Game/Source/GameMain.cpp`에 둡니다. `Engine/Source`에는 게임에서 사용하는 창 처리와 시간 측정 코드를 둡니다. 현재는 하나의 실행 프로젝트에서 두 경로의 소스를 함께 빌드합니다.
 
-Debug, Release의 추가 포함 디렉터리에 `$(ProjectDir)Engine\Source`를 지정합니다. 게임 소스에서는 `#include "WindowsApplication.h"`처럼 엔진 헤더를 포함하며 기존 상속 경로도 유지합니다.
+Debug, Release의 추가 포함 디렉터리에 `$(ProjectDir)Engine\Source`를 지정합니다. 엔진 공용 수학 코드는 `Engine/Source/Core/Math`에 두고, 다른 폴더에서 사용할 때는 `#include "Core/Math/Vector3.h"`처럼 소스 루트 기준 경로로 포함합니다.
 
 ## 외부 라이브러리
 
