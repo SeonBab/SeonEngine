@@ -42,6 +42,12 @@ MSBuild가 자동으로 읽는 [Directory.Build.props](../Directory.Build.props)
 
 두 폴더는 빌드 결과물이므로 `.gitignore`로 버전 관리에서 제외합니다.
 
+## 자산 폴더
+
+게임 자산은 `Game/Content/`, 엔진 기본 자산은 `Engine/Content/`에 둡니다. 코드에서는 `Game/Content/Meshes/Box.gltf`처럼 저장소 루트 기준 상대 경로로 가리키며, `Engine/Source/Paths.h`의 `Paths::GetAbsolutePath`가 이를 절대 경로로 바꿉니다.
+
+자산은 출력 폴더로 복사하지 않습니다. `Paths::GetRootDirectory`는 실행 파일이 위 `OutDir` 배치(`Binaries` 아래 세 단계)에 있다는 전제로 저장소 루트를 구하므로, 실행 파일만 다른 위치로 옮기면 자산을 찾지 못합니다. `OutDir`의 깊이를 바꾸면 이 함수도 함께 고칩니다.
+
 ## 소스 인코딩과 편집기 설정
 
 저장소 루트의 [.editorconfig](../.editorconfig)는 UTF-8(BOM 없음), CRLF와 파일 끝 줄바꿈을 지정합니다. C++ 헤더와 소스는 탭으로 들여쓰고 탭 표시 폭은 4칸입니다. 이 파일을 지원하는 편집기를 사용합니다. 기존 파일의 인코딩은 자동으로 일괄 변환되지 않으므로 CP949 파일을 가져올 때는 원래 인코딩으로 읽은 뒤 UTF-8로 변환합니다.

@@ -19,6 +19,7 @@
     <ClCompile Include="Game\Source\PlayerObject.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\FrameTimer.cpp" />
+    <ClCompile Include="Engine\Source\Paths.cpp" />
     <ClCompile Include="Engine\Source\Input\InputState.cpp" />
     <ClCompile Include="Engine\Source\Input\InputDispatcher.cpp" />
     <ClCompile Include="Engine\Source\Component\InputComponent.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="Engine\Source\Core\MathUtility.h" />
     <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="Engine\Source\FrameTimer.h" />
+    <ClInclude Include="Engine\Source\Paths.h" />
     <ClInclude Include="Game\Source\PlayerObject.h" />
     <ClInclude Include="Engine\Source\Input\InputState.h" />
     <ClInclude Include="Engine\Source\Input\Key.h" />

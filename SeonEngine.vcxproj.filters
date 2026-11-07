@@ -81,6 +81,9 @@
     <ClCompile Include="Engine\Source\FrameTimer.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Paths.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Input\InputState.cpp">
       <Filter>Engine\Source\Input</Filter>
     </ClCompile>
@@ -159,6 +162,9 @@
       <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\FrameTimer.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Paths.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Input\InputState.h">
