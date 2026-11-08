@@ -18,6 +18,7 @@
     <ClCompile Include="Game\Source\GameMain.cpp" />
     <ClCompile Include="Game\Source\PlayerObject.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
+    <ClCompile Include="Engine\Source\Core\FileHelper.cpp" />
     <ClCompile Include="Engine\Source\Core\FrameTimer.cpp" />
     <ClCompile Include="Engine\Source\Paths.cpp" />
     <ClCompile Include="Engine\Source\Input\InputState.cpp" />
@@ -29,6 +30,7 @@
     <ClCompile Include="Engine\Source\Component\TransformComponent.cpp" />
     <ClCompile Include="Engine\Source\Core\Math\Vector3.cpp" />
     <ClCompile Include="Engine\Source\GameObject.cpp" />
+    <ClCompile Include="Engine\Source\GLTFLoader.cpp" />
     <ClCompile Include="Engine\Source\WindowsApplication.cpp" />
     <ClCompile Include="Engine\Source\World.cpp" />
     <ClCompile Include="Engine\Source\Renderer\RenderScene.cpp" />
@@ -37,6 +39,7 @@
     <ClInclude Include="Engine\Source\CameraViewInfo.h" />
     <ClInclude Include="Engine\Source\Core\Math\MathUtility.h" />
     <ClInclude Include="Engine\Source\Engine.h" />
+    <ClInclude Include="Engine\Source\Core\FileHelper.h" />
     <ClInclude Include="Engine\Source\Core\FrameTimer.h" />
     <ClInclude Include="Engine\Source\Paths.h" />
     <ClInclude Include="Game\Source\PlayerObject.h" />
@@ -56,6 +59,8 @@
     <ClInclude Include="Engine\Source\Core\Math\Vector2.h" />
     <ClInclude Include="Engine\Source\Core\Math\Vector3.h" />
     <ClInclude Include="Engine\Source\GameObject.h" />
+    <ClInclude Include="Engine\Source\GLTFDocument.h" />
+    <ClInclude Include="Engine\Source\GLTFLoader.h" />
     <ClInclude Include="Engine\Source\WindowsApplication.h" />
     <ClInclude Include="Engine\Source\World.h" />
     <ClInclude Include="Engine\Source\Renderer\RenderScene.h" />

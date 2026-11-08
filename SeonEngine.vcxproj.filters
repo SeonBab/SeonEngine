@@ -87,6 +87,12 @@
     <ClCompile Include="Engine\Source\GameObject.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\GLTFLoader.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Core\FileHelper.cpp">
+      <Filter>Engine\Source\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Core\FrameTimer.cpp">
       <Filter>Engine\Source\Core</Filter>
     </ClCompile>
@@ -169,6 +175,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Source\GameObject.h">
       <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\GLTFDocument.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\GLTFLoader.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Core\FileHelper.h">
+      <Filter>Engine\Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Core\FrameTimer.h">
       <Filter>Engine\Source\Core</Filter>
