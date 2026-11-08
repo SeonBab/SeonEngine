@@ -36,6 +36,9 @@ void RenderScene::RemoveStaticMeshComponent(StaticMeshComponent* component)
 
 bool RenderScene::CollectSceneRenderData(int viewWidth, int viewHeight, SceneRenderData& outSceneRenderData) const
 {
+	// ----------
+	// 카메라 뷰 구성
+	// ----------
 	// 0으로 나누면 화면 비율이 무한대나 NaN이 되어 투영 검사를 통과할 수 있으므로 나누기 전에 거른다.
 	if (viewWidth <= 0 || viewHeight <= 0) { return false; }
 	const float aspectRatio = static_cast<float>(viewWidth) / static_cast<float>(viewHeight);
@@ -52,6 +55,9 @@ bool RenderScene::CollectSceneRenderData(int viewWidth, int viewHeight, SceneRen
 	sceneRenderData.view.viewMatrix = cameraViewInfo.CalculateViewMatrix();
 	sceneRenderData.view.cameraPosition = cameraViewInfo.position;
 
+	// ----------
+	// 정적 메시 그리기 항목 수집
+	// ----------
 	sceneRenderData.staticMeshes.reserve(staticMeshComponents.size());
 	for (const StaticMeshComponent* component : staticMeshComponents)
 	{

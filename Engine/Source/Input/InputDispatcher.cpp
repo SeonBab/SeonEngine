@@ -39,6 +39,9 @@ void InputDispatcher::RemoveInputComponent(InputComponent* inputComponent)
 
 void InputDispatcher::Dispatch(const InputState& inputState, float deltaTime) const
 {
+	// ----------
+	// 키 누름 및 뗌 이벤트 전달
+	// ----------
 	// 이벤트를 바깥 반복에 두어, 키가 달라도 앞선 이벤트를 모든 컴포넌트가 처리한 뒤 다음 이벤트로 넘어간다.
 	for (const KeyEvent& keyEvent : inputState.GetFrameEvents())
 	{
@@ -49,6 +52,9 @@ void InputDispatcher::Dispatch(const InputState& inputState, float deltaTime) co
 		}
 	}
 
+	// ----------
+	// 현재 눌린 키의 Held 바인딩 실행
+	// ----------
 	// Held는 이벤트가 아니라 전달 시점의 눌림 상태로 정하므로, 한 프레임 안에 눌렀다 뗀 키는 실행하지 않는다.
 	for (std::size_t index = 0; index < KeyCount; ++index)
 	{

@@ -105,6 +105,9 @@ bool WindowsApplication::Initialize()
 
 bool WindowsApplication::Create()
 {
+	// ----------
+	// 창 클래스 등록
+	// ----------
 	if (isWindowClassRegistered) { return false; }
 
 	instance = GetModuleHandleW(nullptr);
@@ -126,6 +129,9 @@ bool WindowsApplication::Create()
 
 	isWindowClassRegistered = true;
 
+	// ----------
+	// 창 생성
+	// ----------
 	const DWORD windowStyle = WS_OVERLAPPEDWINDOW;
 	const DWORD windowExStyle = 0;
 
@@ -138,6 +144,9 @@ bool WindowsApplication::Create()
 		return false;
 	}
 
+	// ----------
+	// 창과 소유 객체 연결 및 표시
+	// ----------
 	// 창 생성이 끝난 뒤, 이후 메시지에서 소유 객체를 찾을 수 있도록 연결한다.
 	SetLastError(ERROR_SUCCESS);
 	const LONG_PTR previousData = SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
