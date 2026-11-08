@@ -12,8 +12,17 @@ bool CameraViewInfo::CalculateProjectionMatrix(float aspectRatio, Matrix4x4& out
 {
 	// 0이면 투영 공식에서 0으로 나누고, 음수면 화면 좌우가 뒤집힌다. 창이 최소화되면 높이가 0이 될 수 있다.
 	if (aspectRatio <= 0.0f) { return false; }
-	if (verticalFovDegrees <= 0.0f || verticalFovDegrees >= 180.0f) { return false; }
 	if (nearClipDistance <= 0.0f || farClipDistance <= nearClipDistance) { return false; }
+
+	if (projectionMode == CameraProjectionMode::Orthographic)
+	{
+		if (orthographicHeight <= 0.0f) { return false; }
+
+		outProjectionMatrix = Matrix4x4::CreateOrthographicViewSize(orthographicHeight * aspectRatio, orthographicHeight, nearClipDistance, farClipDistance);
+		return true;
+	}
+
+	if (verticalFovDegrees <= 0.0f || verticalFovDegrees >= 180.0f) { return false; }
 
 	outProjectionMatrix = Matrix4x4::CreatePerspectiveFieldOfView(verticalFovDegrees, aspectRatio, nearClipDistance, farClipDistance);
 	return true;

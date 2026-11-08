@@ -100,3 +100,16 @@ Matrix4x4 Matrix4x4::CreatePerspectiveFieldOfView(float verticalFovDegrees, floa
 
 	return result;
 }
+
+Matrix4x4 Matrix4x4::CreateOrthographicViewSize(float width, float height, float nearZ, float farZ)
+{
+	// near부터 far까지의 거리를 깊이 범위 0부터 1에 맞춘다.
+	const float depthScale = 1.0f / (farZ - nearZ);
+
+	Matrix4x4 result;
+	result.m[0][0] = 2.0f / width;
+	result.m[1][1] = 2.0f / height;
+	result.m[2][2] = depthScale;
+	result.m[3][2] = -nearZ * depthScale;
+	return result;
+}

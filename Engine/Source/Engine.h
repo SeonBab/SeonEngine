@@ -1,10 +1,11 @@
 #pragma once
 
+#include "AssetManager.h"
 #include "WindowsApplication.h"
 #include "World.h"
 
 /**
- * 창과 World를 소유하고 프레임 순서(메시지 처리, 입력, 갱신, 렌더 데이터 수집)를 실행한다.
+ * 창, AssetManager 및 World를 소유하고 프레임 순서(메시지 처리, 입력, 갱신, 렌더 데이터 수집)를 실행한다.
  * 메인 스레드에서 생성, 초기화, 실행, 소멸한다. 게임은 Run 전에 GetWorld로 World를 꾸민다.
  */
 class Engine
@@ -39,6 +40,8 @@ private:
 private:
 	// 선언 역순으로 파괴되므로 창을 가장 먼저 선언해 가장 늦게 정리한다.
 	WindowsApplication windowsApplication;
+	// World가 정리될 때까지 매니저가 살아 있도록 World보다 먼저 선언한다.
+	AssetManager assetManager;
 	World world;
 
 	// Initialize 성공 시 true, Run을 시작하면 false다. 창 없이 실행하거나 종료 후 다시 실행하는 것을 막는다.

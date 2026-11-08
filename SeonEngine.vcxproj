@@ -17,6 +17,7 @@
     <ClCompile Include="Engine\Source\Core\Math\Transform.cpp" />
     <ClCompile Include="Game\Source\GameMain.cpp" />
     <ClCompile Include="Game\Source\PlayerObject.cpp" />
+    <ClCompile Include="Engine\Source\AssetManager.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Core\FileHelper.cpp" />
     <ClCompile Include="Engine\Source\Core\FrameTimer.cpp" />
@@ -38,6 +39,7 @@
   <ItemGroup>
     <ClInclude Include="Engine\Source\CameraViewInfo.h" />
     <ClInclude Include="Engine\Source\Core\Math\MathUtility.h" />
+    <ClInclude Include="Engine\Source\AssetManager.h" />
     <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="Engine\Source\Core\FileHelper.h" />
     <ClInclude Include="Engine\Source\Core\FrameTimer.h" />

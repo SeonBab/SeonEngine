@@ -34,4 +34,10 @@ struct Matrix4x4
 	 * near 거리는 깊이 0, far 거리는 깊이 1이 된다. 0 < 시야각 < 180, 화면 비율 > 0, 0 < near < far를 전제로 한다.
 	 */
 	static Matrix4x4 CreatePerspectiveFieldOfView(float verticalFovDegrees, float aspectRatio, float nearZ, float farZ);
+
+	/**
+	 * 왼손 좌표계 직교 투영 행렬이다. width와 height는 카메라 공간에서 보이는 영역의 전체 너비와 높이다.
+	 * nearZ는 깊이 0, farZ는 깊이 1이 된다. width > 0, height > 0, 0 < nearZ < farZ를 전제로 한다.
+	 */
+	static Matrix4x4 CreateOrthographicViewSize(float width, float height, float nearZ, float farZ);
 };
