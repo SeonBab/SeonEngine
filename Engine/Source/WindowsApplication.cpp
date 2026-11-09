@@ -1,10 +1,21 @@
 #include "WindowsApplication.h"
 
+#include "Core/Log.h"
 #include "Input/Key.h"
+
+#include <cstdio>
 
 namespace
 {
 	constexpr wchar_t WindowClassName[] = L"SeonEngineWindow";
+
+	/** 다른 Windows 호출이 오류 번호를 바꾸기 전에 받은 값으로 출력한다. */
+	void LogWindowsError(const char* operation, DWORD errorCode)
+	{
+		char message[160] = {};
+		std::snprintf(message, sizeof(message), "%s failed. Windows error: %lu", operation, static_cast<unsigned long>(errorCode));
+		Log::Write(LogLevel::Error, "WindowsApplication", message);
+	}
 
 	static_assert(static_cast<int>(Key::Z) - static_cast<int>(Key::A) == 'Z' - 'A', "A부터 Z까지 Key 값이 연속해야 한다.");
 	static_assert(static_cast<int>(Key::Number9) - static_cast<int>(Key::Number0) == '9' - '0', "Number0부터 Number9까지 Key 값이 연속해야 한다.");
@@ -85,7 +96,7 @@ WindowsApplication::~WindowsApplication()
 	{
 		if (!DestroyWindow(window))
 		{
-			// TODO: 창 파괴 실패 로그를 남긴다.
+			LogWindowsError("DestroyWindow", GetLastError());
 		}
 	}
 
@@ -93,7 +104,7 @@ WindowsApplication::~WindowsApplication()
 	{
 		if (!UnregisterClassW(WindowClassName, instance))
 		{
-			// TODO: 창 클래스 해제 실패 로그를 남긴다.
+			LogWindowsError("UnregisterClassW", GetLastError());
 		}
 	}
 }
@@ -108,10 +119,18 @@ bool WindowsApplication::Create()
 	// ----------
 	// 창 클래스 등록
 	// ----------
-	if (isWindowClassRegistered) { return false; }
+	if (isWindowClassRegistered)
+	{
+		Log::Write(LogLevel::Error, "WindowsApplication", "Initialize failed: window class is already registered.");
+		return false;
+	}
 
 	instance = GetModuleHandleW(nullptr);
-	if (instance == nullptr) { return false; }
+	if (instance == nullptr)
+	{
+		LogWindowsError("GetModuleHandleW", GetLastError());
+		return false;
+	}
 
 	WNDCLASSEXW windowClass = {};
 	windowClass.cbSize = sizeof(windowClass);
@@ -123,7 +142,7 @@ bool WindowsApplication::Create()
 
 	if (RegisterClassExW(&windowClass) == 0)
 	{
-		// @TODO 실패 로그
+		LogWindowsError("RegisterClassExW", GetLastError());
 		return false;
 	}
 
@@ -140,7 +159,7 @@ bool WindowsApplication::Create()
 	window = CreateWindowExW(windowExStyle, WindowClassName, L"SeonEngine", windowStyle, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, instance, nullptr);
 	if (window == nullptr)
 	{
-		// @TODO 실패 로그
+		LogWindowsError("CreateWindowExW", GetLastError());
 		return false;
 	}
 
@@ -150,8 +169,10 @@ bool WindowsApplication::Create()
 	// 창 생성이 끝난 뒤, 이후 메시지에서 소유 객체를 찾을 수 있도록 연결한다.
 	SetLastError(ERROR_SUCCESS);
 	const LONG_PTR previousData = SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-	if (previousData == 0 && GetLastError() != ERROR_SUCCESS)
+	const DWORD connectionError = GetLastError();
+	if (previousData == 0 && connectionError != ERROR_SUCCESS)
 	{
+		LogWindowsError("SetWindowLongPtrW", connectionError);
 		// 연결되지 않은 창이므로 파괴 성공 시 여기서 직접 핸들을 비운다.
 		if (DestroyWindow(window))
 		{
@@ -159,7 +180,8 @@ bool WindowsApplication::Create()
 		}
 		else
 		{
-			// TODO: 창 파괴 실패 로그를 남긴다. 핸들을 유지해 소멸자에서 다시 정리한다.
+			// 핸들을 유지해 소멸자에서 다시 정리한다.
+			LogWindowsError("DestroyWindow", GetLastError());
 		}
 		return false;
 	}

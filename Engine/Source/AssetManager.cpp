@@ -1,10 +1,12 @@
 #include "AssetManager.h"
 
+#include "Core/Log.h"
 #include "GLTFLoader.h"
 #include "Mesh/StaticMeshData.h"
 #include "Paths.h"
 
 #include <cassert>
+#include <string>
 #include <utility>
 
 AssetManager* AssetManager::instance = nullptr;
@@ -29,7 +31,11 @@ AssetManager& AssetManager::Get()
 std::shared_ptr<const StaticMeshData> AssetManager::LoadStaticMesh(std::string_view relativePath)
 {
 	std::filesystem::path absolutePath;
-	if (!Paths::GetAbsolutePath(relativePath, absolutePath)) { return nullptr; }
+	if (!Paths::GetAbsolutePath(relativePath, absolutePath))
+	{
+		Log::Write(LogLevel::Error, "AssetManager", "Failed to resolve static mesh path: " + std::string(relativePath));
+		return nullptr;
+	}
 
 	absolutePath = absolutePath.lexically_normal();
 	absolutePath.make_preferred();
@@ -38,7 +44,11 @@ std::shared_ptr<const StaticMeshData> AssetManager::LoadStaticMesh(std::string_v
 	if (cachedMesh != staticMeshes.end()) { return cachedMesh->second; }
 
 	StaticMeshData meshData;
-	if (!GLTFLoader::LoadStaticMesh(absolutePath, meshData)) { return nullptr; }
+	if (!GLTFLoader::LoadStaticMesh(absolutePath, meshData))
+	{
+		Log::Write(LogLevel::Error, "AssetManager", "Failed to load static mesh: " + std::string(relativePath));
+		return nullptr;
+	}
 
 	std::shared_ptr<const StaticMeshData> mesh = std::make_shared<const StaticMeshData>(std::move(meshData));
 	staticMeshes.emplace(std::move(absolutePath), mesh);

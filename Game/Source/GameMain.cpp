@@ -38,7 +38,6 @@ int main()
 	Engine engine;
 	if (!engine.Initialize())
 	{
-		// @TODO 실패 로그
 		return 1;
 	}
 
