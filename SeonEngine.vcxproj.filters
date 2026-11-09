@@ -99,6 +99,9 @@
     <ClCompile Include="Engine\Source\Core\FrameTimer.cpp">
       <Filter>Engine\Source\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Core\Log.cpp">
+      <Filter>Engine\Source\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Paths.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
@@ -192,6 +195,9 @@
       <Filter>Engine\Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Core\FrameTimer.h">
+      <Filter>Engine\Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Core\Log.h">
       <Filter>Engine\Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Paths.h">

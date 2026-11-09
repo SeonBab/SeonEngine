@@ -1,6 +1,7 @@
 #include "Engine.h"
 
 #include "Core/FrameTimer.h"
+#include "Core/Log.h"
 #include "Input/InputDispatcher.h"
 #include "Renderer/SceneRenderData.h"
 
@@ -21,6 +22,8 @@ int Engine::Run()
 {
 	if (!canRun) { return 1; }
 	canRun = false;
+
+	Log::Write(LogLevel::Info, "Engine", "Run loop started");
 
 	// 초기화와 World 구성 시간을 첫 측정에서 빼려고 루프 직전에 만든다.
 	FrameTimer frameTimer;

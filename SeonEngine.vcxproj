@@ -21,6 +21,7 @@
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Core\FileHelper.cpp" />
     <ClCompile Include="Engine\Source\Core\FrameTimer.cpp" />
+    <ClCompile Include="Engine\Source\Core\Log.cpp" />
     <ClCompile Include="Engine\Source\Paths.cpp" />
     <ClCompile Include="Engine\Source\Input\InputState.cpp" />
     <ClCompile Include="Engine\Source\Input\InputDispatcher.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="Engine\Source\Core\FileHelper.h" />
     <ClInclude Include="Engine\Source\Core\FrameTimer.h" />
+    <ClInclude Include="Engine\Source\Core\Log.h" />
     <ClInclude Include="Engine\Source\Paths.h" />
     <ClInclude Include="Game\Source\PlayerObject.h" />
     <ClInclude Include="Engine\Source\Input\InputState.h" />
