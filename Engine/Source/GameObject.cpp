@@ -1,13 +1,14 @@
 #include "GameObject.h"
 
 #include "Component/Component.h"
+#include "Component/TransformComponent.h"
 
 #include <utility>
 
 GameObject::GameObject(World& targetWorld)
 	: world(targetWorld)
 {
-
+	AddComponent(std::make_unique<TransformComponent>());
 }
 
 GameObject::~GameObject() = default;

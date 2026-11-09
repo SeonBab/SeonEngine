@@ -12,7 +12,10 @@ class GameObject
 {
 	// 생성과 소멸
 public:
-	/** 월드는 이 객체보다 오래 살아 있어야 한다. 생성과 등록은 별개다. */
+	/**
+	 * TransformComponent를 기본 부착한다.
+	 * 월드는 이 객체보다 오래 살아 있어야 한다. 생성과 등록은 별개다.
+	 */
 	explicit GameObject(World& targetWorld);
 	virtual ~GameObject();
 

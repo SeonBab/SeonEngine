@@ -21,9 +21,7 @@ namespace
 	{
 		std::unique_ptr<GameObject> teapot = std::make_unique<GameObject>(world);
 
-		std::unique_ptr<TransformComponent> transform = std::make_unique<TransformComponent>();
-		transform->SetPosition(position);
-		teapot->AddComponent(std::move(transform));
+		teapot->GetComponent<TransformComponent>()->SetPosition(position);
 
 		std::unique_ptr<StaticMeshComponent> mesh = std::make_unique<StaticMeshComponent>();
 		mesh->SetStaticMesh(AssetManager::Get().LoadStaticMesh(TeapotMeshPath));

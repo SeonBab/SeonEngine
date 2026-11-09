@@ -19,9 +19,7 @@ namespace
 PlayerObject::PlayerObject(World& targetWorld)
 	: GameObject(targetWorld)
 {
-	std::unique_ptr<TransformComponent> newTransform = std::make_unique<TransformComponent>();
-	transform = newTransform.get();
-	AddComponent(std::move(newTransform));
+	transform = GetComponent<TransformComponent>();
 
 	std::unique_ptr<InputComponent> newInput = std::make_unique<InputComponent>();
 	InputComponent* input = newInput.get();

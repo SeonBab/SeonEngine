@@ -11,7 +11,7 @@ class PlayerObject : public GameObject
 {
 	// 생성과 소멸
 public:
-	/** 위치, 입력, 카메라 컴포넌트를 부착하고 키 바인딩을 등록한다. */
+	/** 기본 TransformComponent를 조회하고 입력, 카메라 컴포넌트를 부착하며 키 바인딩을 등록한다. */
 	explicit PlayerObject(World& targetWorld);
 
 	// 이동
@@ -23,6 +23,6 @@ private:
 	void PrintPosition(const char* label) const;
 
 private:
-	// 비소유. 생성자에서 부착해 이 객체가 소유한 컴포넌트를 가리킨다.
+	// 비소유. GameObject 생성자가 부착한 TransformComponent를 가리킨다.
 	TransformComponent* transform = nullptr;
 };
