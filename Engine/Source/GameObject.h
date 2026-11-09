@@ -31,6 +31,26 @@ public:
 private:
 	World& world;
 
+	// 부모와 자식
+public:
+	/**
+	 * 같은 World에 등록된 객체끼리 연결한다. nullptr는 연결 해제다.
+	 * 성공하면 true를 반환한다. 등록 조건 위반이나 순환은 기존 관계를 유지하고 false를 반환한다.
+	 * 할당 실패 시 기존 관계를 유지하고 예외를 전파한다.
+	 */
+	bool SetParent(GameObject* newParent);
+
+	/** 부모를 빌려준다. 부모가 없으면 nullptr를 반환한다. */
+	GameObject* GetParent() const { return parent; }
+
+	/** 직계 자식 목록을 빌려준다. 목록이 바뀌면 원소 참조와 반복자가 무효화될 수 있다. */
+	const std::vector<GameObject*>& GetChildren() const { return children; }
+
+private:
+	// World가 소유한 객체를 가리키는 비소유 참조다.
+	GameObject* parent = nullptr;
+	std::vector<GameObject*> children;
+
 	// 컴포넌트
 public:
 	/**
@@ -57,7 +77,7 @@ public:
 	void Tick(float deltaTime);
 
 protected:
-	/** 파생 타입의 갱신 지점. 부모 호출은 필요 없다. */
+	/** 파생 타입의 갱신 지점. 기반 클래스의 OnTick을 호출할 필요는 없다. */
 	virtual void OnTick(float deltaTime);
 };
 

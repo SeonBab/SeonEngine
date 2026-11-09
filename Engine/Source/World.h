@@ -49,6 +49,9 @@ public:
 	 */
 	GameObject* AddGameObject(std::unique_ptr<GameObject> newGameObject);
 
+	/** 이 World에 등록된 객체인지 확인한다. nullptr는 false다. */
+	bool ContainsGameObject(const GameObject* gameObject) const;
+
 private:
 	std::vector<std::unique_ptr<GameObject>> gameObjects;
 
