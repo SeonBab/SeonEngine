@@ -26,13 +26,35 @@ Debug, Release의 추가 포함 디렉터리에 `$(ProjectDir)Engine\Source`를 
 
 ## 외부 라이브러리
 
-외부 라이브러리는 `Engine/ThirdParty/<라이브러리>/`에 원본 그대로 두고, 각 폴더의 README에 출처, 버전, 받은 파일의 해시와 포함한 범위를 적습니다. 별도 설치는 필요하지 않습니다.
+외부 라이브러리 파일을 직접 추가할 때는 `Engine/ThirdParty/<라이브러리>/`에 둡니다. 가져온 파일은 수정하지 않으며, 각 라이브러리 폴더의 README에 출처와 버전을 기록합니다.
 
 | 라이브러리 | 용도 | 버전 | 추가 포함 디렉터리 |
 | --- | --- | --- | --- |
 | RapidJSON | JSON 읽기 | 커밋 `24b5e7a8` ([README](../Engine/ThirdParty/RapidJSON/README.md)) | `$(ProjectDir)Engine\ThirdParty\RapidJSON\include` |
 
 헤더 전용 라이브러리이므로 링크 설정은 없습니다. 소스에서는 `#include "rapidjson/document.h"`처럼 포함합니다.
+
+### vcpkg 패키지
+
+[vcpkg 매니페스트](../Engine/ThirdParty/vcpkg.json)는 렌더러에 사용할 패키지와 버전 기준(`builtin-baseline`)을 선언합니다. Visual Studio Installer에서 `vcpkg 패키지 관리자` 구성 요소를 설치합니다. MSBuild는 [Directory.Build.targets](../Directory.Build.targets)에서 현재 Visual Studio의 vcpkg를 불러오고, 패키지 빌드에도 같은 Visual Studio를 지정합니다. 설치 위치는 `Intermediate/vcpkg_installed/<도구 집합>/x64-windows-static-md/`입니다.
+
+| 패키지 | 용도 |
+| --- | --- |
+| `directx-headers` | Direct3D 12 API 헤더와 `d3dx12.h` 보조 타입 |
+| `directx-dxc` | 렌더러 초기화 시 기본 HLSL 셰이더 컴파일 |
+| `directxtex` | GPU 텍스처 생성 시 DXGI 형식을 sRGB 형식으로 변환 |
+
+### Windows 시스템 라이브러리
+
+`SeonEngine.vcxproj`의 링크 입력에 `ole32.lib`와 `windowscodecs.lib`를 지정합니다. 이미지 로더의 COM 초기화와 정리 호출은 `ole32.lib`, WIC 팩토리 식별자는 `windowscodecs.lib`를 사용합니다.
+
+### 렌더러 소스
+
+`Engine/Renderer/`는 [Hakko 커밋 `78e6eb6`](https://github.com/blumous/Hakko/tree/78e6eb6349932ff6d4654f153538b2a9ee49387e)의 `Hakko/Data/`, `Hakko/Core/`, `Hakko/Render/`에서 가져온 소스, 헤더, 기본 셰이더를 담습니다. 갱신할 때는 원본의 파일 배치를 유지하고 `SeonEngine.vcxproj`와 `.filters`의 목록을 함께 확인합니다. 파일 읽기용 `DataHub_FileLoader`와 `DataHub_Interface`는 반입 범위에서 제외합니다. `.vcxproj`에서 C++ 소스를 직접 컴파일하고, 셰이더는 프로젝트에서 소스 파일로 표시합니다.
+
+SeonEngine에서는 `D3D12Renderer`를 직접 사용할 수 있도록 어댑터와 팩토리를 제거하고, `RenderLimits`와 `RenderTuning`을 `D3D12Renderer.h`에 둡니다. 원본을 갱신할 때 이 변경을 함께 확인합니다.
+
+`SeonEngine.vcxproj`는 빌드 시 같은 구성의 vcpkg 패키지에서 `dxcompiler.dll`과 `dxil.dll`을 실행 파일 옆에 복사합니다. 기본 셰이더는 하위 폴더 구조를 유지해 `Render/D3D12/shader/`에 복사합니다.
 
 ## 도구 집합 선택과 출력 경로
 

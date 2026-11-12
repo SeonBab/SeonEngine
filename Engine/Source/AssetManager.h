@@ -1,11 +1,30 @@
 #pragma once
 
+#include "GLTFLoader.h"
+
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
-struct StaticMeshData;
+class StaticMesh;
+class Texture;
+enum class TextureFormat;
+
+/**
+ * glTF 파일 하나에서 불러온 메시들과 배치표다. 모두 엔진 좌표계(왼손, cm)다.
+ * 장면에 놓기 전의 원본이며, 배치는 배치표를 읽어 만든 GameObject가 맡는다.
+ */
+struct Model
+{
+	// glTF meshes 번호 순서다. 각 경로는 "파일경로#번호"이며, 렌더러가 경로로 메시를 구분하기 때문이다.
+	std::vector<std::shared_ptr<const StaticMesh>> meshes;
+	// glTF nodes 번호 순서다. 각 노드의 mesh 번호로 meshes를 찾는다.
+	std::vector<GLTFSceneNode> sceneNodes;
+};
 
 /**
  * 불러온 CPU 자산을 경로별로 보관하고 재사용한다. Engine이 값으로 소유하며 Get으로 어디서든 빌려 쓴다.
@@ -35,16 +54,27 @@ private:
 	// 비소유. 생성자에서 등록하고 소멸자에서 비운다. 등록된 매니저가 없으면 nullptr이다.
 	static AssetManager* instance;
 
-	// 정적 메시
+	// 모델
 public:
 	/**
-	 * 메인 스레드에서 저장소 루트 기준 UTF-8 경로로 정적 메시를 요청한다.
+	 * 메인 스레드에서 저장소 루트 기준 UTF-8 경로의 glTF 파일에서 모든 메시와 배치표를 불러온다.
 	 * 파일명과 폴더명의 대소문자는 실제 자산 경로에 맞춘다.
-	 * 로드한 메시를 이 매니저의 수명 동안 보관하고, 같은 경로 요청에 재사용한다.
-	 * 경로를 구하거나 메시를 읽는 데 실패하면 nullptr를 반환한다.
+	 * 이 매니저의 수명 동안 보관하고, 같은 경로 요청에 재사용한다. 실패하면 nullptr를 반환한다.
 	 */
-	std::shared_ptr<const StaticMeshData> LoadStaticMesh(std::string_view relativePath);
+	std::shared_ptr<const Model> LoadModel(std::string_view relativePath);
 
 private:
-	std::unordered_map<std::filesystem::path, std::shared_ptr<const StaticMeshData>> staticMeshes;
+	std::unordered_map<std::filesystem::path, std::shared_ptr<const Model>> models;
+
+	// 텍스처
+public:
+	/**
+	 * 저장소 루트 기준 UTF-8 경로의 PNG를 불러오며, 같은 경로와 형식은 캐시해 재사용한다.
+	 * format은 RGBA8UNorm 또는 RGBA8SRGB이다. GPU 준비는 렌더링 단계에서 수행한다.
+	 * 잘못된 형식이나 로딩 실패는 nullptr를 반환하며, 경로 변환과 할당 예외는 전파한다.
+	 */
+	std::shared_ptr<const Texture> LoadTexture(std::string_view relativePath, TextureFormat format);
+
+private:
+	std::map<std::pair<std::filesystem::path, TextureFormat>, std::shared_ptr<const Texture>> textures;
 };

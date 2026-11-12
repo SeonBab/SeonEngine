@@ -40,21 +40,6 @@ private:
 	// gameObjects보다 먼저 선언해 더 늦게 파괴한다. 이후 소멸하는 렌더 컴포넌트가 자신을 해제할 수 있게 하기 위해서다.
 	RenderScene renderScene;
 
-	// 객체 관리
-public:
-	/**
-	 * 소유권을 받아 등록하고 월드 수명 동안 유효한 비소유 포인터를 반환한다.
-	 * 빈 입력과 소속 불일치는 nullptr를 반환하고 입력 객체는 정리한다.
-	 * 갱신 중에는 호출하지 않는다. 할당 실패 예외는 전파한다.
-	 */
-	GameObject* AddGameObject(std::unique_ptr<GameObject> newGameObject);
-
-	/** 이 World에 등록된 객체인지 확인한다. nullptr는 false다. */
-	bool ContainsGameObject(const GameObject* gameObject) const;
-
-private:
-	std::vector<std::unique_ptr<GameObject>> gameObjects;
-
 	// 카메라
 public:
 	/**
@@ -63,12 +48,33 @@ public:
 	 */
 	bool SetActiveCamera(CameraComponent* camera);
 
-	/** 활성 카메라를 빌려준다. 지정하지 않았으면 nullptr이다. */
+	/** 활성 카메라를 빌려준다. 지정하지 않았거나 지정한 카메라가 소멸했으면 nullptr이다. */
 	CameraComponent* GetActiveCamera() const { return activeCamera; }
 
 private:
-	// 비소유. 이 월드가 소유한 객체의 컴포넌트를 가리킨다. 객체 제거 기능이 생기면 해제 시점을 함께 정한다.
+	// 비소유. gameObjects보다 먼저 선언해 더 늦게 파괴한다. 소멸하는 CameraComponent가 지정을 해제할 수 있게 하기 위해서다.
 	CameraComponent* activeCamera = nullptr;
+
+	// 객체 관리
+public:
+	/**
+	 * 소유권을 받아 등록하고 해당 객체가 삭제되기 전까지 유효한 비소유 포인터를 반환한다.
+	 * 빈 입력과 소속 불일치는 nullptr를 반환하고 입력 객체는 정리한다.
+	 * 갱신 중에는 호출하지 않는다. 할당 실패 예외는 전파한다.
+	 */
+	GameObject* AddGameObject(std::unique_ptr<GameObject> newGameObject);
+
+	/**
+	 * 등록된 객체와 그 자손을 즉시 삭제한다. 갱신과 콜백이 진행 중이지 않을 때 호출한다.
+	 * nullptr 또는 미등록 객체면 false를 반환한다. 삭제를 마치면 true를 반환한다.
+	 */
+	bool DestroyGameObject(GameObject* gameObject);
+
+	/** 이 World에 등록된 객체인지 확인한다. nullptr는 false다. */
+	bool ContainsGameObject(const GameObject* gameObject) const;
+
+private:
+	std::vector<std::unique_ptr<GameObject>> gameObjects;
 
 	// 갱신
 public:

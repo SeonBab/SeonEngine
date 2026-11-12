@@ -17,8 +17,15 @@ public:
 	WindowsApplication(WindowsApplication&&) = delete;
 	WindowsApplication& operator=(WindowsApplication&&) = delete;
 
-	/** 창 클래스를 등록하고 창을 만든다. 이미 등록한 객체의 재호출은 실패하며 상태를 유지한다. */
+	/** 창 클래스를 등록하고 창을 만든다. 이미 등록했거나 종료를 시작한 객체의 재호출은 실패한다. */
 	bool Initialize();
+
+	/**
+	 * 창과 등록한 창 클래스를 정리한다. 창을 사용하는 렌더러를 먼저 해제하고 호출한다.
+	 * 미초기화 상태와 반복 호출은 안전하다. 실패 시 false를 반환하고 남은 자원은 재호출로 정리할 수 있다.
+	 * 호출 후 Initialize로 재사용하지 않는다. 소멸자도 이 함수를 호출한다.
+	 */
+	bool Shutdown();
 
 private:
 	bool Create();
@@ -28,6 +35,7 @@ public:
 	/**
 	 * 대기 중인 메시지를 처리한다. 프레임당 한 번 호출하며 시작할 때 이전 프레임의 키 이벤트를 비운다.
 	 * 종료 요청 시 outExitCode에 종료 코드를 저장하고 false를 반환한다.
+	 * WM_CLOSE는 종료만 요청한다. 루프를 마친 호출자가 Shutdown으로 창을 파괴한다.
 	 */
 	bool ProcessMessages(int& outExitCode);
 
@@ -41,6 +49,9 @@ public:
 	/** 클라이언트 영역 크기를 조회한다. 실패하면 출력값을 유지한다. */
 	bool GetClientSize(int& outWidth, int& outHeight) const;
 
+	/** 창의 최소화 상태를 조회한다. 창이 없으면 false다. */
+	bool IsMinimized() const;
+
 private:
 	static LRESULT CALLBACK WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -50,6 +61,8 @@ private:
 
 	// 창 생성에 실패해도, 자신이 등록한 창 클래스는 소멸 시 해제한다.
 	bool isWindowClassRegistered = false;
+	// 닫기 요청 또는 명시적 정리를 시작했으면 창 파괴 시 종료 메시지를 다시 올리지 않는다.
+	bool closeRequested = false;
 
 	// 입력
 public:

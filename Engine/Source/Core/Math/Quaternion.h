@@ -1,6 +1,7 @@
 #pragma once
 
 struct EulerAngles;
+struct Matrix4x4;
 
 /**
  * 회전을 나타내는 단위 쿼터니언이다. x, y, z는 회전축 방향 성분이고 w는 회전 각도의 절반에 대한 cos이다.
@@ -15,6 +16,12 @@ struct Quaternion
 
 	/** 오일러 각으로 만든다. EulerAngles와 같이 roll(Z), pitch(X), yaw(Y) 순서로 적용한다. */
 	static Quaternion CreateFromEulerAngles(const EulerAngles& angles);
+
+	/**
+	 * 회전 행렬(각 행이 길이 1인 회전된 X, Y, Z 축)로 만든다. Matrix4x4::CreateFromQuaternion의 반대다.
+	 * 크기나 거울이 섞이지 않은 행렬을 넣어야 하며, 마지막 행의 이동 성분은 쓰지 않는다.
+	 */
+	static Quaternion CreateFromRotationMatrix(const Matrix4x4& rotation);
 
 	/**
 	 * 도 단위 오일러 각으로 바꾼다. pitch는 -90~90, yaw와 roll은 -180~180 범위로 나오므로

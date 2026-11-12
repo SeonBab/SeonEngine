@@ -1,0 +1,8 @@
+{
+  "dependencies": [
+    "directx-headers",
+    "directx-dxc",
+    "directxtex"
+  ],
+  "builtin-baseline": "cac7d29f246eb789a84004fbfc11bb00db1aa89b"
+}

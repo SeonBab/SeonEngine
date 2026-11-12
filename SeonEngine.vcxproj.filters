@@ -28,8 +28,14 @@
     <Filter Include="Engine\Source\Renderer">
       <UniqueIdentifier>{3be6eb0d-16e0-42ae-8ffb-ddf98ddda2a4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Renderer">
+      <UniqueIdentifier>{f21a0e8d-8e2c-448f-b6a2-55c3d857ff04}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Source\Mesh">
       <UniqueIdentifier>{c4a1d7e9-5b23-4f86-a0d1-7e3b9c25f614}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source\Texture">
+      <UniqueIdentifier>{f895b427-8ea9-4923-a931-5b461624c193}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\ThirdParty">
       <UniqueIdentifier>{2dcb4069-d326-49c4-bab3-b25f9bff6062}</UniqueIdentifier>
@@ -44,6 +50,15 @@
     </ClCompile>
     <ClCompile Include="Game\Source\PlayerObject.cpp">
       <Filter>Game\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Asset.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Mesh\StaticMesh.cpp">
+      <Filter>Engine\Source\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Texture\Texture.cpp">
+      <Filter>Engine\Source\Texture</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\AssetManager.cpp">
       <Filter>Engine\Source</Filter>
@@ -69,6 +84,9 @@
     <ClCompile Include="Engine\Source\Component\Component.cpp">
       <Filter>Engine\Source\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Component\DirectionalLightComponent.cpp">
+      <Filter>Engine\Source\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Source\Component\StaticMeshComponent.cpp">
       <Filter>Engine\Source\Component</Filter>
     </ClCompile>
@@ -91,6 +109,9 @@
       <Filter>Engine\Source</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\GLTFLoader.cpp">
+      <Filter>Engine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\ImageLoader.cpp">
       <Filter>Engine\Source</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Core\FileHelper.cpp">
@@ -119,6 +140,15 @@
     <ClInclude Include="Game\Source\PlayerObject.h">
       <Filter>Game\Source</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Asset.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Image.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\ImageLoader.h">
+      <Filter>Engine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\AssetManager.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
@@ -128,13 +158,10 @@
     <ClInclude Include="Engine\Source\World.h">
       <Filter>Engine\Source</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Renderer\Material.h">
+      <Filter>Engine\Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Source\Renderer\RenderScene.h">
-      <Filter>Engine\Source\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Source\Renderer\RenderView.h">
-      <Filter>Engine\Source\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Source\Renderer\SceneRenderData.h">
       <Filter>Engine\Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\WindowsApplication.h">
@@ -147,6 +174,9 @@
       <Filter>Engine\Source\Component</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Component\Component.h">
+      <Filter>Engine\Source\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Component\DirectionalLightComponent.h">
       <Filter>Engine\Source\Component</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Component\StaticMeshComponent.h">
@@ -179,8 +209,11 @@
     <ClInclude Include="Engine\Source\Mesh\MeshVertex.h">
       <Filter>Engine\Source\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Mesh\StaticMeshData.h">
+    <ClInclude Include="Engine\Source\Mesh\StaticMesh.h">
       <Filter>Engine\Source\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Texture\Texture.h">
+      <Filter>Engine\Source\Texture</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\GameObject.h">
       <Filter>Engine\Source</Filter>
@@ -226,5 +259,115 @@
     <Text Include="Engine\ThirdParty\RapidJSON\license.txt">
       <Filter>Engine\ThirdParty\RapidJSON</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Renderer\Core\private\D3D12\D3D12Core.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClInclude Include="Engine\Renderer\Core\private\D3D12\D3D12Core.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Core\private\D3D12\D3D12Includes.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClCompile Include="Engine\Renderer\Data\private\DataHub.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Renderer\Data\private\DataHub_Interface.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Renderer\Data\private\DataHub_Resource.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_Interface.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_DataBoxCustomizer.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_RTB.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_RenderIdProvider.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_Resource.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_Types.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Allocator.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Allocator.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_BasicImpl.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_FrameNPass.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_MsgProcess.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_ResCtrl.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Template.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Types.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\common\lighting.hlsli">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\common\registers.hlsli">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultBG_PS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultBG_VS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultComposite_PS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultSkyBox_PS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultSkyBox_VS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultWorldOPQ_PS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultWorldTP_PS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultWorld_VS.hlsl">
+      <Filter>Engine\Renderer</Filter>
+    </None>
+    <ClInclude Include="Engine\Renderer\Render\public\RenderOption.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClCompile Include="Engine\Renderer\Render\private\RenderFactory.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClInclude Include="Engine\Renderer\Render\public\RenderAdapter.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Renderer\Render\public\RenderFactory.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

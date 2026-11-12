@@ -2,6 +2,7 @@
 
 #include "Core/Math/EulerAngles.h"
 #include "Core/Math/MathUtility.h"
+#include "Core/Math/Matrix4x4.h"
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +33,58 @@ Quaternion Quaternion::CreateFromEulerAngles(const EulerAngles& angles)
 	result.y = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
 	result.z = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
 	result.w = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
+	return result;
+}
+
+Quaternion Quaternion::CreateFromRotationMatrix(const Matrix4x4& rotation)
+{
+	// 대각선 합은 4 * w * w - 1이다.
+	const float trace = rotation.m[0][0] + rotation.m[1][1] + rotation.m[2][2];
+
+	Quaternion result;
+	if (trace > 0.0f)
+	{
+		// 대각선 합이 양수면 w가 0.5보다 커서 4w로 나누어도 안전하다.
+		const float fourW = std::sqrt(trace + 1.0f) * 2.0f;
+		result.w = fourW * 0.25f;
+
+		// 대각선을 사이에 두고 마주 보는 두 칸의 차는 4w에 각 성분을 곱한 값이다.
+		result.x = (rotation.m[1][2] - rotation.m[2][1]) / fourW;
+		result.y = (rotation.m[2][0] - rotation.m[0][2]) / fourW;
+		result.z = (rotation.m[0][1] - rotation.m[1][0]) / fourW;
+	}
+	else if (rotation.m[0][0] >= rotation.m[1][1] && rotation.m[0][0] >= rotation.m[2][2])
+	{
+		// x가 가장 크고 0.5 이상이라 4x로 나누어도 안전하다.
+		const float fourX = std::sqrt(1.0f + rotation.m[0][0] - rotation.m[1][1] - rotation.m[2][2]) * 2.0f;
+		result.x = fourX * 0.25f;
+
+		// 마주 보는 두 칸의 합은 x와 다른 성분의 곱, 차는 w와 x의 곱에 4를 곱한 값이다.
+		result.y = (rotation.m[0][1] + rotation.m[1][0]) / fourX;
+		result.z = (rotation.m[0][2] + rotation.m[2][0]) / fourX;
+		result.w = (rotation.m[1][2] - rotation.m[2][1]) / fourX;
+	}
+	else if (rotation.m[1][1] >= rotation.m[2][2])
+	{
+		// y가 가장 크고 0.5 이상이라 4y로 나누어도 안전하다.
+		const float fourY = std::sqrt(1.0f - rotation.m[0][0] + rotation.m[1][1] - rotation.m[2][2]) * 2.0f;
+		result.y = fourY * 0.25f;
+
+		result.x = (rotation.m[0][1] + rotation.m[1][0]) / fourY;
+		result.z = (rotation.m[1][2] + rotation.m[2][1]) / fourY;
+		result.w = (rotation.m[2][0] - rotation.m[0][2]) / fourY;
+	}
+	else
+	{
+		// z가 가장 크고 0.5 이상이라 4z로 나누어도 안전하다.
+		const float fourZ = std::sqrt(1.0f - rotation.m[0][0] - rotation.m[1][1] + rotation.m[2][2]) * 2.0f;
+		result.z = fourZ * 0.25f;
+
+		result.x = (rotation.m[0][2] + rotation.m[2][0]) / fourZ;
+		result.y = (rotation.m[1][2] + rotation.m[2][1]) / fourZ;
+		result.w = (rotation.m[0][1] - rotation.m[1][0]) / fourZ;
+	}
+
 	return result;
 }
 

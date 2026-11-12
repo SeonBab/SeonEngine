@@ -2,7 +2,9 @@
 
 #include "Component/Component.h"
 #include "Component/TransformComponent.h"
+#include "World.h"
 
+#include <algorithm>
 #include <utility>
 
 GameObject::GameObject(World& targetWorld)
@@ -16,6 +18,38 @@ GameObject::~GameObject() = default;
 World& GameObject::GetWorld() const
 {
 	return world;
+}
+
+bool GameObject::SetParent(GameObject* newParent)
+{
+	if (newParent == parent) { return true; }
+
+	if (newParent != nullptr)
+	{
+		if (!world.ContainsGameObject(this) || !world.ContainsGameObject(newParent))
+		{
+			return false;
+		}
+
+		const GameObject* ancestor = newParent;
+		while (ancestor != nullptr)
+		{
+			if (ancestor == this) { return false; }
+
+			ancestor = ancestor->parent;
+		}
+
+		// 할당에 실패해도 기존 관계가 유지되도록 새 목록에 먼저 추가한다.
+		newParent->children.push_back(this);
+	}
+
+	if (parent != nullptr)
+	{
+		std::erase(parent->children, this);
+	}
+
+	parent = newParent;
+	return true;
 }
 
 Component* GameObject::AddComponent(std::unique_ptr<Component> newComponent)

@@ -6,6 +6,11 @@
 /** 원근 또는 직교 투영 카메라의 설정값을 보관한다. 위치와 회전은 같은 객체의 TransformComponent를 따른다. */
 class CameraComponent : public Component
 {
+	// 생성과 소멸
+public:
+	/** 활성 카메라로 지정되어 있었다면 소속 World의 지정을 해제한다. */
+	~CameraComponent() override;
+
 	// 투영 모드
 public:
 	/** 기본값은 원근이다. 모드를 바꿔도 각 모드의 설정값은 유지된다. */
@@ -58,7 +63,7 @@ private:
 	// 시점 값
 public:
 	/**
-	 * 같은 객체의 TransformComponent 위치와 회전, 이 카메라의 투영 설정으로 시점 값을 채운다. 크기는 쓰지 않는다.
+	 * 같은 객체의 부모까지 합친 월드 위치와 회전, 이 카메라의 투영 설정으로 시점 값을 채운다. 크기는 쓰지 않는다.
 	 * 부착 전이거나 TransformComponent가 없으면 출력값을 유지하고 false를 반환한다.
 	 */
 	bool GetCameraViewInfo(CameraViewInfo& outCameraViewInfo) const;

@@ -50,8 +50,7 @@ namespace
 			| FOREGROUND_GREEN | FOREGROUND_BLUE
 			| FOREGROUND_INTENSITY;
 
-		return static_cast<WORD>(
-			(originalAttributes & ~ForegroundMask) | foreground);
+		return static_cast<WORD>((originalAttributes & ~ForegroundMask) | foreground);
 	}
 }
 
@@ -65,10 +64,7 @@ bool Log::IsEnabled(LogLevel level)
 	return level >= minimumLevel;
 }
 
-void Log::Write(
-	LogLevel level,
-	std::string_view category,
-	std::string_view message)
+void Log::Write(LogLevel level, std::string_view category, std::string_view message)
 {
 	if (level < minimumLevel) { return; }
 
@@ -76,8 +72,7 @@ void Log::Write(
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo{};
 
 	// 파일이나 파이프로 출력되거나 콘솔 속성 조회에 실패하면 색상 처리를 생략한다.
-	const bool hasConsoleAttributes =
-		GetConsoleScreenBufferInfo(output, &consoleInfo) != FALSE;
+	const bool hasConsoleAttributes = GetConsoleScreenBufferInfo(output, &consoleInfo) != FALSE;
 
 	// 색상을 바꾸기 전에 버퍼에 남은 글자를 실제로 출력한다.
 	std::cout << '[' << category << "] " << std::flush;
@@ -85,9 +80,7 @@ void Log::Write(
 	bool colorChanged = false;
 	if (hasConsoleAttributes)
 	{
-		colorChanged = SetConsoleTextAttribute(
-			output,
-			GetLevelColor(level, consoleInfo.wAttributes)) != FALSE;
+		colorChanged = SetConsoleTextAttribute(output, GetLevelColor(level, consoleInfo.wAttributes)) != FALSE;
 	}
 
 	std::cout << '[' << GetLevelName(level) << ']' << std::flush;

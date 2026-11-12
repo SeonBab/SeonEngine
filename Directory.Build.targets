@@ -1,0 +1,10 @@
+<Project>
+  <Import Project="$(VCInstallDir)vcpkg\scripts\buildsystems\msbuild\vcpkg.targets"
+          Condition="'$(MSBuildProjectExtension)' == '.vcxproj'" />
+
+  <Target Name="SESelectVcpkgVisualStudio"
+          BeforeTargets="VcpkgInstallManifestDependencies"
+          Condition="'$(VcpkgEnableManifest)' == 'true' and '$(VcpkgManifestInstall)' == 'true'">
+    <SetEnv Name="VCPKG_VISUAL_STUDIO_PATH" Value="$(VsInstallRoot)" Prefix="false" />
+  </Target>
+</Project>

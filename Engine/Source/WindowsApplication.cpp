@@ -92,12 +92,27 @@ namespace
 
 WindowsApplication::~WindowsApplication()
 {
+	Shutdown();
+}
+
+bool WindowsApplication::Initialize()
+{
+	if (closeRequested) { return false; }
+	return Create();
+}
+
+bool WindowsApplication::Shutdown()
+{
+	closeRequested = true;
 	if (window != nullptr)
 	{
 		if (!DestroyWindow(window))
 		{
 			LogWindowsError("DestroyWindow", GetLastError());
+			return false;
 		}
+		// 초기화 중 객체 연결에 실패한 창도 파괴 성공 후 핸들을 비운다.
+		window = nullptr;
 	}
 
 	if (isWindowClassRegistered)
@@ -105,13 +120,12 @@ WindowsApplication::~WindowsApplication()
 		if (!UnregisterClassW(WindowClassName, instance))
 		{
 			LogWindowsError("UnregisterClassW", GetLastError());
+			return false;
 		}
+		isWindowClassRegistered = false;
 	}
-}
 
-bool WindowsApplication::Initialize()
-{
-	return Create();
+	return true;
 }
 
 bool WindowsApplication::Create()
@@ -229,6 +243,11 @@ bool WindowsApplication::GetClientSize(int& outWidth, int& outHeight) const
 	return true;
 }
 
+bool WindowsApplication::IsMinimized() const
+{
+	return window != nullptr && IsIconic(window) != FALSE;
+}
+
 LRESULT WindowsApplication::WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	// 창 생성 중 객체 주소를 연결하기 전과 연결을 해제한 뒤의 메시지는 기록할 대상이 없다.
@@ -239,9 +258,23 @@ LRESULT WindowsApplication::WindowProc(HWND windowHandle, UINT message, WPARAM w
 		RecordInputMessage(windowsApplication->inputState, message, wParam);
 	}
 
+	if (message == WM_CLOSE && windowsApplication != nullptr)
+	{
+		// 렌더러가 창을 사용하는 동안은 창을 유지하고 프레임 루프의 종료만 요청한다.
+		if (!windowsApplication->closeRequested)
+		{
+			windowsApplication->closeRequested = true;
+			PostQuitMessage(0);
+		}
+		return 0;
+	}
+
 	if (message == WM_DESTROY)
 	{
-		PostQuitMessage(0);
+		if (windowsApplication == nullptr || !windowsApplication->closeRequested)
+		{
+			PostQuitMessage(0);
+		}
 
 		return 0;
 	}

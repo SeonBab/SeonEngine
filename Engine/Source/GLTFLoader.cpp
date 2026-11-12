@@ -1,12 +1,15 @@
 #include "GLTFLoader.h"
 
 #include "Core/FileHelper.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Transform.h"
 #include "GLTFDocument.h"
 #include "Mesh/MeshVertex.h"
-#include "Mesh/StaticMeshData.h"
+#include "Mesh/StaticMesh.h"
 
 #include "rapidjson/document.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -16,6 +19,9 @@
 
 namespace
 {
+	// glTF는 미터, 엔진은 센티미터 단위다.
+	constexpr float MetersToCentimeters = 100.0f;
+
 	/** accessors 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. */
 	std::vector<GLTFAccessor> ReadAccessors(const rapidjson::Value& document)
 	{
@@ -139,6 +145,74 @@ namespace
 		}
 
 		return meshes;
+	}
+
+	/** nodes 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. */
+	std::vector<GLTFNode> ReadNodes(const rapidjson::Value& document)
+	{
+		std::vector<GLTFNode> nodes;
+		if (!document.HasMember("nodes")) { return nodes; }
+
+		const rapidjson::Value::ConstArray nodeArray = document["nodes"].GetArray();
+		for (const rapidjson::Value& item : nodeArray)
+		{
+			GLTFNode node;
+
+			if (item.HasMember("children"))
+			{
+				const rapidjson::Value::ConstArray childArray = item["children"].GetArray();
+				for (const rapidjson::Value& child : childArray)
+				{
+					node.children.push_back(child.GetUint64());
+				}
+			}
+
+			if (item.HasMember("matrix"))
+			{
+				const rapidjson::Value::ConstArray matrixArray = item["matrix"].GetArray();
+				std::array<float, 16> matrix = {};
+				for (rapidjson::SizeType i = 0; i < 16; ++i)
+				{
+					matrix[i] = matrixArray[i].GetFloat();
+				}
+				node.matrix = matrix;
+			}
+
+			if (item.HasMember("mesh")) { node.mesh = item["mesh"].GetUint64(); }
+
+			if (item.HasMember("rotation"))
+			{
+				const rapidjson::Value::ConstArray rotationArray = item["rotation"].GetArray();
+				for (rapidjson::SizeType i = 0; i < 4; ++i)
+				{
+					node.rotation[i] = rotationArray[i].GetFloat();
+				}
+			}
+
+			if (item.HasMember("scale"))
+			{
+				const rapidjson::Value::ConstArray scaleArray = item["scale"].GetArray();
+				for (rapidjson::SizeType i = 0; i < 3; ++i)
+				{
+					node.scale[i] = scaleArray[i].GetFloat();
+				}
+			}
+
+			if (item.HasMember("translation"))
+			{
+				const rapidjson::Value::ConstArray translationArray = item["translation"].GetArray();
+				for (rapidjson::SizeType i = 0; i < 3; ++i)
+				{
+					node.translation[i] = translationArray[i].GetFloat();
+				}
+			}
+
+			if (item.HasMember("name")) { node.name = item["name"].GetString(); }
+
+			nodes.push_back(std::move(node));
+		}
+
+		return nodes;
 	}
 
 	/** 각 buffer의 uri가 가리키는 파일을 읽어 bufferData를 채운다. 외부 파일 uri만 지원한다. 실패하면 bufferData를 바꾸지 않는다. */
@@ -300,121 +374,285 @@ namespace
 
 		return true;
 	}
+
+	/** 노드의 이동, 회전, 크기를 엔진 좌표계(왼손, cm)의 Transform으로 바꾼다. matrix로 적힌 노드는 행렬을 나눠서 바꾼다. */
+	Transform ConvertNodeTransform(const GLTFNode& node)
+	{
+		// ----------
+		// 담기: glTF 좌표 그대로의 이동, 회전, 크기
+		// ----------
+		// 명세상 한 노드는 matrix와 translation, rotation, scale 중 한 방식으로만 변환을 적는다.
+		Transform source;
+		if (node.matrix.has_value())
+		{
+			// glTF는 열 우선 순서라, 16개 값을 행 단위로 채우면 엔진의 행 벡터 규칙 행렬이 된다.
+			const std::array<float, 16>& values = node.matrix.value();
+			Matrix4x4 matrix;
+			for (int row = 0; row < 4; ++row)
+			{
+				for (int column = 0; column < 4; ++column)
+				{
+					matrix.m[row][column] = values[row * 4 + column];
+				}
+			}
+
+			// 행렬을 glTF 좌표 그대로의 이동, 회전, 크기로 나눈다.
+			source = Transform::CreateFromMatrix(matrix);
+		}
+		else
+		{
+			source.position.x = node.translation[0];
+			source.position.y = node.translation[1];
+			source.position.z = node.translation[2];
+
+			source.rotation.x = node.rotation[0];
+			source.rotation.y = node.rotation[1];
+			source.rotation.z = node.rotation[2];
+			source.rotation.w = node.rotation[3];
+
+			source.scale.x = node.scale[0];
+			source.scale.y = node.scale[1];
+			source.scale.z = node.scale[2];
+		}
+
+		// ----------
+		// 바꾸기: 엔진 좌표계(왼손, cm)로
+		// ----------
+		Transform transform;
+
+		// 정점 위치와 같이 x를 뒤집고 cm로 바꾼다.
+		transform.position.x = -source.position.x * MetersToCentimeters;
+		transform.position.y = source.position.y * MetersToCentimeters;
+		transform.position.z = source.position.z * MetersToCentimeters;
+
+		// x를 뒤집으면 Y축, Z축 기준 회전의 방향이 반대가 되므로 y와 z 성분의 부호를 바꾼다.
+		transform.rotation.x = source.rotation.x;
+		transform.rotation.y = -source.rotation.y;
+		transform.rotation.z = -source.rotation.z;
+		transform.rotation.w = source.rotation.w;
+
+		// 크기는 방향이 없는 축별 배율이라 그대로 쓴다.
+		transform.scale = source.scale;
+
+		return transform;
+	}
+
+	/** .gltf 파일과 외부 버퍼를 읽어 glTF 원본 그대로의 문서를 채운다. 실패하면 출력값을 유지하고 false를 반환한다. */
+	bool LoadDocument(const std::filesystem::path& path, GLTFDocument& outDocument)
+	{
+		std::string gltfText;
+		if (!FileHelper::ReadAllText(path, gltfText)) { return false; }
+
+		rapidjson::Document document;
+		document.Parse(gltfText.data(), gltfText.size());
+		if (document.HasParseError() || !document.IsObject()) { return false; }
+
+		GLTFDocument gltfDocument;
+		gltfDocument.accessors = ReadAccessors(document);
+		gltfDocument.buffers = ReadBuffers(document);
+		gltfDocument.bufferViews = ReadBufferViews(document);
+		gltfDocument.meshes = ReadMeshes(document);
+		gltfDocument.nodes = ReadNodes(document);
+		if (!LoadBufferData(path, gltfDocument)) { return false; }
+
+		outDocument = std::move(gltfDocument);
+
+		return true;
+	}
+
+	/**
+	 * LoadDocument로 채운 원본 문서의 노드들을 엔진 좌표계의 배치표로 바꿔 채운다.
+	 * 배치표 번호는 glTF nodes 번호와 같다. 실패하면 출력값을 유지하고 false를 반환한다.
+	 */
+	bool ConvertSceneNodes(const GLTFDocument& gltfDocument, std::vector<GLTFSceneNode>& outSceneNodes)
+	{
+		// 원본 노드 수만큼 줄을 만든다. 줄 번호가 glTF 노드 번호와 같아진다.
+		std::vector<GLTFSceneNode> sceneNodes(gltfDocument.nodes.size());
+
+		for (std::size_t i = 0; i < gltfDocument.nodes.size(); ++i)
+		{
+			// 메시 번호는 파일에 적힌 값이라, 범위를 벗어나면 나중에 없는 메시를 찾게 되므로 확인한다.
+			if (gltfDocument.nodes[i].mesh.has_value() && gltfDocument.nodes[i].mesh.value() >= gltfDocument.meshes.size()) { return false; }
+
+			sceneNodes[i].mesh = gltfDocument.nodes[i].mesh;
+			sceneNodes[i].localTransform = ConvertNodeTransform(gltfDocument.nodes[i]);
+			sceneNodes[i].name = gltfDocument.nodes[i].name;
+		}
+
+		// glTF의 자식 목록으로 각 노드의 부모와 자식 목록을 함께 채운다.
+		for (std::size_t i = 0; i < gltfDocument.nodes.size(); ++i)
+		{
+			for (const std::size_t child : gltfDocument.nodes[i].children)
+			{
+				// 자식 번호는 파일에 적힌 값이라, 범위를 벗어나면 없는 노드에 쓰게 되므로 확인한다.
+				if (child >= sceneNodes.size()) { return false; }
+
+				// 명세상 노드의 부모는 하나뿐이다. 이미 부모가 적힌 자식을 다시 만나면 잘못된 파일이다.
+				if (sceneNodes[child].parent.has_value()) { return false; }
+
+				// 같은 관계를 두 방향으로 함께 적어 서로 어긋나지 않게 한다.
+				sceneNodes[child].parent = i;
+				sceneNodes[i].children.push_back(child);
+			}
+		}
+
+		// 부모를 따라 올라가 최상위에 닿는지 확인한다. 부모는 하나뿐이라 순환이 없으면 노드 수보다 적은 걸음에 끝난다.
+		for (std::size_t i = 0; i < sceneNodes.size(); ++i)
+		{
+			std::size_t current = i;
+			std::size_t steps = 0;
+			while (sceneNodes[current].parent.has_value())
+			{
+				current = sceneNodes[current].parent.value();
+				++steps;
+
+				// 노드 수만큼 올라가도 끝나지 않으면 같은 노드를 다시 지난 것이므로 순환이다.
+				if (steps >= sceneNodes.size()) { return false; }
+			}
+		}
+
+		outSceneNodes = std::move(sceneNodes);
+
+		return true;
+	}
+
+	/**
+	 * LoadDocument로 채운 원본 문서의 meshIndex번 메시의 첫 프리미티브를 엔진 좌표계(왼손, cm)의 정점과 인덱스로 바꿔 채운다.
+	 * 이름과 경로는 유지하며, 실패하면 출력값을 유지하고 false를 반환한다.
+	 */
+	bool ConvertStaticMesh(const GLTFDocument& gltfDocument, std::size_t meshIndex, StaticMesh& outMeshData)
+	{
+		// ----------
+		// 프리미티브 선택 및 정점 속성과 인덱스 읽기
+		// ----------
+		// 메시 번호가 범위를 벗어나면 없는 메시를 읽게 되므로 확인한다. 메시의 첫 프리미티브만 읽으며, 메시가 있으면 프리미티브도 하나 이상이다.
+		if (meshIndex >= gltfDocument.meshes.size()) { return false; }
+		const GLTFPrimitive& primitive = gltfDocument.meshes[meshIndex].primitives[0];
+
+		// 삼각형 목록(4, 인덱스 3개마다 삼각형 하나)만 지원한다.
+		if (primitive.mode != 4) { return false; }
+
+		// 위치가 없으면 그릴 수 없으므로 실패로 본다.
+		const auto positionAttribute = primitive.attributes.find("POSITION");
+		if (positionAttribute == primitive.attributes.end()) { return false; }
+
+		// 인덱스는 glTF에서 없어도 되지만, 아직 인덱스가 있는 메시만 지원한다.
+		if (!primitive.indices) { return false; }
+
+		std::vector<float> positions;
+		if (!ReadFloatAccessor(gltfDocument, positionAttribute->second, 3, positions)) { return false; }
+
+		// 법선은 아직 직접 계산하지 않으므로 없으면 실패로 본다.
+		const auto normalAttribute = primitive.attributes.find("NORMAL");
+		if (normalAttribute == primitive.attributes.end()) { return false; }
+
+		std::vector<float> normals;
+		if (!ReadFloatAccessor(gltfDocument, normalAttribute->second, 3, normals)) { return false; }
+
+		// UV는 없어도 된다. 없으면 texcoords가 비어 있다.
+		std::vector<float> texcoords;
+		const auto texcoordAttribute = primitive.attributes.find("TEXCOORD_0");
+		if (texcoordAttribute != primitive.attributes.end())
+		{
+			if (!ReadFloatAccessor(gltfDocument, texcoordAttribute->second, 2, texcoords)) { return false; }
+		}
+
+		std::vector<std::uint32_t> indices;
+		if (!ReadIndexAccessor(gltfDocument, primitive.indices.value(), indices)) { return false; }
+
+		// 법선과 UV는 위치와 정점 수가 같아야 한다.
+		const std::size_t vertexCount = positions.size() / 3;
+		if (normals.size() != vertexCount * 3) { return false; }
+		if (!texcoords.empty() && texcoords.size() != vertexCount * 2) { return false; }
+
+		// ----------
+		// 엔진 좌표계로 변환 및 메시 조립
+		// ----------
+		// glTF는 오른손 좌표계, 미터 단위다. 엔진(왼손, cm)에 맞추려고 x를 뒤집고 위치에 100을 곱한다.
+		// x를 뒤집으면 모델 앞면(glTF +Z)과 오른쪽(glTF -X)이 엔진의 +Z 앞, +X 오른쪽과 맞는다.
+		std::vector<MeshVertex> vertices(vertexCount);
+		for (std::size_t i = 0; i < vertexCount; ++i)
+		{
+			MeshVertex& vertex = vertices[i];
+
+			const float* position = &positions[i * 3];
+			vertex.position.x = -position[0] * MetersToCentimeters;
+			vertex.position.y = position[1] * MetersToCentimeters;
+			vertex.position.z = position[2] * MetersToCentimeters;
+
+			// 법선은 길이 1인 방향이라 단위를 바꾸지 않고 x만 뒤집는다.
+			const float* normal = &normals[i * 3];
+			vertex.normal.x = -normal[0];
+			vertex.normal.y = normal[1];
+			vertex.normal.z = normal[2];
+
+			// glTF와 엔진 모두 UV 원점이 왼쪽 위라 그대로 쓴다. UV가 없으면 0으로 남는다.
+			if (!texcoords.empty())
+			{
+				const float* texcoord = &texcoords[i * 2];
+				vertex.uv.x = texcoord[0];
+				vertex.uv.y = texcoord[1];
+			}
+
+			// tangent는 노멀맵을 쓸 때 계산한다. 지금은 0으로 둔다.
+		}
+
+		// 삼각형 목록이라 인덱스 3개가 삼각형 하나다.
+		if (indices.size() % 3 != 0) { return false; }
+
+		// 인덱스는 파일에 적힌 값이라, 정점 수를 넘으면 그릴 때 없는 정점을 읽게 되므로 확인한다.
+		for (const std::uint32_t index : indices)
+		{
+			if (index >= vertexCount) { return false; }
+		}
+
+		// x를 뒤집으면 삼각형이 도는 방향도 뒤집힌다. 엔진의 앞면 약속에 맞추려고 각 삼각형의 2번째와 3번째를 바꾼다.
+		for (std::size_t i = 0; i < indices.size(); i += 3)
+		{
+			std::swap(indices[i + 1], indices[i + 2]);
+		}
+
+		outMeshData.vertices = std::move(vertices);
+		outMeshData.indices = std::move(indices);
+
+		return true;
+	}
 }
 
-bool GLTFLoader::LoadStaticMesh(const std::filesystem::path& path, StaticMeshData& outMeshData)
+bool GLTFLoader::LoadModel(const std::filesystem::path& path, GLTFModel& outModel)
 {
 	// ----------
 	// glTF 문서와 외부 버퍼 읽기
 	// ----------
-	std::string gltfText;
-	if (!FileHelper::ReadAllText(path, gltfText)) { return false; }
-
-	rapidjson::Document document;
-	document.Parse(gltfText.data(), gltfText.size());
-	if (document.HasParseError() || !document.IsObject()) { return false; }
-
 	GLTFDocument gltfDocument;
-	gltfDocument.accessors = ReadAccessors(document);
-	gltfDocument.buffers = ReadBuffers(document);
-	gltfDocument.bufferViews = ReadBufferViews(document);
-	gltfDocument.meshes = ReadMeshes(document);
-	if (!LoadBufferData(path, gltfDocument)) { return false; }
+	if (!LoadDocument(path, gltfDocument)) { return false; }
+
+	GLTFModel model;
 
 	// ----------
-	// 프리미티브 선택 및 정점 속성과 인덱스 읽기
+	// 메시마다 StaticMesh 만들기
 	// ----------
-	// 첫 메시의 첫 프리미티브만 읽는다. 메시가 하나 이상이면 프리미티브도 하나 이상이다.
-	if (gltfDocument.meshes.empty()) { return false; }
-	const GLTFPrimitive& primitive = gltfDocument.meshes[0].primitives[0];
-
-	// 삼각형 목록(4, 인덱스 3개마다 삼각형 하나)만 지원한다.
-	if (primitive.mode != 4) { return false; }
-
-	// 위치가 없으면 그릴 수 없으므로 실패로 본다.
-	const auto positionAttribute = primitive.attributes.find("POSITION");
-	if (positionAttribute == primitive.attributes.end()) { return false; }
-
-	// 인덱스는 glTF에서 없어도 되지만, 아직 인덱스가 있는 메시만 지원한다.
-	if (!primitive.indices) { return false; }
-
-	std::vector<float> positions;
-	if (!ReadFloatAccessor(gltfDocument, positionAttribute->second, 3, positions)) { return false; }
-
-	// 법선은 아직 직접 계산하지 않으므로 없으면 실패로 본다.
-	const auto normalAttribute = primitive.attributes.find("NORMAL");
-	if (normalAttribute == primitive.attributes.end()) { return false; }
-
-	std::vector<float> normals;
-	if (!ReadFloatAccessor(gltfDocument, normalAttribute->second, 3, normals)) { return false; }
-
-	// UV는 없어도 된다. 없으면 texcoords가 비어 있다.
-	std::vector<float> texcoords;
-	const auto texcoordAttribute = primitive.attributes.find("TEXCOORD_0");
-	if (texcoordAttribute != primitive.attributes.end())
+	// 이름은 glTF 메시 이름을 쓰고, 비어 있으면 "파일이름_mesh_번호"로 정한다. 경로는 받는 쪽이 정하므로 비워 둔다.
+	const std::u8string fileStem = path.stem().u8string();
+	model.meshes.reserve(gltfDocument.meshes.size());
+	for (std::size_t i = 0; i < gltfDocument.meshes.size(); ++i)
 	{
-		if (!ReadFloatAccessor(gltfDocument, texcoordAttribute->second, 2, texcoords)) { return false; }
-	}
-
-	std::vector<std::uint32_t> indices;
-	if (!ReadIndexAccessor(gltfDocument, primitive.indices.value(), indices)) { return false; }
-
-	// 법선과 UV는 위치와 정점 수가 같아야 한다.
-	const std::size_t vertexCount = positions.size() / 3;
-	if (normals.size() != vertexCount * 3) { return false; }
-	if (!texcoords.empty() && texcoords.size() != vertexCount * 2) { return false; }
-
-	// ----------
-	// 엔진 좌표계로 변환 및 메시 조립
-	// ----------
-	// glTF는 오른손 좌표계, 미터 단위다. 엔진(왼손, cm)에 맞추려고 x를 뒤집고 위치에 100을 곱한다.
-	// x를 뒤집으면 모델 앞면(glTF +Z)과 오른쪽(glTF -X)이 엔진의 +Z 앞, +X 오른쪽과 맞는다.
-	constexpr float metersToCentimeters = 100.0f;
-
-	std::vector<MeshVertex> vertices(vertexCount);
-	for (std::size_t i = 0; i < vertexCount; ++i)
-	{
-		MeshVertex& vertex = vertices[i];
-
-		const float* position = &positions[i * 3];
-		vertex.position.x = -position[0] * metersToCentimeters;
-		vertex.position.y = position[1] * metersToCentimeters;
-		vertex.position.z = position[2] * metersToCentimeters;
-
-		// 법선은 길이 1인 방향이라 단위를 바꾸지 않고 x만 뒤집는다.
-		const float* normal = &normals[i * 3];
-		vertex.normal.x = -normal[0];
-		vertex.normal.y = normal[1];
-		vertex.normal.z = normal[2];
-
-		// glTF와 엔진 모두 UV 원점이 왼쪽 위라 그대로 쓴다. UV가 없으면 0으로 남는다.
-		if (!texcoords.empty())
+		std::string name = gltfDocument.meshes[i].name;
+		if (name.empty())
 		{
-			const float* texcoord = &texcoords[i * 2];
-			vertex.uv.x = texcoord[0];
-			vertex.uv.y = texcoord[1];
+			name = std::string(fileStem.begin(), fileStem.end()) + "_mesh_" + std::to_string(i);
 		}
 
-		// tangent는 노멀맵을 쓸 때 계산한다. 지금은 0으로 둔다.
+		model.meshes.emplace_back(std::move(name), std::string());
+		if (!ConvertStaticMesh(gltfDocument, i, model.meshes.back())) { return false; }
 	}
 
-	// 삼각형 목록이라 인덱스 3개가 삼각형 하나다.
-	if (indices.size() % 3 != 0) { return false; }
+	// ----------
+	// 배치표 만들기
+	// ----------
+	if (!ConvertSceneNodes(gltfDocument, model.sceneNodes)) { return false; }
 
-	// 인덱스는 파일에 적힌 값이라, 정점 수를 넘으면 그릴 때 없는 정점을 읽게 되므로 확인한다.
-	for (const std::uint32_t index : indices)
-	{
-		if (index >= vertexCount) { return false; }
-	}
-
-	// x를 뒤집으면 삼각형이 도는 방향도 뒤집힌다. 엔진의 앞면 약속에 맞추려고 각 삼각형의 2번째와 3번째를 바꾼다.
-	for (std::size_t i = 0; i < indices.size(); i += 3)
-	{
-		std::swap(indices[i + 1], indices[i + 2]);
-	}
-
-	outMeshData.vertices = std::move(vertices);
-	outMeshData.indices = std::move(indices);
+	outModel = std::move(model);
 
 	return true;
 }

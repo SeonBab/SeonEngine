@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <map>
 #include <optional>
@@ -82,6 +83,25 @@ struct GLTFPrimitive
 	int mode = 4;
 };
 
+/** glTF nodes의 항목 하나. 장면에 놓인 항목이며 메시를 번호로 가리킨다. */
+struct GLTFNode
+{
+	// 선택. 자식 nodes 번호 목록. 자식의 변환은 이 노드 기준이다.
+	std::vector<std::size_t> children;
+	// 선택. 부모 기준 변환 행렬. 열 우선 순서의 숫자 16개다. 있으면 rotation, scale, translation 대신 쓴다.
+	std::optional<std::array<float, 16>> matrix;
+	// 선택. 이 노드가 그리는 meshes 번호
+	std::optional<std::size_t> mesh;
+	// 선택. 부모 기준 회전 쿼터니언 (x, y, z, w). 없으면 회전 없음
+	std::array<float, 4> rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
+	// 선택. 부모 기준 축별 배율. 없으면 1
+	std::array<float, 3> scale = { 1.0f, 1.0f, 1.0f };
+	// 선택. 부모 기준 이동(m). 없으면 0
+	std::array<float, 3> translation = { 0.0f, 0.0f, 0.0f };
+	// 선택. 사람이 보기 위한 이름
+	std::string name;
+};
+
 /** glTF 파일 하나의 최상위 객체. 각 항목은 배열에 담기고, 다른 항목을 이 배열의 번호로 가리킨다. 배열이 없으면 비어 있다. */
 struct GLTFDocument
 {
@@ -89,6 +109,7 @@ struct GLTFDocument
 	std::vector<GLTFBuffer> buffers;
 	std::vector<GLTFBufferView> bufferViews;
 	std::vector<GLTFMesh> meshes;
+	std::vector<GLTFNode> nodes;
 
 	// 명세 항목이 아니다. buffers[i]의 uri에서 불러온 바이트이며 buffers와 같은 번호를 쓴다.
 	std::vector<std::vector<std::byte>> bufferData;

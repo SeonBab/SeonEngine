@@ -17,6 +17,9 @@
     <ClCompile Include="Engine\Source\Core\Math\Transform.cpp" />
     <ClCompile Include="Game\Source\GameMain.cpp" />
     <ClCompile Include="Game\Source\PlayerObject.cpp" />
+    <ClCompile Include="Engine\Source\Asset.cpp" />
+    <ClCompile Include="Engine\Source\Mesh\StaticMesh.cpp" />
+    <ClCompile Include="Engine\Source\Texture\Texture.cpp" />
     <ClCompile Include="Engine\Source\AssetManager.cpp" />
     <ClCompile Include="Engine\Source\Engine.cpp" />
     <ClCompile Include="Engine\Source\Core\FileHelper.cpp" />
@@ -28,11 +31,13 @@
     <ClCompile Include="Engine\Source\Component\InputComponent.cpp" />
     <ClCompile Include="Engine\Source\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Source\Component\Component.cpp" />
+    <ClCompile Include="Engine\Source\Component\DirectionalLightComponent.cpp" />
     <ClCompile Include="Engine\Source\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Engine\Source\Component\TransformComponent.cpp" />
     <ClCompile Include="Engine\Source\Core\Math\Vector3.cpp" />
     <ClCompile Include="Engine\Source\GameObject.cpp" />
     <ClCompile Include="Engine\Source\GLTFLoader.cpp" />
+    <ClCompile Include="Engine\Source\ImageLoader.cpp" />
     <ClCompile Include="Engine\Source\WindowsApplication.cpp" />
     <ClCompile Include="Engine\Source\World.cpp" />
     <ClCompile Include="Engine\Source\Renderer\RenderScene.cpp" />
@@ -40,6 +45,9 @@
   <ItemGroup>
     <ClInclude Include="Engine\Source\CameraViewInfo.h" />
     <ClInclude Include="Engine\Source\Core\Math\MathUtility.h" />
+    <ClInclude Include="Engine\Source\Asset.h" />
+    <ClInclude Include="Engine\Source\Image.h" />
+    <ClInclude Include="Engine\Source\ImageLoader.h" />
     <ClInclude Include="Engine\Source\AssetManager.h" />
     <ClInclude Include="Engine\Source\Engine.h" />
     <ClInclude Include="Engine\Source\Core\FileHelper.h" />
@@ -54,6 +62,7 @@
     <ClInclude Include="Engine\Source\Component\InputComponent.h" />
     <ClInclude Include="Engine\Source\Component\CameraComponent.h" />
     <ClInclude Include="Engine\Source\Component\Component.h" />
+    <ClInclude Include="Engine\Source\Component\DirectionalLightComponent.h" />
     <ClInclude Include="Engine\Source\Component\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Source\Component\TransformComponent.h" />
     <ClInclude Include="Engine\Source\Core\Math\EulerAngles.h" />
@@ -67,15 +76,53 @@
     <ClInclude Include="Engine\Source\GLTFLoader.h" />
     <ClInclude Include="Engine\Source\WindowsApplication.h" />
     <ClInclude Include="Engine\Source\World.h" />
+    <ClInclude Include="Engine\Source\Renderer\Material.h" />
     <ClInclude Include="Engine\Source\Renderer\RenderScene.h" />
-    <ClInclude Include="Engine\Source\Renderer\RenderView.h" />
-    <ClInclude Include="Engine\Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Engine\Source\Mesh\MeshVertex.h" />
-    <ClInclude Include="Engine\Source\Mesh\StaticMeshData.h" />
+    <ClInclude Include="Engine\Source\Mesh\StaticMesh.h" />
+    <ClInclude Include="Engine\Source\Texture\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\ThirdParty\RapidJSON\README.md" />
     <Text Include="Engine\ThirdParty\RapidJSON\license.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Renderer\Core\private\D3D12\D3D12Core.cpp" />
+    <ClInclude Include="Engine\Renderer\Core\private\D3D12\D3D12Core.h" />
+    <ClInclude Include="Engine\Renderer\Core\private\D3D12\D3D12Includes.h" />
+    <ClCompile Include="Engine\Renderer\Data\private\DataHub.cpp" />
+    <ClCompile Include="Engine\Renderer\Data\private\DataHub_Interface.cpp" />
+    <ClCompile Include="Engine\Renderer\Data\private\DataHub_Resource.cpp" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub.h" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_Interface.h" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_DataBoxCustomizer.h" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_RTB.h" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_RenderIdProvider.h" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_Resource.h" />
+    <ClInclude Include="Engine\Renderer\Data\public\DataHub_Types.h" />
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer.h" />
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Allocator.cpp" />
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Allocator.h" />
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_BasicImpl.cpp" />
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_FrameNPass.cpp" />
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_MsgProcess.cpp" />
+    <ClCompile Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_ResCtrl.cpp" />
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Template.h" />
+    <ClInclude Include="Engine\Renderer\Render\private\D3D12\D3D12Renderer_Types.h" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\common\lighting.hlsli" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\common\registers.hlsli" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultBG_PS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultBG_VS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultComposite_PS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultSkyBox_PS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultSkyBox_VS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultWorldOPQ_PS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultWorldTP_PS.hlsl" />
+    <None Include="Engine\Renderer\Render\private\D3D12\shader\defaultWorld_VS.hlsl" />
+    <ClInclude Include="Engine\Renderer\Render\public\RenderOption.h" />
+    <ClCompile Include="Engine\Renderer\Render\private\RenderFactory.cpp" />
+    <ClInclude Include="Engine\Renderer\Render\public\RenderAdapter.h" />
+    <ClInclude Include="Engine\Renderer\Render\public\RenderFactory.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
@@ -146,7 +193,32 @@
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)Engine\Renderer\Data\public;$(ProjectDir)Engine\Renderer\Render\public;$(ProjectDir)Engine\Renderer\Core\private\D3D12;$(ProjectDir)Engine\Renderer\Render\private\D3D12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;ole32.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="SEDeployRendererRuntime" AfterTargets="CopyFilesToOutputDirectory">
+    <PropertyGroup>
+      <SEDxcBinDir>$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\</SEDxcBinDir>
+      <SEDxcBinDir Condition="'$(Configuration)' == 'Debug'">$(VcpkgInstalledDir)$(VcpkgTriplet)\debug\bin\</SEDxcBinDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <SERendererShader Include="$(ProjectDir)Engine\Renderer\Render\private\D3D12\shader\**\*.hlsl;$(ProjectDir)Engine\Renderer\Render\private\D3D12\shader\**\*.hlsli" />
+    </ItemGroup>
+    <Copy SourceFiles="$(SEDxcBinDir)dxcompiler.dll;$(SEDxcBinDir)dxil.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true">
+      <Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
+    </Copy>
+    <Copy SourceFiles="@(SERendererShader)"
+          DestinationFiles="@(SERendererShader->'$(TargetDir)Render\D3D12\shader\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true">
+      <Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
 </Project>

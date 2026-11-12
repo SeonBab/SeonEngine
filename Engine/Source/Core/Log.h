@@ -25,8 +25,5 @@ namespace Log
 	 * 최소 출력 수준보다 낮으면 출력하지 않는다. 색상을 지원하는 콘솔에서는 수준에만 색을 적용한다.
 	 * 호출 중에 바로 출력하며 category와 message를 보관하지 않는다. 로그 수준과 관계없이 프로그램을 종료하지 않는다.
 	 */
-	void Write(
-		LogLevel level,
-		std::string_view category,
-		std::string_view message);
+	void Write(LogLevel level, std::string_view category, std::string_view message);
 }
