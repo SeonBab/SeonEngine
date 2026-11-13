@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+struct Material;
 class StaticMesh;
 class Texture;
 enum class TextureFormat;
@@ -22,6 +23,9 @@ struct Model
 {
 	// glTF meshes 번호 순서다. 각 경로는 "파일경로#번호"이며, 렌더러가 경로로 메시를 구분하기 때문이다.
 	std::vector<std::shared_ptr<const StaticMesh>> meshes;
+	// meshes와 같은 순서이며, 각 메시의 기본 재질이다. nullptr가 아니다.
+	// 같은 glTF 재질을 쓰는 메시는 같은 객체를 공유하고, 재질이 없는 메시는 glTF 기본 재질(흰색, 금속성 1, 거칠기 1)을 공유한다.
+	std::vector<std::shared_ptr<const Material>> meshMaterials;
 	// glTF nodes 번호 순서다. 각 노드의 mesh 번호로 meshes를 찾는다.
 	std::vector<GLTFSceneNode> sceneNodes;
 };
@@ -64,6 +68,12 @@ public:
 	std::shared_ptr<const Model> LoadModel(std::string_view relativePath);
 
 private:
+	/**
+	 * glTF 재질 설명으로 Material을 만든다. 색 텍스처는 modelDirectory(저장소 루트 기준 모델 폴더) 기준으로 불러온다.
+	 * 텍스처를 불러오지 못하면 nullptr를 반환한다.
+	 */
+	std::shared_ptr<const Material> CreateMaterial(const GLTFModelMaterial& source, const std::filesystem::path& modelDirectory);
+
 	std::unordered_map<std::filesystem::path, std::shared_ptr<const Model>> models;
 
 	// 텍스처

@@ -6,10 +6,12 @@
 #include "ImageLoader.h"
 #include "Mesh/StaticMesh.h"
 #include "Paths.h"
+#include "Renderer/Material.h"
 #include "Texture/Texture.h"
 
 #include <cassert>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -75,11 +77,68 @@ std::shared_ptr<const Model> AssetManager::LoadModel(std::string_view relativePa
 		model.meshes.push_back(std::make_shared<const StaticMesh>(std::move(meshData)));
 	}
 
+	// glTF 재질마다 Material을 만든다. 텍스처 경로의 기준은 모델 파일이 있는 폴더다.
+	const std::filesystem::path modelDirectory = assetPath.parent_path();
+	std::vector<std::shared_ptr<const Material>> materials;
+	materials.reserve(gltfModel.materials.size());
+	for (const GLTFModelMaterial& source : gltfModel.materials)
+	{
+		std::shared_ptr<const Material> material = CreateMaterial(source, modelDirectory);
+		if (material == nullptr)
+		{
+			Log::Write(LogLevel::Error, "AssetManager", "Failed to create material for model: " + std::string(relativePath));
+			return nullptr;
+		}
+
+		materials.push_back(std::move(material));
+	}
+
+	// 메시마다 재질을 정한다. 재질 번호는 로더가 범위를 확인했다.
+	// 재질이 없는 메시는 glTF 기본 재질을 쓰며, Material의 기본값(흰색, 금속성 1, 거칠기 1, 텍스처 없음)이 이와 같다.
+	// 기본 재질은 필요할 때 한 번만 만들어 공유한다.
+	std::shared_ptr<const Material> defaultMaterial;
+	model.meshMaterials.reserve(gltfModel.meshMaterials.size());
+	for (const std::optional<std::size_t>& materialIndex : gltfModel.meshMaterials)
+	{
+		if (materialIndex.has_value())
+		{
+			model.meshMaterials.push_back(materials[materialIndex.value()]);
+			continue;
+		}
+
+		if (defaultMaterial == nullptr) { defaultMaterial = std::make_shared<const Material>(); }
+		model.meshMaterials.push_back(defaultMaterial);
+	}
+
 	model.sceneNodes = std::move(gltfModel.sceneNodes);
 
 	std::shared_ptr<const Model> result = std::make_shared<const Model>(std::move(model));
 	models.emplace(std::move(absolutePath), result);
 	return result;
+}
+
+std::shared_ptr<const Material> AssetManager::CreateMaterial(const GLTFModelMaterial& source, const std::filesystem::path& modelDirectory)
+{
+	// 계수는 로더가 범위를 확인했고 의미가 같으므로 그대로 옮긴다.
+	Material material;
+	material.baseColor = source.baseColor;
+	material.roughness = source.roughness;
+	material.metallic = source.metallic;
+
+	if (!source.baseColorImageUri.empty())
+	{
+		// uri는 UTF-8이며 모델 파일 폴더 기준이다. 폴더와 합쳐 저장소 루트 기준 경로로 만든다.
+		const std::u8string uriUtf8(source.baseColorImageUri.begin(), source.baseColorImageUri.end());
+		const std::filesystem::path imagePath = (modelDirectory / std::filesystem::path(uriUtf8)).lexically_normal();
+		const std::u8string imagePathUtf8 = imagePath.generic_u8string();
+		const std::string relativePath(imagePathUtf8.begin(), imagePathUtf8.end());
+
+		// glTF 색 텍스처의 RGB는 sRGB 값이다. 같은 이미지는 LoadTexture가 캐시해 공유한다.
+		material.baseColorTexture = LoadTexture(relativePath, TextureFormat::RGBA8SRGB);
+		if (material.baseColorTexture == nullptr) { return nullptr; }
+	}
+
+	return std::make_shared<const Material>(std::move(material));
 }
 
 std::shared_ptr<const Texture> AssetManager::LoadTexture(std::string_view relativePath, TextureFormat format)

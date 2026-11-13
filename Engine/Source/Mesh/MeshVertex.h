@@ -15,6 +15,7 @@ struct MeshVertex
 	// 면이 바라보는 단위 방향이다.
 	Vector3 normal;
 	// uv의 u가 커지는 단위 방향이다. 노멀맵 계산에 쓴다.
+	// UV가 없거나 유효한 방향을 구하지 못하면 법선에 수직인 대체 단위 방향을 쓴다.
 	Vector3 tangent;
 };
 

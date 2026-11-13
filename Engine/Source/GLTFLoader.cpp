@@ -3,6 +3,7 @@
 #include "Core/FileHelper.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Transform.h"
+#include "Core/Math/Vector3.h"
 #include "GLTFDocument.h"
 #include "Mesh/MeshVertex.h"
 #include "Mesh/StaticMesh.h"
@@ -10,9 +11,11 @@
 #include "rapidjson/document.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -21,6 +24,144 @@ namespace
 {
 	// glTF는 미터, 엔진은 센티미터 단위다.
 	constexpr float MetersToCentimeters = 100.0f;
+
+	/**
+	 * 엔진 로컬 좌표의 삼각형 위치와 UV에서 정규화하지 않은 U 방향을 구한다.
+	 * normal은 사용하지 않는다. UV가 누락되었는지는 호출자가 따로 판단해야 한다.
+	 * 유효하지 않은 값, 퇴화한 삼각형 또는 표현할 수 없는 결과는 false로 처리하며 outTangent를 유지한다.
+	 * 모든 검사를 통과하면 outTangent를 채우고 true를 반환한다. 아직 로더에서 호출하지 않는다.
+	 */
+	bool CalculateTriangleTangent(const MeshVertex& v0, const MeshVertex& v1, const MeshVertex& v2, Vector3& outTangent)
+	{
+		// v0에서 나머지 두 정점으로 향하는 공간상의 변이다.
+		const Vector3 edge1 = v1.position - v0.position;
+		const Vector3 edge2 = v2.position - v0.position;
+		const Vector3 triangleAreaVector = edge1.Cross(edge2);
+		if (!std::isfinite(triangleAreaVector.x) || !std::isfinite(triangleAreaVector.y) || !std::isfinite(triangleAreaVector.z)) { return false; }
+		if (triangleAreaVector.x == 0.0f && triangleAreaVector.y == 0.0f && triangleAreaVector.z == 0.0f) { return false; }
+
+		const float edge1LengthSquared = edge1.Dot(edge1);
+		const float edge2LengthSquared = edge2.Dot(edge2);
+		const float triangleAreaVectorLengthSquared = triangleAreaVector.Dot(triangleAreaVector);
+		if (!std::isfinite(edge1LengthSquared) || !std::isfinite(edge2LengthSquared) || !std::isfinite(triangleAreaVectorLengthSquared)) { return false; }
+
+		constexpr float TriangleParallelTolerance = 1e-6f;
+		const double triangleParallelThreshold = static_cast<double>(TriangleParallelTolerance) * TriangleParallelTolerance * edge1LengthSquared * edge2LengthSquared;
+		if (triangleAreaVectorLengthSquared <= triangleParallelThreshold) { return false; }
+
+		// 각 공간 변에 대응하는 UV 변화량이다.
+		const float deltaU1 = v1.uv.x - v0.uv.x;
+		const float deltaV1 = v1.uv.y - v0.uv.y;
+		const float deltaU2 = v2.uv.x - v0.uv.x;
+		const float deltaV2 = v2.uv.y - v0.uv.y;
+
+		// UV의 두 변이 만드는 부호 있는 평행사변형 넓이다.
+		const float uvDeterminant = deltaU1 * deltaV2 - deltaV1 * deltaU2;
+		if (uvDeterminant == 0.0f) { return false; }
+
+		const float uvEdge1LengthSquared = deltaU1 * deltaU1 + deltaV1 * deltaV1;
+		const float uvEdge2LengthSquared = deltaU2 * deltaU2 + deltaV2 * deltaV2;
+		if (!std::isfinite(uvDeterminant) || !std::isfinite(uvEdge1LengthSquared) || !std::isfinite(uvEdge2LengthSquared)) { return false; }
+
+		// UV 크기와 무관하게 두 변이 거의 평행한지 비교한다. 비교식 양쪽의 곱셈은 double로 수행한다.
+		constexpr float UVParallelTolerance = 1e-6f;
+		const double uvParallelThreshold = static_cast<double>(UVParallelTolerance) * UVParallelTolerance * uvEdge1LengthSquared * uvEdge2LengthSquared;
+		if (static_cast<double>(uvDeterminant) * uvDeterminant <= uvParallelThreshold) { return false; }
+
+		const Vector3 triangleTangent = (edge1 * deltaV2 - edge2 * deltaV1) / uvDeterminant;
+		if (!std::isfinite(triangleTangent.x) || !std::isfinite(triangleTangent.y) || !std::isfinite(triangleTangent.z)) { return false; }
+		if (triangleTangent.x == 0.0f && triangleTangent.y == 0.0f && triangleTangent.z == 0.0f) { return false; }
+
+		outTangent = triangleTangent;
+		return true;
+	}
+
+	/**
+	 * 삼각형별 tangent를 정점에 모아 vertices의 tangent를 채운다. indices는 읽기만 한다.
+	 * 모든 정점의 계산이 성공한 뒤 tangent를 저장하고 true를 반환한다. 실패하면 vertices를 유지한다.
+	 * hasTexcoords가 false이면 정점 번호 검사 후 삼각형 계산을 생략하고 정점별 대체 방향을 만든다.
+	 */
+	bool GenerateTangents(std::vector<MeshVertex>& vertices, const std::vector<std::uint32_t>& indices, bool hasTexcoords)
+	{
+		if (indices.size() % 3 != 0) { return false; }
+
+		std::vector<Vector3> tangentSums(vertices.size());
+
+		for (std::size_t triangleStart = 0; triangleStart < indices.size(); triangleStart += 3)
+		{
+			const std::uint32_t vertexIndex0 = indices[triangleStart];
+			const std::uint32_t vertexIndex1 = indices[triangleStart + 1];
+			const std::uint32_t vertexIndex2 = indices[triangleStart + 2];
+			if (vertexIndex0 >= vertices.size() || vertexIndex1 >= vertices.size() || vertexIndex2 >= vertices.size()) { return false; }
+			if (!hasTexcoords) { continue; }
+
+			Vector3 triangleTangent;
+			// 방향을 구할 수 없는 삼각형은 누적하지 않고 다음 삼각형으로 넘어간다.
+			if (!CalculateTriangleTangent(vertices[vertexIndex0], vertices[vertexIndex1], vertices[vertexIndex2], triangleTangent)) { continue; }
+
+			tangentSums[vertexIndex0] += triangleTangent;
+			tangentSums[vertexIndex1] += triangleTangent;
+			tangentSums[vertexIndex2] += triangleTangent;
+		}
+
+		for (std::size_t vertexIndex = 0; vertexIndex < vertices.size(); ++vertexIndex)
+		{
+			Vector3 normal = vertices[vertexIndex].normal;
+			const float normalLengthSquared = normal.Dot(normal);
+			if (!std::isfinite(normalLengthSquared) || normalLengthSquared <= 0.0f) { return false; }
+
+			// 투영식은 단위 법선을 전제로 하므로 지역 복사본만 정규화한다.
+			normal = normal / std::sqrt(normalLengthSquared);
+
+			Vector3 tangent = tangentSums[vertexIndex];
+			if (!std::isfinite(tangent.x) || !std::isfinite(tangent.y) || !std::isfinite(tangent.z)) { return false; }
+
+			const float normalProjection = normal.Dot(tangent);
+			tangent -= normal * normalProjection;
+
+			const float tangentLengthSquared = tangent.Dot(tangent);
+			if (!std::isfinite(tangentLengthSquared)) { return false; }
+
+			if (tangentLengthSquared > 0.0f)
+			{
+				tangent = tangent / std::sqrt(tangentLengthSquared);
+			}
+			else
+			{
+				const float normalAbsX = std::abs(normal.x);
+				const float normalAbsY = std::abs(normal.y);
+				const float normalAbsZ = std::abs(normal.z);
+
+				// 법선과 가장 덜 나란한 축을 골라 직교화 결과가 영벡터가 되는 것을 피한다.
+				Vector3 referenceAxis;
+				if (normalAbsX <= normalAbsY && normalAbsX <= normalAbsZ)
+				{
+					referenceAxis = Vector3{ 1.0f, 0.0f, 0.0f };
+				}
+				else if (normalAbsY <= normalAbsZ)
+				{
+					referenceAxis = Vector3{ 0.0f, 1.0f, 0.0f };
+				}
+				else
+				{
+					referenceAxis = Vector3{ 0.0f, 0.0f, 1.0f };
+				}
+
+				tangent = referenceAxis - normal * normal.Dot(referenceAxis);
+				tangent = tangent / std::sqrt(tangent.Dot(tangent));
+			}
+
+			// 누적 배열을 최종 방향의 임시 저장소로 재사용한다.
+			tangentSums[vertexIndex] = tangent;
+		}
+
+		for (std::size_t vertexIndex = 0; vertexIndex < vertices.size(); ++vertexIndex)
+		{
+			vertices[vertexIndex].tangent = tangentSums[vertexIndex];
+		}
+
+		return true;
+	}
 
 	/** accessors 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. */
 	std::vector<GLTFAccessor> ReadAccessors(const rapidjson::Value& document)
@@ -109,6 +250,77 @@ namespace
 		}
 
 		return bufferViews;
+	}
+
+	/** images 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. */
+	std::vector<GLTFImage> ReadImages(const rapidjson::Value& document)
+	{
+		std::vector<GLTFImage> images;
+		if (!document.HasMember("images")) { return images; }
+
+		const rapidjson::Value::ConstArray imageArray = document["images"].GetArray();
+		for (const rapidjson::Value& item : imageArray)
+		{
+			GLTFImage image;
+
+			if (item.HasMember("uri")) { image.uri = item["uri"].GetString(); }
+			if (item.HasMember("mimeType")) { image.mimeType = item["mimeType"].GetString(); }
+			if (item.HasMember("bufferView")) { image.bufferView = item["bufferView"].GetUint64(); }
+			if (item.HasMember("name")) { image.name = item["name"].GetString(); }
+
+			images.push_back(std::move(image));
+		}
+
+		return images;
+	}
+
+	/** 재질의 텍스처 참조(textureInfo) 객체 하나를 읽는다. */
+	GLTFTextureInfo ReadTextureInfo(const rapidjson::Value& item)
+	{
+		GLTFTextureInfo textureInfo;
+
+		textureInfo.index = item["index"].GetUint64();
+		if (item.HasMember("texCoord")) { textureInfo.texCoord = item["texCoord"].GetUint64(); }
+
+		return textureInfo;
+	}
+
+	/** materials 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. pbrMetallicRoughness 외의 항목은 읽지 않는다. */
+	std::vector<GLTFMaterial> ReadMaterials(const rapidjson::Value& document)
+	{
+		std::vector<GLTFMaterial> materials;
+		if (!document.HasMember("materials")) { return materials; }
+
+		const rapidjson::Value::ConstArray materialArray = document["materials"].GetArray();
+		for (const rapidjson::Value& item : materialArray)
+		{
+			GLTFMaterial material;
+
+			if (item.HasMember("name")) { material.name = item["name"].GetString(); }
+
+			if (item.HasMember("pbrMetallicRoughness"))
+			{
+				const rapidjson::Value& pbrItem = item["pbrMetallicRoughness"];
+				GLTFPBRMetallicRoughness& pbr = material.pbrMetallicRoughness;
+
+				if (pbrItem.HasMember("baseColorFactor"))
+				{
+					const rapidjson::Value::ConstArray factorArray = pbrItem["baseColorFactor"].GetArray();
+					for (rapidjson::SizeType i = 0; i < 4; ++i)
+					{
+						pbr.baseColorFactor[i] = factorArray[i].GetFloat();
+					}
+				}
+
+				if (pbrItem.HasMember("baseColorTexture")) { pbr.baseColorTexture = ReadTextureInfo(pbrItem["baseColorTexture"]); }
+				if (pbrItem.HasMember("metallicFactor")) { pbr.metallicFactor = pbrItem["metallicFactor"].GetFloat(); }
+				if (pbrItem.HasMember("roughnessFactor")) { pbr.roughnessFactor = pbrItem["roughnessFactor"].GetFloat(); }
+			}
+
+			materials.push_back(std::move(material));
+		}
+
+		return materials;
 	}
 
 	/** meshes 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. */
@@ -213,6 +425,26 @@ namespace
 		}
 
 		return nodes;
+	}
+
+	/** textures 배열을 읽는다. 배열이 없으면 빈 배열을 돌려준다. sampler는 읽지 않는다. */
+	std::vector<GLTFTexture> ReadTextures(const rapidjson::Value& document)
+	{
+		std::vector<GLTFTexture> textures;
+		if (!document.HasMember("textures")) { return textures; }
+
+		const rapidjson::Value::ConstArray textureArray = document["textures"].GetArray();
+		for (const rapidjson::Value& item : textureArray)
+		{
+			GLTFTexture texture;
+
+			if (item.HasMember("source")) { texture.source = item["source"].GetUint64(); }
+			if (item.HasMember("name")) { texture.name = item["name"].GetString(); }
+
+			textures.push_back(std::move(texture));
+		}
+
+		return textures;
 	}
 
 	/** 각 buffer의 uri가 가리키는 파일을 읽어 bufferData를 채운다. 외부 파일 uri만 지원한다. 실패하면 bufferData를 바꾸지 않는다. */
@@ -451,11 +683,61 @@ namespace
 		gltfDocument.accessors = ReadAccessors(document);
 		gltfDocument.buffers = ReadBuffers(document);
 		gltfDocument.bufferViews = ReadBufferViews(document);
+		gltfDocument.images = ReadImages(document);
+		gltfDocument.materials = ReadMaterials(document);
 		gltfDocument.meshes = ReadMeshes(document);
 		gltfDocument.nodes = ReadNodes(document);
+		gltfDocument.textures = ReadTextures(document);
 		if (!LoadBufferData(path, gltfDocument)) { return false; }
 
 		outDocument = std::move(gltfDocument);
+
+		return true;
+	}
+
+	/**
+	 * LoadDocument로 채운 원본 문서의 materialIndex번 재질을 엔진 재질 설명으로 바꿔 채운다.
+	 * 계수가 0~1 밖이거나 번호가 범위를 벗어나거나, 지원하지 않는 형식의 색 텍스처면 출력값을 유지하고 false를 반환한다.
+	 */
+	bool ConvertMaterial(const GLTFDocument& gltfDocument, std::size_t materialIndex, GLTFModelMaterial& outMaterial)
+	{
+		if (materialIndex >= gltfDocument.materials.size()) { return false; }
+
+		const GLTFMaterial& source = gltfDocument.materials[materialIndex];
+		const GLTFPBRMetallicRoughness& pbr = source.pbrMetallicRoughness;
+
+		// 명세상 계수는 모두 0~1이다. 엔진 재질도 같은 범위만 받으므로 벗어나면 잘못된 파일로 본다.
+		const auto isUnitRange = [](float value) { return std::isfinite(value) && value >= 0.0f && value <= 1.0f; };
+		if (!isUnitRange(pbr.baseColorFactor[0]) || !isUnitRange(pbr.baseColorFactor[1]) || !isUnitRange(pbr.baseColorFactor[2])) { return false; }
+		if (!isUnitRange(pbr.metallicFactor) || !isUnitRange(pbr.roughnessFactor)) { return false; }
+
+		GLTFModelMaterial material;
+		material.baseColor = Vector3{ pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2] };
+		material.metallic = pbr.metallicFactor;
+		material.roughness = pbr.roughnessFactor;
+		material.name = source.name;
+
+		// 색 텍스처는 재질 -> textures -> images 순서로 번호를 따라가 이미지 경로를 찾는다.
+		if (pbr.baseColorTexture.has_value())
+		{
+			const GLTFTextureInfo& textureInfo = pbr.baseColorTexture.value();
+
+			// 정점에는 TEXCOORD_0만 담으므로 다른 UV를 쓰는 텍스처는 바르게 붙일 수 없다.
+			if (textureInfo.texCoord != 0) { return false; }
+			if (textureInfo.index >= gltfDocument.textures.size()) { return false; }
+
+			// source가 없으면 확장이 이미지를 정하는데, 확장은 지원하지 않는다.
+			const GLTFTexture& texture = gltfDocument.textures[textureInfo.index];
+			if (!texture.source.has_value() || texture.source.value() >= gltfDocument.images.size()) { return false; }
+
+			// .glb 안(bufferView)이나 data URI의 이미지는 아직 지원하지 않는다.
+			const GLTFImage& image = gltfDocument.images[texture.source.value()];
+			if (image.uri.empty() || image.uri.starts_with("data:")) { return false; }
+
+			material.baseColorImageUri = image.uri;
+		}
+
+		outMaterial = std::move(material);
 
 		return true;
 	}
@@ -593,8 +875,6 @@ namespace
 				vertex.uv.x = texcoord[0];
 				vertex.uv.y = texcoord[1];
 			}
-
-			// tangent는 노멀맵을 쓸 때 계산한다. 지금은 0으로 둔다.
 		}
 
 		// 삼각형 목록이라 인덱스 3개가 삼각형 하나다.
@@ -611,6 +891,9 @@ namespace
 		{
 			std::swap(indices[i + 1], indices[i + 2]);
 		}
+
+		const bool hasTexcoords = texcoordAttribute != primitive.attributes.end();
+		if (!GenerateTangents(vertices, indices, hasTexcoords)) { return false; }
 
 		outMeshData.vertices = std::move(vertices);
 		outMeshData.indices = std::move(indices);
@@ -630,11 +913,21 @@ bool GLTFLoader::LoadModel(const std::filesystem::path& path, GLTFModel& outMode
 	GLTFModel model;
 
 	// ----------
-	// 메시마다 StaticMesh 만들기
+	// 재질마다 설명 만들기
+	// ----------
+	model.materials.resize(gltfDocument.materials.size());
+	for (std::size_t i = 0; i < gltfDocument.materials.size(); ++i)
+	{
+		if (!ConvertMaterial(gltfDocument, i, model.materials[i])) { return false; }
+	}
+
+	// ----------
+	// 메시마다 StaticMesh와 재질 번호 만들기
 	// ----------
 	// 이름은 glTF 메시 이름을 쓰고, 비어 있으면 "파일이름_mesh_번호"로 정한다. 경로는 받는 쪽이 정하므로 비워 둔다.
 	const std::u8string fileStem = path.stem().u8string();
 	model.meshes.reserve(gltfDocument.meshes.size());
+	model.meshMaterials.reserve(gltfDocument.meshes.size());
 	for (std::size_t i = 0; i < gltfDocument.meshes.size(); ++i)
 	{
 		std::string name = gltfDocument.meshes[i].name;
@@ -645,6 +938,11 @@ bool GLTFLoader::LoadModel(const std::filesystem::path& path, GLTFModel& outMode
 
 		model.meshes.emplace_back(std::move(name), std::string());
 		if (!ConvertStaticMesh(gltfDocument, i, model.meshes.back())) { return false; }
+
+		// 첫 프리미티브의 재질 번호를 메시의 재질로 쓴다. 번호는 파일에 적힌 값이라 범위를 확인한다.
+		const std::optional<std::size_t>& materialIndex = gltfDocument.meshes[i].primitives[0].material;
+		if (materialIndex.has_value() && materialIndex.value() >= gltfDocument.materials.size()) { return false; }
+		model.meshMaterials.push_back(materialIndex);
 	}
 
 	// ----------
